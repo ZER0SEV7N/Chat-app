@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Cliente</title>
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Chat Cliente</h1>
+  <input id="msg" placeholder="Escribe un mensaje">
+  <button onclick="sendMessage()">Enviar</button>
+  <ul id="messages"></ul>
+
+  <script>
+    const socket = io("http://localhost:3000", {
+      transports: ["websocket"], // forzamos WebSocket puro
+    });
+
+    // Confirmar conexión
+    socket.on("connect", () => {
+      console.log("✅ Conectado al servidor con ID:", socket.id);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("❌ Error de conexión:", err.message);
+    });
+
+    // Escuchar mensajes desde el servidor
+    socket.on("message", (msg) => {
+      console.log("📩 Mensaje recibido:", msg);
+      const li = document.createElement("li");
+      li.textContent = msg;
+      document.getElementById("messages").appendChild(li);
+    });
+
+    // Enviar mensaje al servidor
+    function sendMessage() {
+      const msg = document.getElementById("msg").value;
+      console.log("📤 Enviando mensaje:", msg);
+      socket.emit("message", msg);
+      document.getElementById("msg").value = "";
+    }
+  </script>
+</body>
+</html>
