@@ -11,4 +11,14 @@ export class UsersService {
         private readonly userRepository: Repository<User>,
     ) {}
     
+    async createUser(username: string, password: string){
+        const hashed = await bcrypt.hash(password, 10);
+        const user = this.userRepository.create({username, password: hashed});
+        return this.userRepository.save(user);
+    }
+
+    async findByUsername(username: string){
+        return this.userRepository.findOne({where: {username}});
+    }
+
 }
