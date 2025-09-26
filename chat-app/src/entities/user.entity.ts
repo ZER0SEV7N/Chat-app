@@ -1,6 +1,6 @@
 //Entidad Usuario
 //Importaciones necesarias:
-import { Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn} from "typeorm";
 
 //Definicion de la entidad User
 @Entity()
@@ -11,7 +11,7 @@ export class User {
     @Column() //Columna de nombre
     name: string;
 
-    @Column() //Columna de nombre de usuario
+    @Column({ unique: true }) //Columna de nombre de usuario
     username: string;
 
     @Column() //Columna de correo electronico
@@ -19,4 +19,7 @@ export class User {
 
     @Column() //Columna de contraseña
     password: string;
+
+    @CreateDateColumn()
+    createdAt: Date;
 }
