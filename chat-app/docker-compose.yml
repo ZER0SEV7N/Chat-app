@@ -1,8 +1,31 @@
+<<<<<<< HEAD
 
 services:
   postgres:
     image: postgres
     container_name: chat-postgres
+=======
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: chat-app
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env
+    networks:
+      - chat-network
+
+  postgres:
+    image: postgres
+    container_name: chat-PG
+>>>>>>> c46fd7ce140119b34b0c0aeb5af2c53296c1df45
     restart: always
     environment:
       POSTGRES_USER: chatuser
@@ -11,7 +34,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
+<<<<<<< HEAD
       - postgres_data:/var/lib/postgresql/data
+=======
+      - pgdata:/var/lib/postgresql/data
+>>>>>>> c46fd7ce140119b34b0c0aeb5af2c53296c1df45
     networks:
       - chat-network
 
@@ -25,7 +52,15 @@ services:
       - chat-network
 
 volumes:
+<<<<<<< HEAD
   postgres_data:
 
 networks:
   chat-network:
+=======
+  pgdata:
+
+networks:
+  chat-network:
+
+>>>>>>> c46fd7ce140119b34b0c0aeb5af2c53296c1df45
