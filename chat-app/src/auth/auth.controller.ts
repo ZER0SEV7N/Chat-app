@@ -7,13 +7,9 @@ export class AuthController {
 
   // 👉 Endpoint para registro
   @Post('register')
-  async register(
-    @Body('name') name: string,
-    @Body('username') username: string,
-    @Body('email') email: string,
-    @Body('password') password: string,
-  ) {
-    return this.authService.register(name, username, email, password);
+  async register(@Body() body: any) {
+    console.log("📥 Body recibido en NestJS:", body);
+    return this.authService.register(body.name, body.username, body.email, body.password);
   }
 
   // 👉 Endpoint para login

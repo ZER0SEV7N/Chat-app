@@ -10,23 +10,19 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // 👉 Registrar usuario
-  async register(name: string, username: string, email: string, password: string) {
-    // verificar si ya existe username
-    const existingUser = await this.usersService.findByUsername(username);
-    if (existingUser) {
-      throw new ConflictException('El nombre de usuario ya está en uso');
+  
+  //Registrar usuario
+    async register(name: string, username: string, email: string, password: string) {
+      const existingUser = await this.usersService.findByUsername(username);
+      if (existingUser) {
+        throw new ConflictException('El nombre de usuario ya está en uso');
+      }
+
+      return this.usersService.createUser(name, username, email, password);
     }
 
-    // crear usuario
-    const user = await this.usersService.createUser(username, password);
-    user.name = name;
-    user.email = email;
 
-    return this.usersService.saveUser(user); // necesitamos agregar este método en UsersService
-  }
-
-  // 👉 Login
+  //Login
   async login(username: string, password: string) {
     const user = await this.usersService.findByUsername(username);
 
@@ -39,7 +35,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // generar token JWT
+    //generar token JWT
     const payload = { sub: user.idUser, username: user.username };
     const token = await this.jwtService.signAsync(payload);
 

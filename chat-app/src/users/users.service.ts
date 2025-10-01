@@ -11,17 +11,25 @@ export class UsersService {
         private readonly userRepository: Repository<User>,
     ) {}
     
-    async createUser(username: string, password: string){
+    async createUser(name: string, username: string, email: string, password: string) {
         const hashed = await bcrypt.hash(password, 10);
-        const user = this.userRepository.create({username, password: hashed});
+        const user = this.userRepository.create({
+            name,
+            username,
+            email,
+            password: hashed,
+        });
         return this.userRepository.save(user);
     }
-
-    async findByUsername(username: string){
-        return this.userRepository.findOne({where: {username}});
+    async findByUsername(username: string) {
+        return this.userRepository
+            .createQueryBuilder('user')
+            .addSelect('user.password') //necesario
+            .where('user.username = :username', { username })
+            .getOne();
     }
 
-    // 👉 Nuevo método
+    //Nuevo método
     async saveUser(user: User) {
         return this.userRepository.save(user);
     }

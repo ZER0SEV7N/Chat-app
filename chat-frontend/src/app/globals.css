@@ -8,54 +8,98 @@ body {
     margin: 0;
 }
 
+/* Animación suave al cargar */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+/* Título */
 .login-container {
     background-color: #ffffff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-    width: 300px; /* Fixed width for the form */
+    padding: 35px;
+    border-radius: 10px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+    width: 340px;
     text-align: center;
+    animation: fadeIn 0.5s ease-in-out;
 }
 
-h2 {
+.login-title {
     margin-bottom: 20px;
     color: #333;
 }
 
 .input-group {
-    margin-bottom: 15px;
+    margin-bottom: 18px;
     text-align: left;
 }
 
 .input-group label {
-    display: block; /* Make the label take its own line */
-    margin-bottom: 5px;
+    display: block;
+    margin-bottom: 6px;
     font-weight: bold;
-    color: #555;
+    color: #444;
+    font-size: 14px;
 }
 
 .input-group input[type="text"],
+.input-group input[type="email"],
 .input-group input[type="password"] {
     width: 100%;
-    padding: 10px;
+    padding: 10px 12px; /* Include padding and border in the element's total width and height */
     border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+    font-size: 14px; 
 }
 
-button[type="submit"] {
+/* Efecto al enfocar */
+.input-group input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.4);
+    outline: none;
+}
+
+.login-btn {
     width: 100%;
-    padding: 10px;
-    background-color: #007bff; /* Primary button color */
-    color: white;
+    padding: 11px;
+    background-color: #f1f1f5;
+    color: #333;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 16px;
-    margin-top: 10px;
-    transition: background-color 0.3s ease; /* Smooth hover effect */
+    font-size: 15px;
+    margin-top: 12px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-button[type="submit"]:hover {
-    background-color: #0056b3; /* Darker color on hover */
+.login-btn:hover {
+    background-color: #d9d9e0;
+    transform: translateY(-1px); /* Darker color on hover */
+}
+
+/* Botón secundario */
+.register-btn {
+    width: 100%;
+    padding: 11px;
+    background-color: #f1f1f5;
+    color: #333;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    margin-top: 12px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.register-btn:hover {
+    background-color: #d9d9e0;
+    transform: translateY(-1px);
+}
+
+.register-footer {
+    margin-top: 18px;
+    font-size: 13px;
+    color: #666;
 }
