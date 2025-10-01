@@ -3,7 +3,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn} from "typeorm";
 
 //Definicion de la entidad User
-@Entity()
+@Entity('users')
 export class User {
     @PrimaryGeneratedColumn() //Columna de ID autogenerada
     idUser: number;
@@ -17,7 +17,7 @@ export class User {
     @Column() //Columna de correo electronico
     email: string;
 
-    @Column() //Columna de contraseña
+    @Column({select: false}) //Columna de contraseña
     password: string;
 
     @CreateDateColumn()

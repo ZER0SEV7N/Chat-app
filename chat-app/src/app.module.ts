@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config'; // 👈 importa ConfigModule
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -7,7 +8,17 @@ import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [UsersModule, DatabaseModule, ChatModule, AuthModule],
+  imports: [
+    // 👇 Carga variables de entorno desde .env
+    ConfigModule.forRoot({
+      isGlobal: true, // disponible en toda la app sin volver a importarlo
+    }),
+
+    UsersModule,
+    DatabaseModule,
+    ChatModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -21,4 +21,8 @@ export class UsersService {
         return this.userRepository.findOne({where: {username}});
     }
 
+    // 👉 Nuevo método
+    async saveUser(user: User) {
+        return this.userRepository.save(user);
+    }
 }
