@@ -1,6 +1,7 @@
 'use client';
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // Para App Router
+import Head from 'next/head';
 
 export default function RegisterPage(){
     const router = useRouter();
@@ -36,6 +37,10 @@ export default function RegisterPage(){
             }
         };
     return (
+        <>
+      <Head>
+          <title>Iniciar sesión - Chat App</title>
+      </Head>
         <main>
             <div className="login-container">
                 <h1 className="login-title">Registro</h1>
@@ -63,6 +68,7 @@ export default function RegisterPage(){
                 </div>
             </div>
         </main>
+        </>
     );
 
 }
