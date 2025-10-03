@@ -52,9 +52,10 @@ export default function LoginPage() {
   };
 
   return (
-    <>
+    <div>
       <Head>
           <title>Iniciar sesión - Chat App</title>
+          <meta name="description" content="Intento de cambiar el nombre de la cabecera" />
       </Head>
       <div className="login-container">
         <h1 className="login-title">
@@ -97,6 +98,6 @@ export default function LoginPage() {
         </button>
         </p>
       </div>
-    </>
+    </div>
   );
 }

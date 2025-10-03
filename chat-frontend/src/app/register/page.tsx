@@ -37,38 +37,39 @@ export default function RegisterPage(){
             }
         };
     return (
-        <>
-      <Head>
-          <title>Iniciar sesión - Chat App</title>
-      </Head>
-        <main>
-            <div className="login-container">
-                <h1 className="login-title">Registro</h1>
-                <form onSubmit={handleRegister}>
-                    <div className="input-group">
-                        <label htmlFor="name">Nombre completo</label>
-                        <input id="name" name="name" type="text" onChange={handleChange} />
+        <div>
+            <Head>
+                <title>Iniciar sesión - Chat App</title>
+                <meta name="description" content="Intento de cambiar el nombre de la cabecera" />
+            </Head>
+            <main>
+                <div className="login-container">
+                    <h1 className="login-title">Registro</h1>
+                    <form onSubmit={handleRegister}>
+                        <div className="input-group">
+                            <label htmlFor="name">Nombre completo</label>
+                            <input id="name" name="name" type="text" onChange={handleChange} />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="username">Usuario</label>
+                            <input id="username" name="username" type="text" onChange={handleChange} />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="email">Correo</label>
+                            <input id="email" name="email" type="email" onChange={handleChange} />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="password">Contraseña</label>
+                            <input id="password" name="password" type="password" onChange={handleChange} />
+                        </div>
+                        <button type="submit" className="login-btn">Registrar</button>
+                    </form>
+                    <div className="register-footer">
+                        ¿Ya tienes cuenta? <button className="register-btn" onClick={() => router.push("/login")}>Iniciar sesión</button>
                     </div>
-                    <div className="input-group">
-                        <label htmlFor="username">Usuario</label>
-                        <input id="username" name="username" type="text" onChange={handleChange} />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="email">Correo</label>
-                        <input id="email" name="email" type="email" onChange={handleChange} />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="password">Contraseña</label>
-                        <input id="password" name="password" type="password" onChange={handleChange} />
-                    </div>
-                    <button type="submit" className="login-btn">Registrar</button>
-                </form>
-                <div className="register-footer">
-                    ¿Ya tienes cuenta? <button className="register-btn" onClick={() => router.push("/login")}>Iniciar sesión</button>
                 </div>
-            </div>
-        </main>
-        </>
+            </main>
+        </div>
     );
 
 }
