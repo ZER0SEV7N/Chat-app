@@ -1,48 +1,59 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer } from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage, MessageBody, 
+  WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket  } from '@nestjs/websockets';
 import { ChatService } from './chat.service';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
-import { OnModuleInit } from '@nestjs/common';
-import { webSocket } from 'rxjs/webSocket';
+import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway()
-export class ChatGateway implements OnModuleInit {
-  constructor(private readonly chatService: ChatService) {}
-
+@WebSocketGateway({ cors: { origin: '*' } }) // Permitir CORS desde cualquier origen
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  public server: Server;
+  server: Server;
 
-  onModuleInit() { 
-    this.server.on('connection', (socket: Socket) => {
-      console.log("El cliente se ha conectado: ", socket.id)
-      socket.on('disconnect', () => {
-        console.log("El cliente se ha desconectado: ", socket.id);
-      })
-   });
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly jwtService: JwtService
+  ) {}
+  //Cuando se establece la conexion
+    async handleConnection(client: Socket) {
+      try {
+        const token = client.handshake.auth.token;
+        if(!token) throw new Error("No se ha enviado el token");
 
-  /*@SubscribeMessage('createChat')
-  create(@MessageBody() createChatDto: CreateChatDto) {
-    return this.chatService.create(createChatDto);
+        const payload = this.jwtService.verify(token);
+        client.data.idUser = payload.sub; // Almacenar el idUser en los datos del socket
+
+        console.log(`Cliente conectado: ${client.id}, Usuario ID: ${client.data.idUser}`);
+      } catch (error) {
+        console.log(`Error de autenticación: ${error.message}`);
+        client.disconnect(); // Desconectar el cliente si la autenticación falla
+      }
+  }
+    //Cuando se desconecta el cliente
+    handleDisconnect(client: Socket) {
+      console.log(`Cliente desconectado: ${client.id}`);
   }
 
-  @SubscribeMessage('findAllChat')
-  findAll() {
-    return this.chatService.findAll();
-  }
+    // Unirse a una sala
+    @SubscribeMessage('joinRoom')
+    async handleJoinRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
+      client.join(`Canal: ${idChannel}`);
+      console.log(`Usuario ${client.data.idUser} se unió al canal -${idChannel}`);
 
-  @SubscribeMessage('findOneChat')
-  findOne(@MessageBody() id: number) {
-    return this.chatService.findOne(id);
+      //Devolver el historial de mensajes al unirse a la sala
+      const history = await this.chatService.getMessages(idChannel);
+      client.emit('history', history);
   }
+    //Enviar Mensaje
+    @SubscribeMessage('sendMessage')
+    async handleMessage(
+      @MessageBody() payload: { idChannel: number, text: string }, 
+      @ConnectedSocket() client: Socket) {
+      const idUser = client.data.user.sub; //Id de usuario desde el token
 
-  @SubscribeMessage('updateChat')
-  update(@MessageBody() updateChatDto: UpdateChatDto) {
-    return this.chatService.update(updateChatDto.id, updateChatDto);
-  }
+      //Guardar en la BD
+      const message = await this.chatService.createMessage(idUser, payload.idChannel, payload.text);
 
-  @SubscribeMessage('removeChat')
-  remove(@MessageBody() id: number) {
-    return this.chatService.remove(id);*/
+      //Emitir el mensaje a todos los usuarios en la sala
+      this.server.to(`Canal: ${payload.idChannel}`).emit('newMessage', message);
   }
 }

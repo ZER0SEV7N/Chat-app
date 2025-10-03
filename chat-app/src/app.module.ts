@@ -6,6 +6,8 @@ import { UsersModule } from './users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
+import { ChannelsController } from './channels/channels.controller';
+import { ChannelsModule } from './channels/channels.module';
 
 @Module({
   imports: [
@@ -18,8 +20,9 @@ import { AuthModule } from './auth/auth.module';
     DatabaseModule,
     ChatModule,
     AuthModule,
+    ChannelsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, ChannelsController],
   providers: [AppService],
 })
 export class AppModule {}
