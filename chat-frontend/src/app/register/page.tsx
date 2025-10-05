@@ -65,7 +65,7 @@ export default function RegisterPage(){
                         <button type="submit" className="login-btn">Registrar</button>
                     </form>
                     <div className="register-footer">
-                        ¿Ya tienes cuenta? <button className="register-btn" onClick={() => router.push("/login")}>Iniciar sesión</button>
+                        ¿Ya tienes cuenta? <button className="register-btn" onClick={() => router.push("/")}>Iniciar sesión</button>
                     </div>
                 </div>
             </main>
