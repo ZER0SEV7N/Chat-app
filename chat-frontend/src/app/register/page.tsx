@@ -31,7 +31,7 @@ export default function RegisterPage(){
         const data = await res.json();
         if (res.ok){
             alert(`Registro exitoso: ${data.username}, ahora por favor inicia sesión.`);
-            router.push("/login");
+            router.push("/");
         } else {
             alert(`Error en el registro: ${data.message}`);
             }

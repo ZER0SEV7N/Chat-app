@@ -103,3 +103,121 @@ body {
     font-size: 13px;
     color: #666;
 }
+.chat-layout {
+  display: flex;
+  height: 100vh;
+  background: #f4f4f4;
+}
+
+.chat-list {
+  width: 250px;
+  background: #fff;
+  border-right: 1px solid #ccc;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-list h2 {
+  margin: 0 0 10px;
+}
+
+.chat-list ul {
+  list-style: none;
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chat-list li {
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.chat-list li:hover {
+  background: #e8f0fe;
+}
+
+.chat-list-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+}
+
+.chat-window h3 {
+  margin-bottom: 10px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.chat-msg {
+  margin-bottom: 6px;
+}
+
+.chat-input {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.chat-input button {
+  padding: 8px 15px;
+  background: #007bff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background: #0069d9;
+}
+
+/* Modal básico */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}

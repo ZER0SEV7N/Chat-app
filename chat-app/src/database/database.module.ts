@@ -2,7 +2,7 @@
 
 //Importaciones necesarias:
 import { Module } from '@nestjs/common'; //Modulo de NestJS
-import { TypeOrmModule} from '@nestjs/typeorm'; //Modulo de TypeORM para la conexion a la base de datos
+import { TypeOrmModule } from '@nestjs/typeorm'; //Modulo de TypeORM para la conexion a la base de datos
 
 //Definicion del modulo DatabaseModule
 @Module({
@@ -19,4 +19,4 @@ import { TypeOrmModule} from '@nestjs/typeorm'; //Modulo de TypeORM para la cone
     })
     ]
 })
-export class DatabaseModule {}
+export class DatabaseModule { }
