@@ -11,7 +11,7 @@ export default function AddUserModal({ onClose, onChannelCreated }: AddUserModal
   const handleAdd = async () => {
     const token = localStorage.getItem('token');
 
-    const res = await fetch('http://localhost:3000/chat/private', {
+    const res = await fetch('http://172.26.176.1:3000/chat/private', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -6,7 +6,7 @@ import Head from 'next/head';
 
 export default function LoginPage() {
   useEffect(() => {
-    const socket = io("http://localhost:3001", {
+    const socket = io("http://172.26.176.1:3000", {
       auth: { token: localStorage.getItem("token") },
     });
     socket.on("connect", () => {
@@ -33,7 +33,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = await fetch("http://localhost:3000/auth/login", {
+    const res = await fetch("http://172.26.176.1:3000/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),

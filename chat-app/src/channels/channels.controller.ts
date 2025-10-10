@@ -8,6 +8,12 @@ export class ChannelsController {
     async getAllPublicChannels(){
         return this.channelsService.getAllPublicChannels();
     }
+    
+    //Endpoint público (sin autenticación)
+    @Get('public')
+    async getPublicChannels() {
+      return this.channelsService.getAllPublicChannels();
+    }
 
     @Post()
     async createChannel(@Body() Body: {name: string, description?: string}){

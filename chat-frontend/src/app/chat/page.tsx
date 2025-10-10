@@ -17,7 +17,7 @@ export default function ChatPage() {
 
   //conexion con el servidor
   useEffect(() => {
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io("http://172.26.176.1:3001", {
       auth: { token: localStorage.getItem("token") },
     });
 
@@ -39,18 +39,31 @@ export default function ChatPage() {
     useEffect(() => {
     const fetchChannels = async () => {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/users/channels', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        console.error('Error al obtener canales del usuario');
-        return;
+      if (!token) return;
+
+      try {
+        // 🧩 1. Obtener canales del usuario (DMs)
+        const resUser = await fetch('http://172.26.176.1:3000/users/channels', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const userChannels = resUser.ok ? await resUser.json() : [];
+
+        // 🧩 2. Obtener canales públicos
+        const resPublic = await fetch('http://172.26.176.1:3000/channels/public');
+        const publicChannels = resPublic.ok ? await resPublic.json() : [];
+
+        // 🧩 3. Combinar ambos (sin duplicar)
+        const allChannels = [...publicChannels, ...userChannels];
+
+        setChannels(allChannels);
+      } catch (err) {
+        console.error('Error al obtener canales:', err);
       }
-      const data = await res.json();
-      setChannels(data);
     };
+
     fetchChannels();
   }, []);
+
 
   const handleSelectChannel = (channel: any) => setSelectedChannel(channel);
 
@@ -82,7 +95,7 @@ export default function ChatPage() {
       {showAddUserModal && (
         <AddUserModal
           onClose={() => setShowAddUserModal(false)}
-          onChannelCreated={handleChannelCreated} // ✅ ahora notifica el nuevo canal
+          onChannelCreated={handleChannelCreated}
         />
       )}
     </div>

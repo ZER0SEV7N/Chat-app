@@ -5,7 +5,7 @@ export default function createChannelModal ({ onClose, onChannelCreated }: any){
     const [description, setDescription] = useState('');
 
     const handleCreate = async () => {
-        const res = await fetch('http://localhost:3000/channels', {
+        const res = await fetch('http://172.26.176.1:3000/channels', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, description }),

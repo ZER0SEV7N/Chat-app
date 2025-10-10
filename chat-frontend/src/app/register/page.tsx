@@ -22,7 +22,7 @@ export default function RegisterPage(){
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Datos enviados al backend:", form);
-        const res = await fetch("http://localhost:3000/auth/register",{
+        const res = await fetch("http://172.26.176.1:3000/auth/register",{
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(form),
