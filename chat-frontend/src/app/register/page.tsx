@@ -9,7 +9,8 @@ export default function RegisterPage(){
         name: "",
         username: "",
         email: "",
-        password: ""
+        password: "",
+        confirmPassword: ""
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,6 +22,12 @@ export default function RegisterPage(){
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (form.password !== form.confirmPassword) {
+            alert("Las contraseñas no coinciden");
+            return;
+        }
+
         console.log("Datos enviados al backend:", form);
         const res = await fetch("http://localhost:3000/auth/register",{
             method: "POST",
@@ -31,7 +38,7 @@ export default function RegisterPage(){
         const data = await res.json();
         if (res.ok){
             alert(`Registro exitoso: ${data.username}, ahora por favor inicia sesión.`);
-            router.push("/login");
+            router.push("/");
         } else {
             alert(`Error en el registro: ${data.message}`);
             }
@@ -61,6 +68,13 @@ export default function RegisterPage(){
                         <div className="input-group">
                             <label htmlFor="password">Contraseña</label>
                             <input id="password" name="password" type="password" onChange={handleChange} />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="confirmPassword">Confirmar Contraseña</label>
+                            <input id="confirmPassword" name="confirmPassword" type="password" onChange={handleChange} />
+                            {form.confirmPassword && form.password !== form.confirmPassword && (
+                                <p style={{ color: "red" }}>Las contraseñas no coinciden</p>
+                            )}  
                         </div>
                         <button type="submit" className="login-btn">Registrar</button>
                     </form>

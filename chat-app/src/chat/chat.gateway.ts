@@ -25,7 +25,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log(`Cliente conectado: ${client.id}, Usuario ID: ${client.data.idUser}`);
       } catch (error) {
         console.log(`Error de autenticación: ${error.message}`);
-        client.disconnect(); // Desconectar el cliente si la autenticación falla
+        client.disconnect(); //Desconectar el cliente si la autenticación falla
       }
   }
     //Cuando se desconecta el cliente

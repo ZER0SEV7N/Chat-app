@@ -10,35 +10,28 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  
   //Registrar usuario
     async register(name: string, username: string, email: string, password: string) {
       const existingUser = await this.usersService.findByUsername(username);
       if (existingUser) {
         throw new ConflictException('El nombre de usuario ya está en uso');
       }
-
       return this.usersService.createUser(name, username, email, password);
     }
-
 
   //Login
   async login(username: string, password: string) {
     const user = await this.usersService.findByUsername(username);
-
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
-
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
-
     //generar token JWT
     const payload = { sub: user.idUser, username: user.username };
     const token = await this.jwtService.signAsync(payload);
-
     return {
       access_token: token,
       user: {
