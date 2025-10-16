@@ -33,8 +33,8 @@ export class ChatService {
 
     return await this.messageRepository.find({
       where: { channel: { idChannel: channelId } },
-      relations: ['user'], // Incluir la relación con el usuario
-      order: { createdAt: 'ASC' }, // Ordenar por fecha de creación ascendente
+      relations: ['user'], //Incluir la relación con el usuario
+      order: { createdAt: 'ASC' }, //Ordenar por fecha de creación ascendente
     });
   }
   //Crear o recuperar un MD entre dos usuarios
@@ -47,19 +47,18 @@ export class ChatService {
     let channel = await this.channelRepository
       .createQueryBuilder('channel')
       .leftJoinAndSelect('channel.members', 'member')
-      .where('channel.isPrivate = true')
-      .andWhere('member.id IN (:...ids)', { ids: [userId, targetUser.idUser] })
+      .where('channel.isPublic = false')
+      .andWhere('member.idUser IN (:...ids)', { ids: [userId, targetUser.idUser] })
       .getOne();
 
     if (!channel) {
       channel = this.channelRepository.create({
         name: `dm-${userId}-${targetUser.idUser}`,
-        isPublic: true,
+        isPublic: false,
         members: [{ idUser: userId }, { idUser: targetUser.idUser }],
       });
       await this.channelRepository.save(channel);
     }
-
     return channel;
   }
 
@@ -72,5 +71,19 @@ export class ChatService {
     if (!user) throw new NotFoundException('Usuario no encontrado');
 
     return user.channels;
+  }
+  // Eliminar un canal (y sus mensajes)
+  // ============================================================
+  async removeChannel(idChannel: number) {
+    const channel = await this.channelRepository.findOne({
+      where: { idChannel },
+      relations: ['messages'], // incluimos mensajes para borrarlos en cascada
+    });
+
+    if (!channel) {
+      throw new NotFoundException(`Canal con ID ${idChannel} no encontrado`);
+    }
+    await this.channelRepository.remove(channel);
+    return { message: `Canal ${idChannel} eliminado correctamente` };
   }
 }

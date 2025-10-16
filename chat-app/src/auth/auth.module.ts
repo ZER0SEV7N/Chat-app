@@ -12,18 +12,14 @@ import { User } from '../entities/user.entity';
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule, //para estrategias de autenticación
-      JwtModule.registerAsync({
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: async (config: ConfigService) => ({
-          secret: config.get<string>('JWT_SECRET'),
-          signOptions: { expiresIn: config.get<string>('JWT_EXPIRES') || '1h' },
+      JwtModule.register({
+        secret: 'MI_SECRETO_SUPER_SEGURO', // 👈 clave fija
+        signOptions: { expiresIn: '1h' },  // tiempo de expiración
         }),
-      }),
     ],
     controllers: [AuthController],
     providers: [AuthService, UsersService],
-    exports: [AuthService], //por si lo necesitas en otros módulos
+    exports: [AuthService, JwtModule] //por si lo necesitas en otros módulos
   })
 export class AuthModule {}
 

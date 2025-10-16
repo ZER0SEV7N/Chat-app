@@ -6,14 +6,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { Message } from 'src/entities/message.entity';
 import { Channel } from 'src/entities/channels.entity';
 import { User } from 'src/entities/user.entity';
+import { MessageModule } from 'src/messages/message.module'; 
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Message, Channel, User]), // 👈 esto es clave
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: process.env.JWT_EXPIRES },
-    }),
+    TypeOrmModule.forFeature([Message, Channel, User]), 
+    AuthModule,
+    MessageModule, 
   ],
   providers: [ChatGateway, ChatService],
 })

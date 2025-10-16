@@ -33,4 +33,13 @@ export class UsersService {
     async saveUser(user: User) {
         return this.userRepository.save(user);
     }
+    async getUserChannels(idUser: number) {
+        const user = await this.userRepository.findOne({
+            where: { idUser },
+            relations: ['channels'],
+        });
+        if (!user) throw new Error('Usuario no encontrado');
+        return user.channels;
+}
+
 }

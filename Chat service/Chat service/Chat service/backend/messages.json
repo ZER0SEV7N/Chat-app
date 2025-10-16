@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "from": 2,
+    "to": 1,
+    "message": "Hola, ¿cómo estás?",
+    "timestamp": "2025-10-01T15:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "from": 1,
+    "to": 2,
+    "message": "Todo bien, gracias. ¿Y tú?",
+    "timestamp": "2025-10-01T15:05:00.000Z"
+  }
+]

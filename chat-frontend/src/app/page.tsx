@@ -1,26 +1,9 @@
 "use client";
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { io } from "socket.io-client";
 import Head from 'next/head';
 
 export default function LoginPage() {
-  useEffect(() => {
-    const socket = io("http://localhost:3001", {
-      auth: { token: localStorage.getItem("token") },
-    });
-    socket.on("connect", () => {
-      console.log("Conectado al servidor de chat");
-    });
-
-    socket.on("newMessage", (msg) => {
-      console.log("Nuevo mensaje:", msg);
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
 
   const router = useRouter();
   const [username, setUsername] = useState("");
