@@ -24,6 +24,6 @@ export class Message {
     user: User;
 
     // Relación con el Canal (el mensaje pertenece a un canal)
-    @ManyToOne(() => Channel, channel => channel.messages)
+    @ManyToOne(() => Channel, (channel) => channel.messages, { onDelete: 'CASCADE' })
     channel: Channel;
 }

@@ -1,107 +1,139 @@
 'use client';
 import { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
-// ❌ Se eliminó la importación: import Head from 'next/head';
+import ChatList from './chatList';
+import ChatWindow from './chatWindow';
+import CreateChannelModal from './CreateChannelModal';
+import AddUserModal from './AddUserModal';
 
+//Funcion principales de la pagina del chat
 export default function ChatPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [messages, setMessages] = useState<string[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [channels, setChannels] = useState<any[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<any | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [username, setUsername] = useState('Usuario'); // nombre del usuario
 
+  //conexion con el servidor para cargar los mensajes
   useEffect(() => {
-    // Conexión al backend en el puerto 3000
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      //Si no hay token, redirigir al login
+      window.location.href = '/';
+      return;
+    }
+    // Leer el username del localStorage solo en cliente
+    const user = localStorage.getItem("username");
+    if (user) setUsername(user);
+
+    //Conectarse con el backend
     const newSocket = io("http://localhost:3000", {
-      // Nota: Aquí estamos asumiendo que el token es necesario.
-      auth: { token: localStorage.getItem("token") },
+      auth: { token },
     });
-
+    //Si el servidor detecta el token
     newSocket.on("connect", () => {
-      console.log("Conectado al servidor de chat en 3000");
+      console.log("Conectado al servidor de chat");
     });
-
-    // Lógica para recibir mensajes (Listener)
-    newSocket.on("newMessage", (msg: string) => {
-      // Esto añade el mensaje re-emitido por el servidor a la lista
-      setMessages((prev) => [...prev, msg]);
-    });
-
+    
     setSocket(newSocket);
 
+    // Si el servidor detecta token inválido
+    newSocket.on("unauthorized", () => {
+      alert("Sesión expirada. Redirigiendo al login.");
+      handleLogout();
+    });
+
+    //Función de limpieza correcta
     return () => {
-      newSocket.disconnect();
+      newSocket.disconnect(); //Cierra la conexión
+      console.log("Socket desconectado");
     };
   }, []);
+  //Funcion de logout
+  const handleLogout = () => {
+    localStorage.removeItem('token') //Eliminar el token
+    socket?.disconnect();
+    window.location.href = '/'; //Redirigir al comienzo
+  }
+  //FETCH de los canales//
+    //Cargar canales desde el backend
+    useEffect(() => {
+    const fetchChannels = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-  // Función para enviar mensajes
-  const sendMessage = () => {
-    if (socket && inputMessage.trim() !== '') {
-      // ✅ CORRECCIÓN LÓGICA: Usamos 'sendMessage' para EMITIR el mensaje al servidor.
-      // El backend DEBE escuchar este evento.
-      socket.emit('sendMessage', inputMessage);
-      setInputMessage('');
-    }
-  };
+      try {
+        //1. Obtener canales del usuario (DMs)
+        const resUser = await fetch('http://localhost:3000/users/channels', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const userChannels = resUser.ok ? await resUser.json() : [];
 
-  if (!socket) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-lg text-blue-500 font-semibold">
-          Conectando al chat...
-        </div>
-      </div>
-    );
+        //2. Obtener canales públicos
+        const resPublic = await fetch('http://localhost:3000/channels/public');
+        const publicChannels = resPublic.ok ? await resPublic.json() : [];
+
+        //3. Combinar ambos (sin duplicar)
+        const allChannels = [...publicChannels, ...userChannels];
+
+        setChannels(allChannels);
+      } catch (err) {
+        console.error('Error al obtener canales:', err);
+      }
+    };
+
+    fetchChannels();
+  }, []);
+
+  //FUNCIONES DEL CHAT//
+  //Funcion seleccionar un canal
+  const handleSelectChannel = (channel: any) => setSelectedChannel(channel);
+  //Funcion al crear un canal
+  const handleChannelCreated = (channel: any) => {
+  // Verificar si ya existe
+  const exists = channels.some(ch => !ch.isPublic && ch.idChannel === channel.idChannel);
+  if (exists) {
+    alert(`Ya tienes un DM con ${channel.name}`);
+    return;
   }
 
+  // Si no existe, añadirlo
+  setChannels((prev) => [channel, ...prev]);
+  setShowAddUserModal(false);
+  setShowCreateModal(false);
+};
+
+  //Renderizado
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4">
-      {/* ❌ Se eliminó el componente <Head>. La funcionalidad del título ya está gestionada. */}
+    <div className="chat-layout">
+      <ChatList
+        channels={channels}
+        onSelectChannel={handleSelectChannel}
+        onCreateChannel={() => setShowCreateModal(true)}
+        onAddUser={() => setShowAddUserModal(true)}
+        onLogout={handleLogout}
+        username={username}
+      />
+      
 
-      {/* Contenedor Principal (Simulando la tarjeta de la imagen) */}
-      <div className="w-full max-w-xl bg-white rounded-xl shadow-2xl p-6 mt-10">
+      <ChatWindow socket={socket} channel={selectedChannel} />
 
-        <h2 className="text-xl font-bold text-gray-800 border-b-2 border-blue-500 pb-2 mb-4">
-          Historial de Mensajes
-        </h2>
+      {showCreateModal && (
+        <CreateChannelModal
+          onClose={() => setShowCreateModal(false)}
+          onChannelCreated={handleChannelCreated}
+        />
+      )}
 
-        {/* Contenedor de Mensajes (Historial) */}
-        <div className="p-4 border border-gray-200 h-96 overflow-y-auto bg-gray-50 rounded-lg mb-4">
-          {messages.length === 0 ? (
-            <p className="text-gray-500 italic">Comienza a chatear...</p>
-          ) : (
-            messages.map((msg, index) => (
-              <div
-                key={index}
-                className="py-2 border-b border-gray-200 last:border-b-0 text-gray-700"
-              >
-                {/* Aquí deberías mostrar el nombre de usuario junto al mensaje, pero por ahora solo mostramos el texto */}
-                {msg}
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Input y Botón de Envío */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Escribe un mensaje..."
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                sendMessage();
-              }
-            }}
-            className="flex-grow p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={sendMessage}
-            className="p-3 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition duration-150"
-          >
-            Enviar
-          </button>
-        </div>
-      </div>
+      {showAddUserModal && (
+        <AddUserModal
+          onClose={() => setShowAddUserModal(false)}
+          onChannelCreated={handleChannelCreated}
+          channels={channels}
+        />
+      )}
     </div>
   );
 }

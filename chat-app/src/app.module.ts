@@ -9,13 +9,13 @@ import { AuthModule } from './auth/auth.module';
 import { ChannelsController } from './channels/channels.controller';
 import { ChannelsModule } from './channels/channels.module';
 
+
 @Module({
   imports: [
-    // 👇 Carga variables de entorno desde .env
+    //Carga variables de entorno desde .env
     ConfigModule.forRoot({
       isGlobal: true, // disponible en toda la app sin volver a importarlo
     }),
-
     UsersModule,
     DatabaseModule,
     ChatModule,

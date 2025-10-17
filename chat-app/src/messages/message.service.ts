@@ -1,33 +1,48 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-// ¡Ruta corregida! Usando '../entities/message.entity' como indicaste.
 import { Message } from '../entities/message.entity';
+import { User } from '../entities/user.entity';
+import { Channel } from '../entities/channels.entity';
 
 @Injectable()
 export class MessageService {
-    constructor(
-        @InjectRepository(Message)
-        private readonly messageRepository: Repository<Message>,
-    ) { }
+  constructor(
+    @InjectRepository(Message)
+    private readonly messageRepository: Repository<Message>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Channel)
+    private readonly channelRepository: Repository<Channel>,
+  ) {}
 
-    // 1. Guardar un nuevo mensaje en la base de datos
-    // *** ¡CORRECCIÓN! Orden de argumentos ajustado a (content, senderId) y senderId es 'number' ***
-    async create(content: string, senderId: number): Promise<Message> { // <-- AJUSTADO
-        const newMessage = this.messageRepository.create({
-            senderId,
-            content,
-            // Aquí podrías agregar el channelId cuando ese módulo exista
-        });
+  // ============================================================
+  // Crear un mensaje (con relación a usuario y canal)
+  // ============================================================
+  async create(text: string, idUser: number, idChannel: number): Promise<Message> {
+    const user = await this.userRepository.findOne({ where: { idUser } });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
 
-        return this.messageRepository.save(newMessage);
-    }
+    const channel = await this.channelRepository.findOne({ where: { idChannel } });
+    if (!channel) throw new NotFoundException('Canal no encontrado');
 
-    // 2. Cargar el historial de mensajes al iniciar el chat (para el futuro)
-    async findAll(): Promise<Message[]> {
-        return this.messageRepository.find({
-            order: { createdAt: 'ASC' }, // Los mensajes más antiguos primero
-            relations: ['sender'], // Para cargar la información del usuario que lo envió
-        });
-    }
+    const newMessage = this.messageRepository.create({
+      text,
+      user,
+      channel,
+    });
+
+    return this.messageRepository.save(newMessage);
+  }
+
+  // ============================================================
+  // Obtener historial de mensajes (por canal)
+  // ============================================================
+  async findAll(idChannel: number): Promise<Message[]> {
+    return this.messageRepository.find({
+      where: { channel: { idChannel } },
+      order: { createdAt: 'ASC' },
+      relations: ['user', 'channel'],
+    });
+  }
 }

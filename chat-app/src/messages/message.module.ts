@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-// Corregir la ruta a '../database/...'
 import { Message } from '../entities/message.entity';
+import { User } from '../entities/user.entity';
+import { Channel } from '../entities/channels.entity';
 import { MessageService } from './message.service';
 
 @Module({
-    imports: [
-        // Importa la entidad para que TypeORM sepa que la va a usar
-        TypeOrmModule.forFeature([Message]),
-    ],
-    providers: [MessageService],
-    exports: [MessageService], // Exporta el servicio para que otros módulos (como Chat) puedan usarlo
+  imports: [
+    // 👇 Debes incluir todas las entidades que se inyectan en MessageService
+    TypeOrmModule.forFeature([Message, User, Channel]),
+  ],
+  providers: [MessageService],
+  exports: [MessageService], // 👈 Esto permite usar MessageService desde ChatModule u otros
 })
-export class MessageModule { }
+export class MessageModule {}

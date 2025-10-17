@@ -1,15 +1,23 @@
 import { Module } from '@nestjs/common';
-// import { TypeOrmModule } from '@nestjs/typeorm'; <-- Asumo que ya tenías esto
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
-import { MessageModule } from '../messages/message.module'; // <-- ¡IMPORTA ESTO!
-// import { Chat } from '../database/entities/chat.entity'; <-- Si tienes una entidad Chat
+import { JwtModule } from '@nestjs/jwt';
+import { Message } from 'src/entities/message.entity';
+import { Channel } from 'src/entities/channels.entity';
+import { User } from 'src/entities/user.entity';
+import { MessageModule } from 'src/messages/message.module'; 
+import { AuthModule } from 'src/auth/auth.module';
+import { ChatController } from './chat.controller';
 
 @Module({
   imports: [
-    MessageModule, // <-- ¡AÑADE ESTO!
-    // TypeOrmModule.forFeature([Chat]), // Si es necesario
+    TypeOrmModule.forFeature([Message, Channel, User]), 
+    AuthModule,
+    MessageModule, 
   ],
   providers: [ChatGateway, ChatService],
+  controllers: [ChatController],
 })
-export class ChatModule { }
+export class ChatModule {}
+
