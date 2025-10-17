@@ -1,6 +1,8 @@
 //Entidad Usuario
 //Importaciones necesarias:
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Message } from "./message.entity";
+import { Channel } from "./channels.entity";
 
 
 //Definicion de la entidad User
@@ -24,6 +26,13 @@ export class User {
     @CreateDateColumn()
     createdAt: Date;
 
+    //Relaciones (Añadidas por el compañero)
+    //Relacion con Mensaje
+    @OneToMany(() => Message, message => message.user)
+    messages: Message[];
 
+    @ManyToMany(() => Channel, (channel) => channel.members)
+    @JoinTable()
+    channels: Channel[];
 
 }
