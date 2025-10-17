@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ToasterProvider from "@/components/ToasterProvider"; // 👈 lo crearemos abajo
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Iniciar sesión - Chat App",
-  description: "Pagina Principal, se encarga del login de usuarios",
-
+  description: "Página principal, se encarga del login de usuarios",
 };
 
 export default function RootLayout({
@@ -27,6 +27,8 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
+        {/* 👇 el Toaster va en un componente cliente */}
+        <ToasterProvider />
       </body>
     </html>
   );

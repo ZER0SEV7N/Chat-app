@@ -1,93 +1,96 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody,
-  WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket } from '@nestjs/websockets';
-import { ChatService } from './chat.service';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
+import {
+  WebSocketGateway,
+  SubscribeMessage,
+  MessageBody,
+  WebSocketServer,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  ConnectedSocket,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { JwtService } from '@nestjs/jwt'; // <-- Traído del código del compañero
-import { MessageService } from '../messages/message.service'; // <-- Traído de tu código
+import { JwtService } from '@nestjs/jwt';
+import { ChatService } from './chat.service';
+import { MessageService } from '../messages/message.service';
 
-// Importa la entidad User para obtener el ID, si ya la tienes en tu proyecto.
-// import { User } from '../database/entities/user.entity'; 
-@WebSocketGateway({ cors: { origin: '*' } }) //habilitamos CORS
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { //Usamos la interfaz de conexión del compañero
+@WebSocketGateway({ cors: { origin: '*' } })
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
   constructor(
     private readonly chatService: ChatService,
-    private readonly jwtService: JwtService, // <-- Inyectado del compañero
-    private readonly messageService : MessageService, // <-- Inyectado de tu código
-  ) { }
+    private readonly jwtService: JwtService,
+    private readonly messageService: MessageService,
+  ) {}
 
-
-  // =================================================================================
-  // MANEJO DE CONEXIÓN Y DESCONEXIÓN (DEL CÓDIGO DEL COMPAÑERO)
-  // =================================================================================
-
-  //Cuando se establece la conexion
+  // =====================================================
+  // 🔐 MANEJO DE CONEXIÓN Y AUTENTICACIÓN
+  // =====================================================
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
-      if (!token) throw new Error("No se ha enviado el token");
+      if (!token) throw new Error('No se ha enviado el token');
 
       const payload = this.jwtService.verify(token);
-      client.data.idUser = payload.sub; // Almacenar el idUser en los datos del socket
+      client.data.idUser = payload.sub;
 
-        console.log(`Cliente conectado: ${client.id}, Usuario ID: ${client.data.idUser}`);
-      } catch (error) {
-        console.log(`Error de autenticación: ${error.message}`);
-        client.disconnect(); //Desconectar el cliente si la autenticación falla
-      }
+      console.log(`✅ Cliente conectado: ${client.id}, Usuario ID: ${client.data.idUser}`);
+    } catch (error) {
+      console.log(`❌ Error de autenticación: ${error.message}`);
+      client.disconnect();
+    }
   }
-  //Cuando se desconecta el cliente
+
   handleDisconnect(client: Socket) {
-    console.log(`Cliente desconectado: ${client.id}`);
+    console.log(`🔌 Cliente desconectado: ${client.id}`);
   }
 
-
-  // =================================================================================
-  // UNIRSE A SALAS Y OBTENER HISTORIAL (DEL CÓDIGO DEL COMPAÑERO)
-  // =================================================================================
-
-  // Unirse a una sala
+  // =====================================================
+  // 📡 UNIRSE A CANALES
+  // =====================================================
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
     client.join(`Canal: ${idChannel}`);
-    console.log(`Usuario ${client.data.idUser} se unió al canal -${idChannel}`);
+    console.log(`👤 Usuario ${client.data.idUser} se unió al canal ${idChannel}`);
 
-    //Devolver el historial de mensajes al unirse a la sala
+    // Enviar historial de mensajes al cliente
     const history = await this.chatService.getMessages(idChannel);
     client.emit('history', history);
   }
 
-  //Salir de un canal
   @SubscribeMessage('leaveRoom')
-  async handleLeaveRoom(@MessageBody() channelId: number, @ConnectedSocket() client: Socket) {
-    client.leave(String(channelId));
-    console.log(`Usuario con ID ${client.data.idUser} salió del canal ${channelId}`);
+  async handleLeaveRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
+    client.leave(`Canal: ${idChannel}`);
+    console.log(`👋 Usuario ${client.data.idUser} salió del canal ${idChannel}`);
   }
-  // =================================================================================
-  // ENVIAR Y PERSISTIR MENSAJE (CÓDIGO FUSIONADO)
-  // =================================================================================
 
-  //Enviar Mensaje
+  // =====================================================
+  // 💬 ENVIAR MENSAJE (con senderId)
+  // =====================================================
   @SubscribeMessage('sendMessage')
   async handleMessage(
-    @MessageBody() payload: { idChannel: number, text: string },
-    @ConnectedSocket() client: Socket) {
-
-    // Usamos el ID de usuario que el compañero almacenó en el socket (tras el JWT)
+    @MessageBody() payload: { idChannel: number; text: string },
+    @ConnectedSocket() client: Socket,
+  ) {
     const idUser = client.data.idUser;
 
-    // 1. GUARDA el mensaje en la base de datos (Usamos la lógica del compañero)
+    // 1️⃣ Guardar el mensaje en la base de datos
     const message = await this.chatService.createMessage(idUser, payload.idChannel, payload.text);
+    console.log(`📨 Mensaje guardado en DB con ID: ${message.idMessage}`);
 
-    console.log(`[PERSISTENCIA OK] Mensaje guardado en DB con ID: ${message.idMessage}.`); // Mensaje de confirmación
-
-    // 2. Emitir el mensaje a todos los usuarios en la sala
-    this.server.to(`Canal: ${payload.idChannel}`).emit('newMessage', message);
+    // 2️⃣ Emitir el mensaje con metadatos extra (senderId)
+    this.server.to(`Canal: ${payload.idChannel}`).emit('newMessage', {
+      channelId: payload.idChannel,
+      senderId: idUser, // 👈 para distinguir al emisor
+      senderName: message.user?.username || 'Desconocido',
+      content: payload.text,
+      createdAt: message.createdAt,
+    });
   }
+
+  // =====================================================
+  // ⚙️ CREAR / ELIMINAR / LISTAR CANALES
+  // =====================================================
   @SubscribeMessage('createChannel')
   async handleCreateChannel(
     @MessageBody() payload: { userId: number; targetUsername: string },
@@ -101,20 +104,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
   }
 
   @SubscribeMessage('getUserChannels')
-  async handleGetUserChannels(
-    @MessageBody() userId: number,
-    @ConnectedSocket() client: Socket,
-  ) {
+  async handleGetUserChannels(@MessageBody() userId: number, @ConnectedSocket() client: Socket) {
     const channels = await this.chatService.getUserChannels(userId);
     client.emit('userChannels', channels);
   }
 
   @SubscribeMessage('deleteChannel')
-  async handleDeleteChannel(
-    @MessageBody() idChannel: number,
-    @ConnectedSocket() client: Socket,
-  ) {
-    await this.chatService.removeChannel(idChannel); // (debes implementarlo)
+  async handleDeleteChannel(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
+    await this.chatService.removeChannel(idChannel);
     client.emit('channelDeleted', idChannel);
   }
 }

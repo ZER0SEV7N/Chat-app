@@ -42,3 +42,48 @@
 .chat-input button:hover {
   background-color: #0056b3;
 }
+/* --- Estilos para la lista de canales (ChatList) --- */
+
+/* Asegura que los ítems del canal estén bien espaciados */
+.channel-item {
+    display: flex;
+    justify-content: space-between; /* Mueve el badge a la derecha */
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee; /* Ajusta el color del borde si es necesario */
+    transition: background-color 0.2s;
+}
+
+.channel-item:hover {
+    background-color: #f0f0f0;
+}
+
+/* Contenedor de la información del canal (nombre y tipo) */
+.channel-info {
+    display: flex;
+    flex-direction: column;
+    /* Permite que el badge tenga espacio */
+    margin-right: 10px; 
+}
+
+/* Estilo del badge de notificación (el círculo rojo) */
+.unread-badge {
+    /* Diseño del círculo */
+    background-color: #e74c3c; /* Rojo vivo para la alerta */
+    color: white;
+    border-radius: 50%;
+    
+    /* Dimensiones y centrado */
+    min-width: 20px; 
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    /* Tipografía */
+    font-size: 0.75rem; /* Pequeño y legible */
+    font-weight: bold;
+    line-height: 1; /* Asegura el centrado vertical */
+}
+
