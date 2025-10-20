@@ -2,15 +2,23 @@ import { useState } from 'react';
 import './chat.css';
 interface AddUserModalProps {
   onClose: () => void;
-  onChannelCreated: (channel: any) => void; // ✅ nueva prop
+  onChannelCreated: (channel: any) => void;
+  channels : any[];
 }
 
-export default function AddUserModal({ onClose, onChannelCreated }: AddUserModalProps) {
+export default function AddUserModal({ onClose, onChannelCreated, channels }: AddUserModalProps) {
   const [username, setUsername] = useState('');
 
   const handleAdd = async () => {
     const token = localStorage.getItem('token');
+    if (!token) return alert("Debes iniciar sesión");
 
+    //Verificar si ya existe el DM con este usuario
+    const existing = channels.find(ch => !ch.isPublic && ch.targetUsername === username);
+    if (existing) {
+      alert(`Ya tienes un DM con ${username}`);
+      return;
+    }      
     const res = await fetch('http://localhost:3000/chat/private', {
       method: 'POST',
       headers: {

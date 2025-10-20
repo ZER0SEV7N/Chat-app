@@ -6,26 +6,44 @@ import ChatWindow from './chatWindow';
 import CreateChannelModal from './CreateChannelModal';
 import AddUserModal from './AddUserModal';
 
-
-
+//Funcion principales de la pagina del chat
 export default function ChatPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [channels, setChannels] = useState<any[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<any | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [username, setUsername] = useState('Usuario'); // nombre del usuario
 
-  //conexion con el servidor
+  //conexion con el servidor para cargar los mensajes
   useEffect(() => {
-    const newSocket = io("http://localhost:3000", {
-      auth: { token: localStorage.getItem("token") },
-    });
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      //Si no hay token, redirigir al login
+      window.location.href = '/';
+      return;
+    }
+    // Leer el username del localStorage solo en cliente
+    const user = localStorage.getItem("username");
+    if (user) setUsername(user);
 
+    //Conectarse con el backend
+    const newSocket = io("http://localhost:3000", {
+      auth: { token },
+    });
+    //Si el servidor detecta el token
     newSocket.on("connect", () => {
       console.log("Conectado al servidor de chat");
     });
-
+    
     setSocket(newSocket);
+
+    // Si el servidor detecta token inválido
+    newSocket.on("unauthorized", () => {
+      alert("Sesión expirada. Redirigiendo al login.");
+      handleLogout();
+    });
 
     //Función de limpieza correcta
     return () => {
@@ -33,8 +51,13 @@ export default function ChatPage() {
       console.log("Socket desconectado");
     };
   }, []);
-
-
+  //Funcion de logout
+  const handleLogout = () => {
+    localStorage.removeItem('token') //Eliminar el token
+    socket?.disconnect();
+    window.location.href = '/'; //Redirigir al comienzo
+  }
+  //FETCH de los canales//
     //Cargar canales desde el backend
     useEffect(() => {
     const fetchChannels = async () => {
@@ -64,16 +87,25 @@ export default function ChatPage() {
     fetchChannels();
   }, []);
 
-
+  //FUNCIONES DEL CHAT//
+  //Funcion seleccionar un canal
   const handleSelectChannel = (channel: any) => setSelectedChannel(channel);
-
+  //Funcion al crear un canal
   const handleChannelCreated = (channel: any) => {
-    // ✅ Añadir el nuevo canal a la lista
-    setChannels((prev) => [channel, ...prev]);
-    setShowAddUserModal(false);
-    setShowCreateModal(false);
-  };
+  // Verificar si ya existe
+  const exists = channels.some(ch => !ch.isPublic && ch.idChannel === channel.idChannel);
+  if (exists) {
+    alert(`Ya tienes un DM con ${channel.name}`);
+    return;
+  }
 
+  // Si no existe, añadirlo
+  setChannels((prev) => [channel, ...prev]);
+  setShowAddUserModal(false);
+  setShowCreateModal(false);
+};
+
+  //Renderizado
   return (
     <div className="chat-layout">
       <ChatList
@@ -81,7 +113,10 @@ export default function ChatPage() {
         onSelectChannel={handleSelectChannel}
         onCreateChannel={() => setShowCreateModal(true)}
         onAddUser={() => setShowAddUserModal(true)}
+        onLogout={handleLogout}
+        username={username}
       />
+      
 
       <ChatWindow socket={socket} channel={selectedChannel} />
 
@@ -96,6 +131,7 @@ export default function ChatPage() {
         <AddUserModal
           onClose={() => setShowAddUserModal(false)}
           onChannelCreated={handleChannelCreated}
+          channels={channels}
         />
       )}
     </div>

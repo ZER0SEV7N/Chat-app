@@ -30,6 +30,7 @@ export default function LoginPage() {
     }
 
     localStorage.setItem("token", data.access_token);
+    localStorage.setItem("username", data.user.username);
     alert("Login exitoso ✅");
     window.location.href = "/chat";
   };

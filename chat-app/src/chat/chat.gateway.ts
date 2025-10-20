@@ -44,12 +44,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
   handleDisconnect(client: Socket) {
     console.log(`Cliente desconectado: ${client.id}`);
   }
-
-
-  // =================================================================================
-  // UNIRSE A SALAS Y OBTENER HISTORIAL (DEL CÓDIGO DEL COMPAÑERO)
-  // =================================================================================
-
+  //UNIRSE A SALAS Y OBTENER HISTORIAL (DEL CÓDIGO DEL COMPAÑERO)
   // Unirse a una sala
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {

@@ -10,7 +10,7 @@ export class ChatController {
     private readonly jwtService: JwtService,
   ) {}
 
-  // 🔹 Crear o recuperar canal privado (por username)
+  //Crear o recuperar canal privado (por username)
   @Post('private')
   async getOrCreatePrivateChannel(
     @Body() body: { targetUsername: string },

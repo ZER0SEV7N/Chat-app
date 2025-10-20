@@ -5,11 +5,19 @@ interface Props {
     onSelectChannel: (channel: any) => void;
     onCreateChannel: () => void;
     onAddUser: () => void;
+    onLogout: () => void;
+    username: string;
 }
 
-export default function ChatList({ channels, onSelectChannel, onCreateChannel, onAddUser}: Props) {
+export default function ChatList({ channels, onSelectChannel, onCreateChannel, onAddUser, onLogout, username}: Props) {
+    
     return(
         <div className="chat-list">
+            {/* Header con usuario y logout */}
+            <div className="chat-list-header">
+                <span className="chat-username">{username}</span>
+                <button className="logout-button" onClick={onLogout}>Cerrar sesión</button>
+            </div>
             <h2>Canales</h2>
             <ul>
                 {channels.map((ch, i) => (
