@@ -1,6 +1,6 @@
 //Entidad canales
 //Importaciones necesarias:
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany, JoinTable, ManyToOne} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany} from "typeorm";
 import { Message } from "./message.entity";
 import { User } from "./user.entity";
 //Definicion de la entidad Channel

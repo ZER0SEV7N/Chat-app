@@ -42,17 +42,17 @@ export default function ChatPage() {
       if (!token) return;
 
       try {
-        // 🧩 1. Obtener canales del usuario (DMs)
+        //1. Obtener canales del usuario (DMs)
         const resUser = await fetch('http://localhost:3000/users/channels', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const userChannels = resUser.ok ? await resUser.json() : [];
 
-        // 🧩 2. Obtener canales públicos
+        //2. Obtener canales públicos
         const resPublic = await fetch('http://localhost:3000/channels/public');
         const publicChannels = resPublic.ok ? await resPublic.json() : [];
 
-        // 🧩 3. Combinar ambos (sin duplicar)
+        //3. Combinar ambos (sin duplicar)
         const allChannels = [...publicChannels, ...userChannels];
 
         setChannels(allChannels);

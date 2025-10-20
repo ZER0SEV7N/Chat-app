@@ -34,5 +34,4 @@ export class User {
     @ManyToMany(() => Channel, (channel) => channel.members)
     @JoinTable()
     channels: Channel[];
-
 }

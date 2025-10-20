@@ -83,7 +83,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     // 1. GUARDA el mensaje en la base de datos (Usamos la lógica del compañero)
     const message = await this.chatService.createMessage(idUser, payload.idChannel, payload.text);
 
-    console.log(`[PERSISTENCIA OK] Mensaje guardado en DB con ID: ${message.idMessage}.`); // Mensaje de confirmación
+    console.log(`[PERSISTENCIA] Mensaje guardado en DB con ID: ${message.idMessage}.`); // Mensaje de confirmación
 
     // 2. Emitir el mensaje a todos los usuarios en la sala
     this.server.to(`Canal: ${payload.idChannel}`).emit('newMessage', message);
