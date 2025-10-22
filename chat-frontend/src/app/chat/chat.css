@@ -1,69 +1,285 @@
+/* ========================================
+   📋 PANEL DE LISTA DE CANALES (CHAT-LIST)
+===========================================*/
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: #333;
+}
+
+/* Encabezado con usuario y logout */
+.chat-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  color: #fff;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chat-username {
+  font-size: 16px;
+  letter-spacing: 0.3px;
+}
+
+.logout-button {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.logout-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Lista de canales */
+.chat-list h2 {
+  padding: 12px 16px;
+  font-size: 15px;
+  color: #444;
+  border-bottom: 1px solid #eee;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chat-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.channel-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.channel-item:hover {
+  background: #f5f8ff;
+}
+
+.channel-item strong {
+  font-weight: 500;
+  color: #222;
+}
+
+.channel-item span {
+  font-size: 13px;
+  color: #777;
+}
+
+/* Botones inferiores */
+.chat-list-buttons {
+  padding: 12px;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fafafa;
+}
+
+.chat-list-buttons button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.chat-list-buttons button:hover {
+  background-color: #0056b3;
+}
+
+/* ========================================
+   ✉️ SECCIÓN DE ENTRADA DE CHAT
+===========================================*/
+.chat-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  position: relative;
+}
+
+.chat-input input {
+  flex-grow: 1;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+
+.chat-input input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.chat-input button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.chat-input button:hover {
+  background-color: #0056b3;
+}
+
+.chat-input button:active {
+  transform: scale(0.97);
+}
+
+/* Botón de emojis */
 .emoji-btn {
   font-size: 22px;
   background: none;
   border: none;
   cursor: pointer;
   margin-right: 6px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, transform 0.1s ease;
 }
 
+.emoji-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Contenedor del selector de emojis */
 .emoji-picker-container {
   position: absolute;
   bottom: 55px;
   left: 10px;
   z-index: 10;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.chat-input {
+/* ========================================
+   💬 SECCIÓN PRINCIPAL DE MENSAJES (CHAT WINDOW)
+===========================================*/
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.chat-header {
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  padding: 12px 16px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  padding: 14px;
+  overflow-y: auto;
+  background: #f5f7fa;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Burbujas de mensajes */
+.chat-msg {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+.own-msg {
+  align-self: flex-end;
+  background: #e3f2fd;
+}
+
+.msg-content {
+  flex: 1;
+}
+
+.msg-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.msg-header strong {
+  color: #333;
+}
+
+.msg-time {
+  font-size: 12px;
+  color: #888;
+}
+
+.msg-text {
+  color: #444;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Botón de eliminación de mensajes */
+.delete-msg-btn {
+  background: none;
+  border: none;
+  color: #bbb;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 8px;
+  transition: color 0.2s ease;
+}
+
+.delete-msg-btn:hover {
+  color: #e53935;
+}
+
+/* Estado vacío */
+.chat-window-empty {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-top: 1px solid #ddd;
-  background: #f8f8f8;
-  position: relative;
-}
-
-.chat-input input {
-  flex-grow: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-.chat-input button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-}
-
-.chat-input button:hover {
-  background-color: #0056b3;
-}
-.chat-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #ccc;
-    background-color: #e0e0e0;
-}
-
-.chat-username {
-    font-weight: bold;
-}
-
-.logout-button {
-    background-color: #e53935;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.logout-button:hover {
-    background-color: #c62828;
+  justify-content: center;
+  height: 100%;
+  color: #777;
+  font-style: italic;
 }

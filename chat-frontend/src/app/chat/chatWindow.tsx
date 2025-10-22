@@ -1,76 +1,115 @@
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
-//Definir las props que recibirá el componente
-interface Props {
-    socket: any;
-    channel: any;
-}
-//Exportar la función chatWindow
-export default function chatWindow({ socket, channel }: Props){
-    const [messages, setMessages] = useState<any[]>([]);
-    const [input, setInput] = useState('');
-    const [showPicker, setShowPicker] = useState(false);
-    //Efecto para manejar la conexión del socket y los mensajes
-    useEffect(() => {
-        //Unirse a la sala del canal
-        //Si el socket y el canal existen
-        if (socket && channel) {
-          //Emitir evento para unirse a la sala del canal
-            socket.emit('joinRoom', channel.idChannel);
-            //Recuperar el historial de mensajes
-            const handleHistory = (history: any[]) => setMessages(history);
-            //Manejar nuevos mensajes
-            const handleNewMessage = (msg: any) => {
-            //Agregar el nuevo mensaje si pertenece al canal actual
-              if (msg.channel.idChannel === channel.idChannel) {
-                  setMessages((prev) => [...prev, msg]);
-             }
-            };
-            //Escuchar eventos del socket
-            socket.on('history', handleHistory);
-            socket.on('newMessage', handleNewMessage);
-            //Función de limpieza para salir de la sala y remover listeners
-            return () => {
-            socket.emit('leaveRoom', channel.idChannel);
-            socket.off('history', handleHistory);
-            socket.off('newMessage', handleNewMessage);
-            };
-        }
-        //Limpiar mensajes al cambiar de canal
-        setMessages([]);
-    //Volver a ejecutar el efecto si cambian socket o canal
-    }, [socket, channel]);
 
-    //Función para enviar mensajes
-    const sendMessage = () => {
-    //Si el socket existe y el input no está vacío
-    if (socket && input.trim() !== '') {
-      socket.emit('sendMessage', {
+interface Props {
+  socket: any;
+  channel: any;
+  username: string;
+}
+
+export default function ChatWindow({ socket, channel, username }: Props) {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
+
+  // 📡 Conexión al canal y recepción de mensajes
+  useEffect(() => {
+    if (socket && channel) {
+      socket.emit("joinRoom", channel.idChannel);
+
+      const handleHistory = (history: any[]) => setMessages(history);
+      const handleNewMessage = (msg: any) => {
+        if (msg.channel.idChannel === channel.idChannel) {
+          setMessages((prev) => [...prev, msg]);
+        }
+      };
+
+      const handleDeletedMessage = (deletedId: string) => {
+        setMessages((prev) => prev.filter((m) => m.idMessage !== deletedId));
+      };
+
+      socket.on("history", handleHistory);
+      socket.on("newMessage", handleNewMessage);
+      socket.on("messageDeleted", handleDeletedMessage);
+
+      return () => {
+        socket.emit("leaveRoom", channel.idChannel);
+        socket.off("history", handleHistory);
+        socket.off("newMessage", handleNewMessage);
+        socket.off("messageDeleted", handleDeletedMessage);
+      };
+    }
+
+    setMessages([]);
+  }, [socket, channel]);
+
+  // ✉️ Enviar mensaje
+  const sendMessage = () => {
+    if (socket && input.trim() !== "") {
+      socket.emit("sendMessage", {
         idChannel: channel.idChannel,
         text: input,
       });
-      setInput('');
+      setInput("");
     }
   };
 
-  //Constante para el selector de emojis
+  // 🗑️ Eliminar mensaje
+  const handleDeleteMessage = (msg: any) => {
+    if (socket && msg.idMessage) {
+      socket.emit("deleteMessage", msg.idMessage);
+      setMessages((prev) => prev.filter((m) => m.idMessage !== msg.idMessage));
+    }
+  };
+
+  // 😄 Selector de emojis
   const handleEmojiClick = (emojiData: any) => {
     setInput((prev) => prev + emojiData.emoji);
     setShowPicker(false);
   };
 
   if (!channel)
-    return <div className="chat-window-empty">Selecciona un canal para comenzar</div>;
+    return (
+      <div className="chat-window-empty">
+        <p>Selecciona un canal para comenzar</p>
+      </div>
+    );
 
   return (
     <div className="chat-window">
-      <h3>#{channel.name}</h3>
+      {/* Título del canal */}
+      <div className="chat-header">
+        <h3>#{channel.name}</h3>
+      </div>
 
       {/* 💬 Mensajes */}
       <div className="chat-messages">
         {messages.map((msg, i) => (
-          <div key={i} className="chat-msg">
-            <strong>{msg.user?.username || "Anon"}:</strong> {msg.text}
+          <div
+            key={i}
+            className={`chat-msg ${
+              msg.user?.username === username ? "own-msg" : ""
+            }`}
+          >
+            <div className="msg-content">
+              <div className="msg-header">
+                <strong>{msg.user?.username || "Anon"}:</strong>
+                <span className="msg-time">
+                  {msg.time || new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <div className="msg-text">{msg.text}</div>
+            </div>
+            <button
+              className="delete-msg-btn"
+              onClick={() => handleDeleteMessage(msg)}
+              title="Eliminar mensaje"
+            >
+              🗑️
+            </button>
           </div>
         ))}
       </div>
