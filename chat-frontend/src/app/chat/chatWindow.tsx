@@ -64,8 +64,11 @@ export default function chatWindow({ socket, channel }: Props){
 
   return (
     <div className="chat-window">
-      <h3>#{channel.name}</h3>
-
+      <div className="chat-header">
+        <h3>#{channel.name}</h3>
+        {channel.description  && (<p className="chat-description">{channel.description}</p>
+      )}
+      </div>
       {/* 💬 Mensajes */}
       <div className="chat-messages">
         {messages.map((msg, i) => (
