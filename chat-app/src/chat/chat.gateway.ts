@@ -19,11 +19,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     private readonly jwtService: JwtService, // <-- Inyectado del compañero
     private readonly messageService : MessageService, // <-- Inyectado de tu código
   ) { }
-
-
-  // =================================================================================
-  // MANEJO DE CONEXIÓN Y DESCONEXIÓN (DEL CÓDIGO DEL COMPAÑERO)
-  // =================================================================================
+  //MANEJO DE CONEXIÓN Y DESCONEXIÓN (DEL CÓDIGO DEL COMPAÑERO)
 
   //Cuando se establece la conexion
   async handleConnection(client: Socket) {
