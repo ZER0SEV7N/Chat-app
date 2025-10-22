@@ -60,28 +60,46 @@ export default function chatWindow({ socket, channel }: Props){
   };
 
   if (!channel)
-    return <div className="chat-window-empty">Selecciona un canal para comenzar</div>;
+    return (
+      <div className="chat-empty">
+        <p>Selecciona un canal para comenzar a chatear 💬</p>
+      </div>
+    );
 
   return (
-    <div className="chat-window">
+    <div className="chat-container">
+      {/* 🔹 Encabezado */}
       <div className="chat-header">
-        <h3>#{channel.name}</h3>
-        {channel.description  && (<p className="chat-description">{channel.description}</p>
-      )}
+        <div>
+          <h2>#{channel.name}</h2>
+          <p className="chat-description">
+            {channel.description || "Sin descripción disponible"}
+          </p>
+        </div>
       </div>
-      {/* 💬 Mensajes */}
+
+      {/* 🔹 Mensajes */}
       <div className="chat-messages">
         {messages.map((msg, i) => (
-          <div key={i} className="chat-msg">
-            <strong>{msg.user?.username || "Anon"}:</strong> {msg.text}
+          <div
+            key={i}
+            className={`chat-message ${
+              msg.user?.username === localStorage.getItem("username")
+                ? "own-message"
+                : ""
+            }`}
+          >
+            <span className="chat-username-messages">
+              {msg.user?.username || "Anon"}:
+            </span>{" "}
+            <span>{msg.text}</span>
           </div>
         ))}
       </div>
 
-      {/* 💬 Input con emojis */}
-      <div className="chat-input">
+      {/* 🔹 Input */}
+      <div className="chat-input-container">
         <button
-          type="button"
           className="emoji-btn"
           onClick={() => setShowPicker(!showPicker)}
         >
@@ -89,8 +107,8 @@ export default function chatWindow({ socket, channel }: Props){
         </button>
 
         {showPicker && (
-          <div className="emoji-picker-container">
-            <EmojiPicker onEmojiClick={handleEmojiClick} />
+          <div className="emoji-picker">
+            <EmojiPicker onEmojiClick={(e) => setInput((prev) => prev + e.emoji)} />
           </div>
         )}
 
@@ -101,9 +119,11 @@ export default function chatWindow({ socket, channel }: Props){
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && sendMessage()}
         />
-
-        <button onClick={sendMessage}>Enviar</button>
+        <button className="send-btn" onClick={sendMessage}>
+          Enviar
+        </button>
       </div>
     </div>
   );
 }
+

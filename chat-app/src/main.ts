@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import * as os from 'os'; //para obtener la IP local
 
@@ -38,5 +39,8 @@ async function bootstrap() {
   console.log(`🚀 Servidor NestJS corriendo en:`);
   console.log(`👉 Local:   http://localhost:${PORT}`);
   console.log(`👉 Red LAN: http://${localIp}:${PORT}`);
+  
+  //Valida automáticamente todos los DTOs
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 }
 bootstrap();

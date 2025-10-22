@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './chat.css';
+import './modal.css';
 interface AddUserModalProps {
   onClose: () => void;
   onChannelCreated: (channel: any) => void;

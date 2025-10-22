@@ -1,69 +1,323 @@
-.emoji-btn {
-  font-size: 22px;
-  background: none;
-  border: none;
+/* =======================================================
+   🌐 LAYOUT GENERAL
+   ======================================================= */
+.chat-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr; /* Sidebar + área de chat */
+  height: 100vh;
+  background: #f9f9fb;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* =======================================================
+   🗂 LISTA DE CANALES (lado izquierdo)
+   ======================================================= */
+   
+/* === Contenedor general de la lista de canales === */
+.chat-list {
+  background: #fff;
+  border-right: 2px 0 8px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+/* === Header del panel lateral (usuario + logout) === */
+.chat-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 16px;
+}
+.chat-list h2 {
+  margin: 0 0 10px;
+}
+
+/* === Nombre del usuario en el header === */
+.chat-username-header {
+  font-weight: bold;
+  color: #970e0e;
+  font-size: 15px;
+}
+
+.chat-list li {
+  padding: 8px;
   cursor: pointer;
+  border-radius: 5px;
+}
+
+.chat-list li:hover {
+  background: #e8f0fe;
+}
+.chat-list ul {
+  list-style: none;
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+
+
+/* === Cada canal individual === */
+.channel-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  transition: background 0.18s ease, transform 0.08s ease;
+}
+.channel-item:hover {
+  background: #f0f4ff;
+  transform: translateY(-1px);
+}
+.channel-item.active {
+  background: #dfeeff;
+  font-weight: 600;
+}
+
+/* =======================================================
+   💬 ÁREA PRINCIPAL DEL CHAT
+   ======================================================= */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fcfdff;
+}
+
+/* === Encabezado del chat (nombre del canal) === */
+.chat-header {
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f0f0f;
+}
+
+/* === Descripción del canal (bajo el nombre) === */
+.chat-description {
+  margin: 0;
+  font-size: 12px;
+  color: #2f3236;
+}
+
+/* =======================================================
+   💬 LISTADO DE MENSAJES
+   ======================================================= */
+.chat-messages {
+  flex-grow: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 5px solid #ccc;
+  border-radius: 6px;
+  scroll-behavior: smooth;
+  word-wrap: break-word;      
+  overflow-wrap: break-word;  
+}
+
+.chat-message {
+  margin-bottom: 8px;
+  line-height: 1.4;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #eef6ff;
+  color: #12263a;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  max-width: 75%;             /* Evita que las burbujas ocupen todo el ancho */
+  white-space: pre-wrap;      /* Conserva saltos de línea pero permite ajustar texto */
+  word-break: break-word;     /* Rompe palabras demasiado largas */
+  overflow-wrap: anywhere;    /* Versión moderna para evitar desbordes */
+}
+/* (Opcional) para pantallas pequeñas */
+@media (max-width: 600px) {
+  .chat-message {
+    max-width: 90%;
+  }
+}
+
+/* === Mensaje propio (alineado a la derecha) === */
+.chat-message.own-message {
+  align-self: flex-end;
+  background: #007bff;
+  color: #fff;
+}
+
+/* === Estilo del nombre del usuario === */
+.chat-username-messages {
+  font-weight: 700;
+  color: #151a22;
+  display: inline-block;
   margin-right: 6px;
 }
 
-.emoji-picker-container {
-  position: absolute;
-  bottom: 55px;
-  left: 10px;
-  z-index: 10;
-}
-
-.chat-input {
+/* =======================================================
+   ✏️ ÁREA DE INPUT (Enviar mensaje)
+   ======================================================= */
+.chat-input-container {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
-  border-top: 1px solid #ddd;
-  background: #f8f8f8;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #e6e9ee;
   position: relative;
 }
 
-.chat-input input {
+/* === Caja de texto === */
+.chat-input-container input {
   flex-grow: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  border: 1px solid #ced4da;
+  border-radius: 22px;
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.chat-input-container input:focus{
+  outline: none;
+  border-color: #0b66ff;
+  box-shadow: 0 6px 18px rgba(11, 102, 255, 0.08);
 }
 
-.chat-input button {
-  padding: 8px 14px;
+
+/* === Posición del picker de emojis === */
+.emoji-picker {
+  position: absolute;
+  bottom: 64px;
+  left: 12px;
+  z-index: 120;
+}
+
+/* =======================================================
+   🕳️ ESTADO VACÍO DEL CHAT
+   ======================================================= */
+.chat-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #777;
+  font-style: italic;
+}
+
+/* =======================================================
+   🎛️ BOTONES GENERALES (Base Styles)
+   ======================================================= */
+button {
+  font-family: inherit;
+  font-size: 14px;
   border: none;
-  border-radius: 6px;
-  background-color: #007bff;
-  color: white;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.chat-input button:hover {
-  background-color: #0056b3;
+/* === Botón del emoji === */
+.emoji-btn {
+  font-size: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: transform 0.12s ease, background 0.12s;
 }
-.chat-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #ccc;
-    background-color: #e0e0e0;
-}
-
-.chat-username {
-    font-weight: bold;
-}
-
-.logout-button {
-    background-color: #e53935;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
+.emoji-btn:hover{
+  transform: scale(1.08);
+  background: rgba(0, 0, 0, 0.03);
 }
 
-.logout-button:hover {
-    background-color: #c62828;
+/* === Botón de enviar === */
+.send-btn {
+  background: #0b66ff;
+  color: #fff;
+  border: none;
+  padding: 9px 14px;
+  border-radius: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(11, 102, 255, 0.12);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.send-btn:hover {
+  transform: translateY(-2px);
+  background: #055ad1;
+}
+/* === Botón "Cerrar sesión" === */
+.logout-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: 0.2s ease;
+}
+.logout-btn:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+}
+/* === Botones de la barra lateral === */
+.sidebar-button {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  text-align: center;
+  background: #fbfdff;
+  color: #222;
+  border-radius: 10px;
+  border: 1px solid #e1e6ef;
+  font-weight: 600;
+  transition: background 0.14s ease, transform 0.12s ease;
+}
+.sidebar-button:hover {
+  background: #eef6ff;
+  transform: translateY(-2px);
+}
+.sidebar-button span {
+  margin-right: 8px;
+}
+/* =======================================================
+   📋 PANEL LATERAL (Sidebar)
+   ======================================================= */
+.chat-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #ddd;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* === Sección superior del sidebar === */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-header h3 {
+  font-size: 16px;
+  font-weight: 600;
 }
