@@ -14,8 +14,11 @@ export class ChatService {
     private channelRepository: Repository<Channel>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
-  //Crear mensaje
+  ) { }
+
+  // ============================================================
+  // Crear mensaje
+  // ============================================================
   async createMessage(userId: number, channelId: number, text: string) {
     const user = await this.userRepository.findOne({ where: { idUser: userId } });
     if (!user) throw new NotFoundException('Usuario no encontrado');
@@ -26,24 +29,31 @@ export class ChatService {
     const message = this.messageRepository.create({ text, user, channel });
     return this.messageRepository.save(message);
   }
-  //Obtener mensajes de un canal
+
+  // ============================================================
+  // Obtener mensajes de un canal
+  // ============================================================
   async getMessages(channelId: number) {
     const channel = await this.channelRepository.findOne({ where: { idChannel: channelId } });
     if (!channel) throw new NotFoundException('Canal no encontrado');
 
     return await this.messageRepository.find({
       where: { channel: { idChannel: channelId } },
-      relations: ['user'], //Incluir la relación con el usuario
-      order: { createdAt: 'ASC' }, //Ordenar por fecha de creación ascendente
+      relations: ['user'], // incluir el usuario
+      order: { createdAt: 'ASC' },
     });
   }
-  //Crear o recuperar un MD entre dos usuarios
+
+  // ============================================================
+  // Crear o recuperar un canal privado (DM)
+  // ============================================================
   async getOrCreatePrivateChannel(userId: number, targetUsername: string) {
-    const targetUser = await this.userRepository.findOne({ where: { username: targetUsername  } });
+    const targetUser = await this.userRepository.findOne({
+      where: { username: targetUsername },
+    });
     if (!targetUser) throw new NotFoundException('Usuario no encontrado');
 
-
-    //Buscar si ya existe un canal privado entre los dos usuarios
+    // Buscar si ya existe un canal privado entre los dos usuarios
     let channel = await this.channelRepository
       .createQueryBuilder('channel')
       .leftJoinAndSelect('channel.members', 'member')
@@ -51,6 +61,7 @@ export class ChatService {
       .andWhere('member.idUser IN (:...ids)', { ids: [userId, targetUser.idUser] })
       .getOne();
 
+    // Si no existe, crear nuevo
     if (!channel) {
       channel = this.channelRepository.create({
         name: `dm-${userId}-${targetUser.idUser}`,
@@ -59,10 +70,13 @@ export class ChatService {
       });
       await this.channelRepository.save(channel);
     }
+
     return channel;
   }
 
-  //Canales de un usuario
+  // ============================================================
+  // Obtener canales de un usuario
+  // ============================================================
   async getUserChannels(userId: number) {
     const user = await this.userRepository.findOne({
       where: { idUser: userId },
@@ -72,17 +86,36 @@ export class ChatService {
 
     return user.channels;
   }
-  // Eliminar un canal (y sus mensajes)
+
   // ============================================================
-  async removeChannel(idChannel: number) {
+  // Obtener usuarios que pertenecen a un canal
+  // ============================================================
+  async getUsersInChannel(idChannel: number) {
     const channel = await this.channelRepository.findOne({
       where: { idChannel },
-      relations: ['messages'], // incluimos mensajes para borrarlos en cascada
+      relations: ['members'], // asegúrate de que 'members' es la relación con usuarios
     });
 
     if (!channel) {
       throw new NotFoundException(`Canal con ID ${idChannel} no encontrado`);
     }
+
+    return channel.members; // devuelve todos los usuarios miembros del canal
+  }
+
+  // ============================================================
+  // Eliminar un canal (y sus mensajes)
+  // ============================================================
+  async removeChannel(idChannel: number) {
+    const channel = await this.channelRepository.findOne({
+      where: { idChannel },
+      relations: ['messages'],
+    });
+
+    if (!channel) {
+      throw new NotFoundException(`Canal con ID ${idChannel} no encontrado`);
+    }
+
     await this.channelRepository.remove(channel);
     return { message: `Canal ${idChannel} eliminado correctamente` };
   }

@@ -3,7 +3,8 @@
    ======================================================= */
 .chat-layout {
   display: grid;
-  grid-template-columns: 280px 1fr; /* Sidebar + área de chat */
+  grid-template-columns: 280px 1fr;
+  /* Sidebar + área de chat */
   height: 100vh;
   background: #f9f9fb;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -12,7 +13,7 @@
 /* =======================================================
    🗂 LISTA DE CANALES (lado izquierdo)
    ======================================================= */
-   
+
 /* === Contenedor general de la lista de canales === */
 .chat-list {
   background: #fff;
@@ -35,6 +36,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   margin-bottom: 16px;
 }
+
 .chat-list h2 {
   margin: 0 0 10px;
 }
@@ -55,6 +57,7 @@
 .chat-list li:hover {
   background: #e8f0fe;
 }
+
 .chat-list ul {
   list-style: none;
   padding: 0;
@@ -75,10 +78,12 @@
   gap: 4px;
   transition: background 0.18s ease, transform 0.08s ease;
 }
+
 .channel-item:hover {
   background: #f0f4ff;
   transform: translateY(-1px);
 }
+
 .channel-item.active {
   background: #dfeeff;
   font-weight: 600;
@@ -131,8 +136,8 @@
   border: 5px solid #ccc;
   border-radius: 6px;
   scroll-behavior: smooth;
-  word-wrap: break-word;      
-  overflow-wrap: break-word;  
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .chat-message {
@@ -143,11 +148,16 @@
   background: #eef6ff;
   color: #12263a;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-  max-width: 75%;             /* Evita que las burbujas ocupen todo el ancho */
-  white-space: pre-wrap;      /* Conserva saltos de línea pero permite ajustar texto */
-  word-break: break-word;     /* Rompe palabras demasiado largas */
-  overflow-wrap: anywhere;    /* Versión moderna para evitar desbordes */
+  max-width: 75%;
+  /* Evita que las burbujas ocupen todo el ancho */
+  white-space: pre-wrap;
+  /* Conserva saltos de línea pero permite ajustar texto */
+  word-break: break-word;
+  /* Rompe palabras demasiado largas */
+  overflow-wrap: anywhere;
+  /* Versión moderna para evitar desbordes */
 }
+
 /* (Opcional) para pantallas pequeñas */
 @media (max-width: 600px) {
   .chat-message {
@@ -192,7 +202,8 @@
   font-size: 14px;
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
-.chat-input-container input:focus{
+
+.chat-input-container input:focus {
   outline: none;
   border-color: #0b66ff;
   box-shadow: 0 6px 18px rgba(11, 102, 255, 0.08);
@@ -240,7 +251,8 @@ button {
   border-radius: 8px;
   transition: transform 0.12s ease, background 0.12s;
 }
-.emoji-btn:hover{
+
+.emoji-btn:hover {
   transform: scale(1.08);
   background: rgba(0, 0, 0, 0.03);
 }
@@ -257,10 +269,12 @@ button {
   box-shadow: 0 6px 16px rgba(11, 102, 255, 0.12);
   transition: transform 0.12s ease, background 0.12s ease;
 }
+
 .send-btn:hover {
   transform: translateY(-2px);
   background: #055ad1;
 }
+
 /* === Botón "Cerrar sesión" === */
 .logout-btn {
   background: #e74c3c;
@@ -273,10 +287,12 @@ button {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: 0.2s ease;
 }
+
 .logout-btn:hover {
   background: #c0392b;
   transform: scale(1.05);
 }
+
 /* === Botones de la barra lateral === */
 .sidebar-button {
   display: block;
@@ -291,13 +307,16 @@ button {
   font-weight: 600;
   transition: background 0.14s ease, transform 0.12s ease;
 }
+
 .sidebar-button:hover {
   background: #eef6ff;
   transform: translateY(-2px);
 }
+
 .sidebar-button span {
   margin-right: 8px;
 }
+
 /* =======================================================
    📋 PANEL LATERAL (Sidebar)
    ======================================================= */
@@ -320,4 +339,105 @@ button {
 .sidebar-header h3 {
   font-size: 16px;
   font-weight: 600;
+}
+
+/* 🕓 Hora debajo de cada mensaje */
+.chat-time {
+  font-size: 0.7rem;
+  color: rgb(0, 0, 0);
+  text-align: right;
+  margin-top: 3px;
+  opacity: 0.8;
+}
+
+.own-message .chat-time {
+  color: #000000;
+  text-align: right;
+}
+
+.chat-message:not(.own-message) .chat-time {
+  color: #000000;
+  text-align: left;
+}
+
+/* 🔍 Botón de búsqueda (lupa) */
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  /* 👈 Mueve la lupa a la derecha */
+  align-items: center;
+  background-color: #202020;
+  padding: 10px 15px;
+  border-bottom: 1px solid #333;
+}
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.2s ease, color 0.2s ease;
+  margin-left: auto;
+  /* 👈 asegura que esté al extremo derecho */
+}
+
+.search-btn:hover {
+  transform: scale(1.1);
+  color: #1da1f2;
+  /* azul tipo WhatsApp */
+}
+
+/* 🔎 Barra de búsqueda */
+.chat-search-bar {
+  background: #1e1e1e;
+  padding: 8px 12px;
+  border-top: 1px solid #333;
+  animation: fadeIn 0.3s ease;
+  /* animación al aparecer */
+}
+
+.chat-search-bar input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #2a2a2a;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.chat-search-bar input::placeholder {
+  color: #aaa;
+}
+
+.chat-search-bar input:focus {
+  border-color: #1da1f2;
+  background: #252525;
+}
+
+/* ✨ Efecto de resalte cuando se busca */
+.highlight {
+  background-color: rgba(255, 255, 0, 0.2);
+  border-left: 3px solid yellow;
+  padding-left: 5px;
+  border-radius: 4px;
+}
+
+/* 🩶 Animación suave */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

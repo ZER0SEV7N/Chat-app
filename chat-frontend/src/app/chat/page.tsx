@@ -6,78 +6,101 @@ import ChatWindow from './chatWindow';
 import CreateChannelModal from './CreateChannelModal';
 import AddUserModal from './AddUserModal';
 
-//Funcion principales de la pagina del chat
 export default function ChatPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [channels, setChannels] = useState<any[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<any | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [username, setUsername] = useState('Usuario'); // nombre del usuario
+  const [username, setUsername] = useState('Usuario');
 
-  //conexion con el servidor para cargar los mensajes
+  // 🔔 Pedir permiso para mostrar notificaciones
+  useEffect(() => {
+    if (typeof window !== 'undefined' && "Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
+  // 🔌 Conexión con el servidor
   useEffect(() => {
     const token = localStorage.getItem("token");
-    
     if (!token) {
-      //Si no hay token, redirigir al login
       window.location.href = '/';
       return;
     }
-    // Leer el username del localStorage solo en cliente
+
     const user = localStorage.getItem("username");
     if (user) setUsername(user);
 
-    //Conectarse con el backend
     const newSocket = io("http://localhost:3000", {
       auth: { token },
     });
-    //Si el servidor detecta el token
-    newSocket.on("connect", () => {
-      console.log("Conectado al servidor de chat");
-    });
-    
-    setSocket(newSocket);
 
-    // Si el servidor detecta token inválido
+    newSocket.on("connect", () => {
+      console.log("✅ Conectado al servidor de chat");
+    });
+
     newSocket.on("unauthorized", () => {
       alert("Sesión expirada. Redirigiendo al login.");
       handleLogout();
     });
 
-    //Función de limpieza correcta
+    // 🧠 Escuchar mensajes y mostrar notificación + sonido si el mensaje no es tuyo
+    newSocket.on("message", (msg: any) => {
+      console.log("📩 Mensaje recibido:", msg);
+
+      const currentUser = localStorage.getItem("username");
+
+      // 🔒 Solo mostrar notificación si el mensaje NO lo envió el usuario actual
+      if (msg.senderName !== currentUser) {
+        // Mostrar notificación
+        if (Notification.permission === "granted") {
+          new Notification(`💬 ${msg.senderName}`, {
+            body: msg.content,
+            icon: "/chat-icon.png",
+          });
+        }
+
+        // 🔊 Reproducir sonido
+        const audio = new Audio("/message.mp3");
+        audio.volume = 0.7;
+        audio.play().catch((err) => console.warn("Error reproduciendo sonido:", err));
+      }
+    });
+
+    setSocket(newSocket);
+
     return () => {
-      newSocket.disconnect(); //Cierra la conexión
-      console.log("Socket desconectado");
+      newSocket.disconnect();
+      console.log("🔌 Socket desconectado");
     };
-  }, []);
-  //Funcion de logout
+  }, [selectedChannel]);
+
+  // 🚪 Logout
   const handleLogout = () => {
-    localStorage.removeItem('token') //Eliminar el token
+    localStorage.removeItem('token');
     socket?.disconnect();
-    window.location.href = '/'; //Redirigir al comienzo
-  }
-  //FETCH de los canales//
-    //Cargar canales desde el backend
-    useEffect(() => {
+    window.location.href = '/';
+  };
+
+  // 📡 Cargar canales
+  useEffect(() => {
     const fetchChannels = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
       try {
-        //1. Obtener canales del usuario (DMs)
         const resUser = await fetch('http://localhost:3000/users/channels', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const userChannels = resUser.ok ? await resUser.json() : [];
 
-        //2. Obtener canales públicos
         const resPublic = await fetch('http://localhost:3000/channels/public');
         const publicChannels = resPublic.ok ? await resPublic.json() : [];
 
-        //3. Combinar ambos (sin duplicar)
         const allChannels = [...publicChannels, ...userChannels];
-
         setChannels(allChannels);
       } catch (err) {
         console.error('Error al obtener canales:', err);
@@ -87,25 +110,22 @@ export default function ChatPage() {
     fetchChannels();
   }, []);
 
-  //FUNCIONES DEL CHAT//
-  //Funcion seleccionar un canal
+  // ⚙️ Manejadores de canales
   const handleSelectChannel = (channel: any) => setSelectedChannel(channel);
-  //Funcion al crear un canal
+
   const handleChannelCreated = (channel: any) => {
-  // Verificar si ya existe
-  const exists = channels.some(ch => !ch.isPublic && ch.idChannel === channel.idChannel);
-  if (exists) {
-    alert(`Ya tienes un DM con ${channel.name}`);
-    return;
-  }
+    const exists = channels.some(ch => !ch.isPublic && ch.idChannel === channel.idChannel);
+    if (exists) {
+      alert(`Ya tienes un DM con ${channel.name}`);
+      return;
+    }
 
-  // Si no existe, añadirlo
-  setChannels((prev) => [channel, ...prev]);
-  setShowAddUserModal(false);
-  setShowCreateModal(false);
-};
+    setChannels((prev) => [channel, ...prev]);
+    setShowAddUserModal(false);
+    setShowCreateModal(false);
+  };
 
-  //Renderizado
+  // 🎨 Render
   return (
     <div className="chat-layout">
       <ChatList
@@ -116,7 +136,6 @@ export default function ChatPage() {
         onLogout={handleLogout}
         username={username}
       />
-      
 
       <ChatWindow socket={socket} channel={selectedChannel} />
 
