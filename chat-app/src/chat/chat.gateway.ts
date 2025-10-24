@@ -44,14 +44,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     //Mostrar mensaje de desconexión
     console.log(`Cliente desconectado: ${client.id}`);
   }
-  //UNIRSE A SALAS Y OBTENER HISTORIAL de MENSAJES
+  // Unirse
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
     @MessageBody() idChannel: number,
     @ConnectedSocket() client: Socket,
   ) {
-    client.join(`Canal:${idChannel}`);
-    console.log(`👥 Usuario ${client.data.idUser} se unió al canal ${idChannel}`);
+    const room = `Canal:${idChannel}`;
+    client.join(room);
+    console.log(`👥 Usuario ${client.data.idUser} se unió a ${room}`);
 
     const history = await this.chatService.getMessages(idChannel);
     client.emit('history', history);
@@ -70,19 +71,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
   // MENSAJES
   // ==============================
 
+// Enviar mensajes
   @SubscribeMessage('sendMessage')
   async handleMessage(
-    //El cuerpo del mensaje contiene el ID del canal y el texto
-    @MessageBody() payload: { idChannel: number, text: string },
-    @ConnectedSocket() client: Socket) {
-
-    // Usamos el ID de usuario que el compañero almacenó en el socket (tras el JWT)
+    @MessageBody() payload: { idChannel: number; text: string },
+    @ConnectedSocket() client: Socket,
+  ) {
     const idUser = client.data.idUser;
-
-    //GUARDA el mensaje en la base de datos (Usamos la lógica del compañero)
     const message = await this.chatService.createMessage(idUser, payload.idChannel, payload.text);
-    //Emitir el mensaje a todos los usuarios en la sala
-    this.server.to(`Canal: ${payload.idChannel}`).emit('newMessage', message);
+    const room = `Canal:${payload.idChannel}`;
+
+    this.server.to(room).emit('newMessage', message);
   }
   //CREAR CANAL PRIVADO ENTRE DOS USUARIOS
   @SubscribeMessage('createChannel')

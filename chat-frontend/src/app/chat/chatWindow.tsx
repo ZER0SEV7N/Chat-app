@@ -1,82 +1,63 @@
 import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
-import { Search } from "lucide-react"; // 👈 para el ícono de lupa
-//Definir las props que recibirá el componente
+import { Search, Trash2, Edit3, Check, X } from "lucide-react"; // 👈 Agregamos iconos extra
+
 interface Props {
-    socket: any;
-    channel: any;
+  socket: any;
+  channel: any;
 }
-//Exportar la función chatWindow
-export default function chatWindow({ socket, channel }: Props){
-    const [messages, setMessages] = useState<any[]>([]);
-    const [input, setInput] = useState('');
-    const [showPicker, setShowPicker] = useState(false);
-    const [showSearch, setShowSearch] = useState(false); // 🔍 control de barra de búsqueda
-    const [searchTerm, setSearchTerm] = useState(""); // texto de búsqueda
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    //Efecto para manejar la conexión del socket y los mensajes
-    useEffect(() => {
-        //Unirse a la sala del canal
-        //Si el socket y el canal existen
-        if (socket && channel) {
-          //Emitir evento para unirse a la sala del canal
-            socket.emit('joinRoom', channel.idChannel);
-            //Recuperar el historial de mensajes
-            const handleHistory = (history: any[]) => setMessages(history);
-            //Manejar nuevos mensajes
-            const handleNewMessage = (msg: any) => {
-            //Agregar el nuevo mensaje si pertenece al canal actual
-              if (msg.channel.idChannel === channel.idChannel) {
-                  setMessages((prev) => [...prev, msg]);
-             }
-            };
-            //Escuchar eventos del socket
-            socket.on('history', handleHistory);
-            socket.on('newMessage', handleNewMessage);
-            //Función de limpieza para salir de la sala y remover listeners
-            return () => {
-            socket.emit('leaveRoom', channel.idChannel);
-            socket.off('history', handleHistory);
-            socket.off('newMessage', handleNewMessage);
-            };
-        }
-        //Limpiar mensajes al cambiar de canal
-        setMessages([]);
-    //Volver a ejecutar el efecto si cambian socket o canal
-    }, [socket, channel]);
-     //Bajar el scroll automáticamente al recibir nuevos mensajes
-    useEffect(() => {
-      const container = document.querySelector(".chat-messages");
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }, [messages]); //Se ejecuta cada vez que llegan nuevos mensajes
-  // 🔹 Pedir permiso de notificación al cargar
+
+// Exportar el componente principal del chat
+export default function ChatWindow({ socket, channel }: Props) {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
+  const [showSearch, setShowSearch] = useState(false); // 🔍 control barra búsqueda
+  const [searchTerm, setSearchTerm] = useState(""); // texto de búsqueda
+  const [editingId, setEditingId] = useState<string | null>(null); // ID de mensaje en edición
+  const [editText, setEditText] = useState(""); // texto editado
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 🔹 Configurar notificaciones y audio
   useEffect(() => {
-    if ("Notification" in window) {
-      if (Notification.permission === "default") {
-        Notification.requestPermission();
-      }
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
     }
     audioRef.current = new Audio("/sounds/message.mp3");
     audioRef.current.preload = "auto";
     audioRef.current.volume = 0.7;
   }, []);
 
-  // 🔹 Escuchar mensajes entrantes
+  // 🔹 Manejar conexión de socket y eventos
   useEffect(() => {
     if (!socket || !channel) return;
 
+    // Limpieza de eventos anteriores para evitar duplicados
+    socket.off("history");
+    socket.off("newMessage");
+    socket.off("messageDeleted");
+    socket.off("messageEdited");
+
+    // Unirse al canal actual
     socket.emit("joinRoom", channel.idChannel);
+
+    // 🔹 Cargar historial
     const handleHistory = (history: any[]) => setMessages(history);
+
+    // 🔹 Nuevo mensaje recibido
     const handleNewMessage = (msg: any) => {
-      if (msg.channel.idChannel === channel.idChannel) {
-        setMessages((prev) => [...prev, msg]);
-      }
+      if (msg.channel.idChannel !== channel.idChannel) return;
+
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.idMessage === msg.idMessage);
+        return exists ? prev : [...prev, msg];
+      });
+
       const currentUser = localStorage.getItem("username");
       const audio = audioRef.current;
+
       if (msg.user?.username !== currentUser && audio) {
-        audio.play().catch(() => { });
+        audio.play().catch(() => {});
         if ("Notification" in window && Notification.permission === "granted") {
           const notif = new Notification(
             `💬 ${msg.user?.username || "Usuario"} te envió un mensaje`,
@@ -95,12 +76,31 @@ export default function chatWindow({ socket, channel }: Props){
       }
     };
 
+    // 🔹 Mensaje eliminado
+    const handleDeletedMessage = (idMessage: string) => {
+      setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
+    };
+
+    // 🔹 Mensaje editado
+    const handleEditedMessage = (updatedMsg: any) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.idMessage === updatedMsg.idMessage ? updatedMsg : m))
+      );
+    };
+
+    // Escuchar eventos
     socket.on("history", handleHistory);
     socket.on("newMessage", handleNewMessage);
+    socket.on("messageDeleted", handleDeletedMessage);
+    socket.on("messageEdited", handleEditedMessage);
+
+    // 🔹 Limpieza al salir o cambiar de canal
     return () => {
       socket.emit("leaveRoom", channel.idChannel);
       socket.off("history", handleHistory);
       socket.off("newMessage", handleNewMessage);
+      socket.off("messageDeleted", handleDeletedMessage);
+      socket.off("messageEdited", handleEditedMessage);
     };
   }, [socket, channel]);
 
@@ -108,11 +108,33 @@ export default function chatWindow({ socket, channel }: Props){
   const sendMessage = () => {
     if (!socket || input.trim() === "") return;
     socket.emit("sendMessage", { idChannel: channel.idChannel, text: input });
-    const audio = audioRef.current;
-    if (audio) {
-      audio.play().catch(() => { });
-    }
     setInput("");
+  };
+
+  // 🔹 Eliminar mensaje
+  const deleteMessage = (idMessage: string) => {
+    if (!socket) return;
+    socket.emit("deleteMessage", idMessage);
+    setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
+  };
+
+  // 🔹 Guardar edición
+  const saveEdit = (idMessage: string) => {
+    if (!socket || editText.trim() === "") return;
+    socket.emit("editMessage", { idMessage, newText: editText });
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.idMessage === idMessage ? { ...m, text: editText } : m
+      )
+    );
+    setEditingId(null);
+    setEditText("");
+  };
+
+  // 🔹 Cancelar edición
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditText("");
   };
 
   // 😄 Agregar emoji
@@ -132,7 +154,7 @@ export default function chatWindow({ socket, channel }: Props){
     });
   };
 
-  // 🔍 Filtrar mensajes por búsqueda
+  // 🔍 Filtrar mensajes
   const filteredMessages = messages.filter((msg) =>
     msg.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -189,14 +211,74 @@ export default function chatWindow({ socket, channel }: Props){
 
           return (
             <div
-              key={i}
-              className={`chat-message ${isOwn ? "own-message" : ""} ${highlight ? "highlight" : ""
-                }`}
+              key={msg.idMessage || i}
+              className={`chat-message ${isOwn ? "own-message" : ""} ${
+                highlight ? "highlight" : ""
+              }`}
             >
-              <span className="chat-username-messages">
-                {msg.user?.username || "Anon"}:
-              </span>{" "}
-              <span>{msg.text}</span>
+              <div className="chat-message-header">
+                <span className="chat-username-messages">
+                  {msg.user?.username || "Anon"}:
+                </span>
+
+                {/* ✏️ Solo mis mensajes pueden editarse o eliminarse */}
+                {isOwn && (
+                  <div className="message-actions">
+                    {editingId === msg.idMessage ? (
+                      <>
+                        <button
+                          className="confirm-btn"
+                          title="Guardar"
+                          onClick={() => saveEdit(msg.idMessage)}
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          className="cancel-btn"
+                          title="Cancelar"
+                          onClick={cancelEdit}
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="edit-btn"
+                          title="Editar"
+                          onClick={() => {
+                            setEditingId(msg.idMessage);
+                            setEditText(msg.text);
+                          }}
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        <button
+                          className="delete-btn"
+                          title="Eliminar"
+                          onClick={() => deleteMessage(msg.idMessage)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {editingId === msg.idMessage ? (
+                <input
+                  type="text"
+                  className="edit-input"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveEdit(msg.idMessage)}
+                  autoFocus
+                />
+              ) : (
+                <span>{msg.text}</span>
+              )}
+
               <div className="chat-time">
                 {formatHour(msg.createdAt || new Date().toISOString())}
               </div>
@@ -225,7 +307,7 @@ export default function chatWindow({ socket, channel }: Props){
           placeholder="Escribe un mensaje..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
         <button className="send-btn" onClick={sendMessage}>
           Enviar
