@@ -58,12 +58,11 @@ export default function ChatPage() {
     window.location.href = '/'; //Redirigir al comienzo
   }
   //FETCH de los canales//
-    //Cargar canales desde el backend
-    useEffect(() => {
+  //Cargar canales desde el backend
+  useEffect(() => {
     const fetchChannels = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
-
       try {
         //1. Obtener canales del usuario (DMs)
         const resUser = await fetch('http://localhost:3000/users/channels', {
@@ -81,30 +80,59 @@ export default function ChatPage() {
         setChannels(allChannels);
       } catch (err) {
         console.error('Error al obtener canales:', err);
-      }
-    };
-
-    fetchChannels();
+      }  
+    }; 
+  fetchChannels();
   }, []);
+  //Actualizar el título de la página según el canal seleccionado
+  useEffect(() => {
+    if (selectedChannel?.name) {
+      document.title = `${selectedChannel.name} - Chat App`;
+    } else {
+      document.title = "Chat App";
+    }
+  }, [selectedChannel]);
 
   //FUNCIONES DEL CHAT//
   //Funcion seleccionar un canal
   const handleSelectChannel = (channel: any) => setSelectedChannel(channel);
   //Funcion al crear un canal
   const handleChannelCreated = (channel: any) => {
-  // Verificar si ya existe
-  const exists = channels.some(ch => !ch.isPublic && ch.idChannel === channel.idChannel);
-  if (exists) {
-    alert(`Ya tienes un DM con ${channel.name}`);
-    return;
+    // Verificar si ya existe
+    const exists = channels.some(ch => !ch.isPublic && ch.idChannel === channel.idChannel);
+    if (exists) {
+      alert(`Ya tienes un DM con ${channel.name}`);
+      return;
+    }
+
+    // Si no existe, añadirlo
+    setChannels((prev) => [channel, ...prev]);
+    setShowAddUserModal(false);
+    setShowCreateModal(false);
+  };
+  //Eliminar canales privados (de momento)
+  const handleDeleteChannel = async (idChannel: number) => {
+    const token = localStorage.getItem('token');
+    //Capturar errores
+    try {
+      const res = await fetch(`http://localhost:3000/channels/${idChannel}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if(res.ok){
+      alert("DM eliminado correctamente");
+      // 🔄 Quitar el canal de la lista sin recargar
+      setChannels((prev) => prev.filter((ch) => ch.idChannel !== idChannel));
+    } else {
+      const data = await res.json();
+      alert(`Error: ${data.message || "No se pudo eliminar el canal"}`);
+    }
+  } catch (err) {
+    console.error("Error al eliminar el canal:", err);
   }
-
-  // Si no existe, añadirlo
-  setChannels((prev) => [channel, ...prev]);
-  setShowAddUserModal(false);
-  setShowCreateModal(false);
-};
-
+}
   //Renderizado
   return (
     <div className="chat-layout">
@@ -114,6 +142,7 @@ export default function ChatPage() {
         onCreateChannel={() => setShowCreateModal(true)}
         onAddUser={() => setShowAddUserModal(true)}
         onLogout={handleLogout}
+        onDeleteChannel={handleDeleteChannel} 
         username={username}
       />
       

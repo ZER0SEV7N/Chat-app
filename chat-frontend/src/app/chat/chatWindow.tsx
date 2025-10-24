@@ -1,4 +1,4 @@
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
 //Definir las props que recibirá el componente
 interface Props {
@@ -40,6 +40,13 @@ export default function chatWindow({ socket, channel }: Props){
         setMessages([]);
     //Volver a ejecutar el efecto si cambian socket o canal
     }, [socket, channel]);
+     //Bajar el scroll automáticamente al recibir nuevos mensajes
+    useEffect(() => {
+      const container = document.querySelector(".chat-messages");
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, [messages]); //Se ejecuta cada vez que llegan nuevos mensajes
 
     //Función para enviar mensajes
     const sendMessage = () => {
@@ -52,7 +59,7 @@ export default function chatWindow({ socket, channel }: Props){
       setInput('');
     }
   };
-
+  
   //Constante para el selector de emojis
   const handleEmojiClick = (emojiData: any) => {
     setInput((prev) => prev + emojiData.emoji);
@@ -80,21 +87,34 @@ export default function chatWindow({ socket, channel }: Props){
 
       {/* 🔹 Mensajes */}
       <div className="chat-messages">
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`chat-message ${
-              msg.user?.username === localStorage.getItem("username")
-                ? "own-message"
-                : ""
-            }`}
-          >
-            <span className="chat-username-messages">
-              {msg.user?.username || "Anon"}:
-            </span>{" "}
-            <span>{msg.text}</span>
-          </div>
-        ))}
+        {messages.map((msg, i) => {
+          const hora = msg.createdAt
+            ? new Date(msg.createdAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true, // cambia a false si prefieres formato 24h
+              })
+            : '';
+
+          return (
+            <div
+              key={i}
+              className={`chat-message ${
+                msg.user?.username === localStorage.getItem("username")
+                  ? "own-message"
+                  : ""
+              }`}
+            >
+              <div className="message-header">
+                <span className="chat-username-messages">
+                  {msg.user?.username || "Anon"}
+                </span>
+                <span className="chat-time">{hora}</span>
+              </div>
+              <div className="message-text">{msg.text}</div>
+            </div>
+          );
+        })}
       </div>
 
       {/* 🔹 Input */}
@@ -108,7 +128,7 @@ export default function chatWindow({ socket, channel }: Props){
 
         {showPicker && (
           <div className="emoji-picker">
-            <EmojiPicker onEmojiClick={(e) => setInput((prev) => prev + e.emoji)} />
+            <EmojiPicker onEmojiClick={handleEmojiClick} />
           </div>
         )}
 
