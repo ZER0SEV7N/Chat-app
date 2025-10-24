@@ -19,8 +19,11 @@ export class ChatService {
     //Repositorio de usuarios
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
-  //Crear mensaje
+  ) { }
+
+  // ============================================================
+  // Crear mensaje
+  // ============================================================
   async createMessage(userId: number, channelId: number, text: string) {
     //Buscar el usuario y el canal
     const user = await this.userRepository.findOne({ where: { idUser: userId } });
@@ -35,7 +38,10 @@ export class ChatService {
     //Guardar el mensaje en la base de datos
     return this.messageRepository.save(message);
   }
-  //Obtener mensajes de un canal
+
+  // ============================================================
+  // Obtener mensajes de un canal
+  // ============================================================
   async getMessages(channelId: number) {
     //Verificar que el canal existe
     const channel = await this.channelRepository.findOne({ where: { idChannel: channelId } });
@@ -48,7 +54,10 @@ export class ChatService {
       order: { createdAt: 'ASC' }, //Ordenar por fecha de creación ascendente
     });
   }
-  //Crear o recuperar un MD entre dos usuarios
+
+  // ============================================================
+  // Crear o recuperar un canal privado (DM)
+  // ============================================================
   async getOrCreatePrivateChannel(userId: number, targetUsername: string) {
     //comprobar el usuario objetivo por su username
     const targetUser = await this.userRepository.findOne({ where: { username: targetUsername  } });
@@ -98,5 +107,4 @@ export class ChatService {
 
     return user.channels;
   }
-
 }

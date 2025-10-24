@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
+import { Search } from "lucide-react"; // 👈 para el ícono de lupa
 //Definir las props que recibirá el componente
 interface Props {
     socket: any;
@@ -10,6 +11,9 @@ export default function chatWindow({ socket, channel }: Props){
     const [messages, setMessages] = useState<any[]>([]);
     const [input, setInput] = useState('');
     const [showPicker, setShowPicker] = useState(false);
+    const [showSearch, setShowSearch] = useState(false); // 🔍 control de barra de búsqueda
+    const [searchTerm, setSearchTerm] = useState(""); // texto de búsqueda
+    const audioRef = useRef<HTMLAudioElement | null>(null);
     //Efecto para manejar la conexión del socket y los mensajes
     useEffect(() => {
         //Unirse a la sala del canal
@@ -47,24 +51,91 @@ export default function chatWindow({ socket, channel }: Props){
         container.scrollTop = container.scrollHeight;
       }
     }, [messages]); //Se ejecuta cada vez que llegan nuevos mensajes
-
-    //Función para enviar mensajes
-    const sendMessage = () => {
-    //Si el socket existe y el input no está vacío
-    if (socket && input.trim() !== '') {
-      socket.emit('sendMessage', {
-        idChannel: channel.idChannel,
-        text: input,
-      });
-      setInput('');
+  // 🔹 Pedir permiso de notificación al cargar
+  useEffect(() => {
+    if ("Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission();
+      }
     }
+    audioRef.current = new Audio("/sounds/message.mp3");
+    audioRef.current.preload = "auto";
+    audioRef.current.volume = 0.7;
+  }, []);
+
+  // 🔹 Escuchar mensajes entrantes
+  useEffect(() => {
+    if (!socket || !channel) return;
+
+    socket.emit("joinRoom", channel.idChannel);
+    const handleHistory = (history: any[]) => setMessages(history);
+    const handleNewMessage = (msg: any) => {
+      if (msg.channel.idChannel === channel.idChannel) {
+        setMessages((prev) => [...prev, msg]);
+      }
+      const currentUser = localStorage.getItem("username");
+      const audio = audioRef.current;
+      if (msg.user?.username !== currentUser && audio) {
+        audio.play().catch(() => { });
+        if ("Notification" in window && Notification.permission === "granted") {
+          const notif = new Notification(
+            `💬 ${msg.user?.username || "Usuario"} te envió un mensaje`,
+            {
+              body: msg.text,
+              icon: "/favicon.ico",
+              silent: true,
+              requireInteraction: true,
+            }
+          );
+          notif.onclick = () => {
+            window.focus();
+            notif.close();
+          };
+        }
+      }
+    };
+
+    socket.on("history", handleHistory);
+    socket.on("newMessage", handleNewMessage);
+    return () => {
+      socket.emit("leaveRoom", channel.idChannel);
+      socket.off("history", handleHistory);
+      socket.off("newMessage", handleNewMessage);
+    };
+  }, [socket, channel]);
+
+  // 🔹 Enviar mensaje
+  const sendMessage = () => {
+    if (!socket || input.trim() === "") return;
+    socket.emit("sendMessage", { idChannel: channel.idChannel, text: input });
+    const audio = audioRef.current;
+    if (audio) {
+      audio.play().catch(() => { });
+    }
+    setInput("");
   };
-  
-  //Constante para el selector de emojis
+
+  // 😄 Agregar emoji
   const handleEmojiClick = (emojiData: any) => {
     setInput((prev) => prev + emojiData.emoji);
     setShowPicker(false);
   };
+
+  // ⏰ Formatear hora tipo WhatsApp
+  const formatHour = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("es-PE", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  // 🔍 Filtrar mensajes por búsqueda
+  const filteredMessages = messages.filter((msg) =>
+    msg.text.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (!channel)
     return (
@@ -77,47 +148,64 @@ export default function chatWindow({ socket, channel }: Props){
     <div className="chat-container">
       {/* 🔹 Encabezado */}
       <div className="chat-header">
-        <div>
+        <div className="chat-header-info">
           <h2>#{channel.name}</h2>
           <p className="chat-description">
             {channel.description || "Sin descripción disponible"}
           </p>
         </div>
+
+        {/* 🔍 Botón de búsqueda */}
+        <button
+          type="button"
+          className="search-btn"
+          aria-label="Buscar en el chat"
+          title="Buscar"
+          onClick={() => setShowSearch(!showSearch)}
+        >
+          <Search size={20} aria-hidden="true" />
+        </button>
       </div>
 
-      {/* 🔹 Mensajes */}
+      {/* Barra de búsqueda */}
+      {showSearch && (
+        <div className="chat-search-bar">
+          <input
+            type="text"
+            placeholder="Buscar en el chat..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      )}
+
+      {/* Mensajes */}
       <div className="chat-messages">
-        {messages.map((msg, i) => {
-          const hora = msg.createdAt
-            ? new Date(msg.createdAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true, // cambia a false si prefieres formato 24h
-              })
-            : '';
+        {filteredMessages.map((msg, i) => {
+          const isOwn = msg.user?.username === localStorage.getItem("username");
+          const highlight =
+            searchTerm &&
+            msg.text.toLowerCase().includes(searchTerm.toLowerCase());
 
           return (
             <div
               key={i}
-              className={`chat-message ${
-                msg.user?.username === localStorage.getItem("username")
-                  ? "own-message"
-                  : ""
-              }`}
+              className={`chat-message ${isOwn ? "own-message" : ""} ${highlight ? "highlight" : ""
+                }`}
             >
-              <div className="message-header">
-                <span className="chat-username-messages">
-                  {msg.user?.username || "Anon"}
-                </span>
-                <span className="chat-time">{hora}</span>
+              <span className="chat-username-messages">
+                {msg.user?.username || "Anon"}:
+              </span>{" "}
+              <span>{msg.text}</span>
+              <div className="chat-time">
+                {formatHour(msg.createdAt || new Date().toISOString())}
               </div>
-              <div className="message-text">{msg.text}</div>
             </div>
           );
         })}
       </div>
 
-      {/* 🔹 Input */}
+      {/* Input */}
       <div className="chat-input-container">
         <button
           className="emoji-btn"
@@ -146,4 +234,3 @@ export default function chatWindow({ socket, channel }: Props){
     </div>
   );
 }
-

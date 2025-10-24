@@ -22,7 +22,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     private readonly messageService : MessageService, // <--Inyectado de tu código
     private readonly channelsService: ChannelsService, //inyectado correctamente
   ) { }
-  //MANEJO DE CONEXIÓN Y DESCONEXIÓN (DEL CÓDIGO DEL COMPAÑERO)
 
   //Cuando un cliente se establece la conexion
   async handleConnection(client: Socket) {
@@ -40,30 +39,37 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
         client.disconnect(); //Desconectar el cliente si la autenticación falla
       }
   }
-  //Cuando se desconecta el cliente
+
   handleDisconnect(client: Socket) {
     //Mostrar mensaje de desconexión
     console.log(`Cliente desconectado: ${client.id}`);
   }
   //UNIRSE A SALAS Y OBTENER HISTORIAL de MENSAJES
   @SubscribeMessage('joinRoom')
-  async handleJoinRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
-    client.join(`Canal: ${idChannel}`);
-    console.log(`Usuario ${client.data.idUser} se unió al canal -${idChannel}`);
+  async handleJoinRoom(
+    @MessageBody() idChannel: number,
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(`Canal:${idChannel}`);
+    console.log(`👥 Usuario ${client.data.idUser} se unió al canal ${idChannel}`);
 
-    //Devolver el historial de mensajes al unirse a la sala
     const history = await this.chatService.getMessages(idChannel);
     client.emit('history', history);
   }
 
-  //Salir de un canal
   @SubscribeMessage('leaveRoom')
-  async handleLeaveRoom(@MessageBody() channelId: number, @ConnectedSocket() client: Socket) {
-    client.leave(String(channelId));
-    console.log(`Usuario con ID ${client.data.idUser} salió del canal ${channelId}`);
+  async handleLeaveRoom(
+    @MessageBody() idChannel: number,
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.leave(`Canal:${idChannel}`);
+    console.log(`🚪 Usuario ${client.data.idUser} salió del canal ${idChannel}`);
   }
 
-  //Enviar Mensaje
+  // ==============================
+  // MENSAJES
+  // ==============================
+
   @SubscribeMessage('sendMessage')
   async handleMessage(
     //El cuerpo del mensaje contiene el ID del canal y el texto
@@ -128,3 +134,4 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     }
   }
 }
+
