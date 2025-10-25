@@ -29,7 +29,7 @@ export default function ChatPage() {
     if (user) setUsername(user);
 
     //Conectarse con el backend
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io("http://192.168.1.9:3000", {
       auth: { token },
     });
     //Si el servidor detecta el token
@@ -66,13 +66,13 @@ export default function ChatPage() {
 
       try {
         //1. Obtener canales del usuario (DMs)
-        const resUser = await fetch('http://localhost:3000/users/channels', {
+        const resUser = await fetch('http://192.168.1.9:3000/users/channels', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const userChannels = resUser.ok ? await resUser.json() : [];
 
         //2. Obtener canales públicos
-        const resPublic = await fetch('http://localhost:3000/channels/public');
+        const resPublic = await fetch('http://192.168.1.9:3000/channels/public');
         const publicChannels = resPublic.ok ? await resPublic.json() : [];
 
         //3. Combinar ambos (sin duplicar)

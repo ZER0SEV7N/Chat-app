@@ -29,7 +29,7 @@ export default function RegisterPage(){
         }
 
         console.log("Datos enviados al backend:", form);
-        const res = await fetch("http://localhost:3000/auth/register",{
+        const res = await fetch("http://192.168.1.9:3000/auth/register",{
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(form),

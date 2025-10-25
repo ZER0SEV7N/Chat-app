@@ -16,8 +16,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
 
   constructor(
     private readonly chatService: ChatService,
-    private readonly jwtService: JwtService, // <-- Inyectado del compañero
-    private readonly messageService : MessageService, // <-- Inyectado de tu código
+    private readonly jwtService: JwtService, // <--Inyectado del compañero
   ) { }
 
 
@@ -45,7 +44,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     console.log(`Cliente desconectado: ${client.id}`);
   }
   //UNIRSE A SALAS Y OBTENER HISTORIAL (DEL CÓDIGO DEL COMPAÑERO)
-  // Unirse a una sala
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
     client.join(`Canal: ${idChannel}`);
@@ -83,6 +81,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     // 2. Emitir el mensaje a todos los usuarios en la sala
     this.server.to(`Canal: ${payload.idChannel}`).emit('newMessage', message);
   }
+  //Crear canal privado o recuperar existente
   @SubscribeMessage('createChannel')
   async handleCreateChannel(
     @MessageBody() payload: { userId: number; targetUsername: string },
@@ -94,7 +93,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     );
     client.emit('channelCreated', channel);
   }
-
+  //Obtener canales del usuario
   @SubscribeMessage('getUserChannels')
   async handleGetUserChannels(
     @MessageBody() userId: number,
@@ -103,13 +102,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     const channels = await this.chatService.getUserChannels(userId);
     client.emit('userChannels', channels);
   }
-
+  //Eliminar canal
   @SubscribeMessage('deleteChannel')
   async handleDeleteChannel(
     @MessageBody() idChannel: number,
     @ConnectedSocket() client: Socket,
   ) {
-    await this.chatService.removeChannel(idChannel); // (debes implementarlo)
+    await this.chatService.removeChannel(idChannel); 
     client.emit('channelDeleted', idChannel);
   }
 }
