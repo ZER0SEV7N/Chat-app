@@ -19,7 +19,7 @@ export default function AddUserModal({ onClose, onChannelCreated, channels }: Ad
       alert(`Ya tienes un DM con ${username}`);
       return;
     }      
-    const res = await fetch('http://localhost:3000/chat/private', {
+    const res = await fetch('http://192.168.1.56:3000/chat/private', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

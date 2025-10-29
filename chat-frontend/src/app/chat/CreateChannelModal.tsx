@@ -13,7 +13,7 @@ export default function CreateChannelModal({ onClose, onChannelCreated }: Create
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); //evita recargar la página al enviar el form
     try {
-      const res = await fetch('http://localhost:3000/channels', {
+      const res = await fetch('http://192.168.1.56:3000/channels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, description }),

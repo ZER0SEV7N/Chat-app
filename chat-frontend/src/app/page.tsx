@@ -30,7 +30,7 @@ export default function LoginPage() {
     setLoading(true); // Iniciar estado de carga
     try {
       //Realizar la petición al endpoint de login
-      const res = await fetch("http://localhost:3000/auth/login", {
+      const res = await fetch("http://192.168.1.56:3000/auth/login", {
         method: "POST", // Método POST
         headers: { "Content-Type": "application/json" }, // Encabezados
         body: JSON.stringify({ username, password }), // Cuerpo de la solicitud como JSON

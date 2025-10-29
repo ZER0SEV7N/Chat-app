@@ -49,7 +49,7 @@ export default function RegisterPage(){
             //Enviar los datos al backend
             console.log("Datos enviados al backend:", form);
             //Realizar la petición al endpoint de registro
-            const res = await fetch("http://localhost:3000/auth/register",{
+            const res = await fetch("http://192.168.1.56:3000/auth/register",{
                 method: "POST", // Método POST
                 headers: {"Content-Type": "application/json"}, // Encabezados
                 body: JSON.stringify(form), // Cuerpo de la solicitud como JSON

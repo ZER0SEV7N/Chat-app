@@ -34,7 +34,7 @@ export default function ChatPage() {
     const user = localStorage.getItem("username");
     if (user) setUsername(user);
 
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io("http://192.168.1.56:3000", {
       auth: { token },
     });
 
@@ -92,12 +92,12 @@ export default function ChatPage() {
       if (!token) return;
 
       try {
-        const resUser = await fetch('http://localhost:3000/users/channels', {
+        const resUser = await fetch('http://192.168.1.56:3000/users/channels', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const userChannels = resUser.ok ? await resUser.json() : [];
 
-        const resPublic = await fetch('http://localhost:3000/channels/public');
+        const resPublic = await fetch('http://192.168.1.56:3000/channels/public');
         const publicChannels = resPublic.ok ? await resPublic.json() : [];
 
         const allChannels = [...publicChannels, ...userChannels];

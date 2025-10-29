@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
-import { Search } from "lucide-react"; // 👈 para el ícono de lupa
+import { Search, Trash2, Edit3, Check, X } from "lucide-react"; // 👈 Agregamos iconos de editar/guardar/cancelar
 
 interface Props {
   socket: any;
@@ -11,11 +11,13 @@ export default function ChatWindow({ socket, channel }: Props) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const [showPicker, setShowPicker] = useState(false);
-  const [showSearch, setShowSearch] = useState(false); // 🔍 control de barra de búsqueda
-  const [searchTerm, setSearchTerm] = useState(""); // texto de búsqueda
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null); // 🔹 mensaje en edición
+  const [editText, setEditText] = useState(""); // 🔹 texto editado
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 🔹 Pedir permiso de notificación al cargar
+  // 🔹 Notificaciones y sonido
   useEffect(() => {
     if ("Notification" in window) {
       if (Notification.permission === "default") {
@@ -27,20 +29,24 @@ export default function ChatWindow({ socket, channel }: Props) {
     audioRef.current.volume = 0.7;
   }, []);
 
-  // 🔹 Escuchar mensajes entrantes
+  // 🔹 Socket eventos
   useEffect(() => {
     if (!socket || !channel) return;
 
     socket.emit("joinRoom", channel.idChannel);
+
     const handleHistory = (history: any[]) => setMessages(history);
+
     const handleNewMessage = (msg: any) => {
       if (msg.channel.idChannel === channel.idChannel) {
         setMessages((prev) => [...prev, msg]);
       }
+
       const currentUser = localStorage.getItem("username");
       const audio = audioRef.current;
+
       if (msg.user?.username !== currentUser && audio) {
-        audio.play().catch(() => { });
+        audio.play().catch(() => {});
         if ("Notification" in window && Notification.permission === "granted") {
           const notif = new Notification(
             `💬 ${msg.user?.username || "Usuario"} te envió un mensaje`,
@@ -59,12 +65,28 @@ export default function ChatWindow({ socket, channel }: Props) {
       }
     };
 
+    const handleDeletedMessage = (idMessage: string) => {
+      setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
+    };
+
+    // 🔹 Escuchar mensaje editado
+    const handleEditedMessage = (updatedMsg: any) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.idMessage === updatedMsg.idMessage ? updatedMsg : m))
+      );
+    };
+
     socket.on("history", handleHistory);
     socket.on("newMessage", handleNewMessage);
+    socket.on("messageDeleted", handleDeletedMessage);
+    socket.on("messageEdited", handleEditedMessage);
+
     return () => {
       socket.emit("leaveRoom", channel.idChannel);
       socket.off("history", handleHistory);
       socket.off("newMessage", handleNewMessage);
+      socket.off("messageDeleted", handleDeletedMessage);
+      socket.off("messageEdited", handleEditedMessage);
     };
   }, [socket, channel]);
 
@@ -74,18 +96,50 @@ export default function ChatWindow({ socket, channel }: Props) {
     socket.emit("sendMessage", { idChannel: channel.idChannel, text: input });
     const audio = audioRef.current;
     if (audio) {
-      audio.play().catch(() => { });
+      audio.play().catch(() => {});
     }
     setInput("");
   };
 
-  // 😄 Agregar emoji
+  // 🔹 Eliminar mensaje
+  const deleteMessage = (idMessage: string) => {
+    if (!socket) return;
+    socket.emit("deleteMessage", idMessage);
+    setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
+  };
+
+  // 🔹 Editar mensaje (guardar cambios)
+  const saveEdit = (idMessage: string) => {
+    if (!socket || editText.trim() === "") {
+      setEditingId(null);
+      return;
+    }
+
+    socket.emit("editMessage", { idMessage, newText: editText });
+
+    // Actualizamos localmente para respuesta rápida
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.idMessage === idMessage ? { ...m, text: editText } : m
+      )
+    );
+
+    setEditingId(null);
+    setEditText("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditText("");
+  };
+
+  // 😄 Emoji
   const handleEmojiClick = (emojiData: any) => {
     setInput((prev) => prev + emojiData.emoji);
     setShowPicker(false);
   };
 
-  // ⏰ Formatear hora tipo WhatsApp
+  // ⏰ Hora tipo WhatsApp
   const formatHour = (dateString: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -96,7 +150,7 @@ export default function ChatWindow({ socket, channel }: Props) {
     });
   };
 
-  // 🔍 Filtrar mensajes por búsqueda
+  // 🔍 Filtrar mensajes
   const filteredMessages = messages.filter((msg) =>
     msg.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -110,7 +164,7 @@ export default function ChatWindow({ socket, channel }: Props) {
 
   return (
     <div className="chat-container">
-      {/* 🔹 Encabezado */}
+      {/* Encabezado */}
       <div className="chat-header">
         <div className="chat-header-info">
           <h2>#{channel.name}</h2>
@@ -118,8 +172,6 @@ export default function ChatWindow({ socket, channel }: Props) {
             {channel.description || "Sin descripción disponible"}
           </p>
         </div>
-
-        {/* 🔍 Botón de búsqueda */}
         <button
           type="button"
           className="search-btn"
@@ -153,14 +205,75 @@ export default function ChatWindow({ socket, channel }: Props) {
 
           return (
             <div
-              key={i}
-              className={`chat-message ${isOwn ? "own-message" : ""} ${highlight ? "highlight" : ""
-                }`}
+              key={msg.idMessage || i}
+              className={`chat-message ${isOwn ? "own-message" : ""} ${
+                highlight ? "highlight" : ""
+              }`}
             >
-              <span className="chat-username-messages">
-                {msg.user?.username || "Anon"}:
-              </span>{" "}
-              <span>{msg.text}</span>
+              <div className="chat-message-header">
+                <span className="chat-username-messages">
+                  {msg.user?.username || "Anon"}:
+                </span>
+
+                {/* Solo botones para mis mensajes */}
+                {isOwn && (
+                  <div className="message-actions">
+                    {editingId === msg.idMessage ? (
+                      <>
+                        <button
+                          className="confirm-btn"
+                          title="Guardar"
+                          onClick={() => saveEdit(msg.idMessage)}
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          className="cancel-btn"
+                          title="Cancelar"
+                          onClick={cancelEdit}
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="edit-btn"
+                          title="Editar"
+                          onClick={() => {
+                            setEditingId(msg.idMessage);
+                            setEditText(msg.text);
+                          }}
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        <button
+                          className="delete-btn"
+                          title="Eliminar"
+                          onClick={() => deleteMessage(msg.idMessage)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Si estoy editando este mensaje, muestro input */}
+              {editingId === msg.idMessage ? (
+                <input
+                  type="text"
+                  className="edit-input"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveEdit(msg.idMessage)}
+                  autoFocus
+                />
+              ) : (
+                <span>{msg.text}</span>
+              )}
+
               <div className="chat-time">
                 {formatHour(msg.createdAt || new Date().toISOString())}
               </div>
@@ -169,7 +282,7 @@ export default function ChatWindow({ socket, channel }: Props) {
         })}
       </div>
 
-      {/* Input */}
+      {/* Input de nuevo mensaje */}
       <div className="chat-input-container">
         <button
           className="emoji-btn"
