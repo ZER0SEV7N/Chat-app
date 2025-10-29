@@ -4,6 +4,7 @@
 "use client"; // Indica que este es un componente del lado del cliente
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "@/lib/config";
 //Componente de la página de login
 export default function LoginPage() {
   //Hooks de estado y router
@@ -30,7 +31,7 @@ export default function LoginPage() {
     setLoading(true); // Iniciar estado de carga
     try {
       //Realizar la petición al endpoint de login
-      const res = await fetch("http://localhost:3000/auth/login", {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST", // Método POST
         headers: { "Content-Type": "application/json" }, // Encabezados
         body: JSON.stringify({ username, password }), // Cuerpo de la solicitud como JSON

@@ -70,7 +70,7 @@ export default function ChatList({
           return (
             //Mostrar cada canal en la lista
             <li
-              key={ch.idChannel || `channel-${index}`} // ✅ Evita warning de keys duplicadas
+              key={ch.idChannel || `channel-${index}`} //Evita warning de keys duplicadas
               className="channel-item"
               onClick={() => onSelectChannel(ch)}
             >

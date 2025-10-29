@@ -1,6 +1,7 @@
 'use client';
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // Para App Router
+import { API_URL } from "@/lib/config";
 //Componente de la página de registro
 export default function RegisterPage(){
     //Hooks de estado y router
@@ -49,7 +50,7 @@ export default function RegisterPage(){
             //Enviar los datos al backend
             console.log("Datos enviados al backend:", form);
             //Realizar la petición al endpoint de registro
-            const res = await fetch("http://localhost:3000/auth/register",{
+            const res = await fetch(`${API_URL}/auth/register`,{
                 method: "POST", // Método POST
                 headers: {"Content-Type": "application/json"}, // Encabezados
                 body: JSON.stringify(form), // Cuerpo de la solicitud como JSON

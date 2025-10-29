@@ -117,13 +117,12 @@
   background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
   border-bottom: 1px solid #e5e7eb;
   display: flex;
-  flex-direction: column;
   gap: 6px;
 }
 
 .chat-header h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
   color: #0f0f0f;
 }

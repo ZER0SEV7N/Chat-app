@@ -15,14 +15,19 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { MessageService } from '../messages/message.service';
 import { ChannelsService } from '../channels/channels.service';
-
+//
 @WebSocketGateway({ cors: { origin: '*' } }) //habilitamos CORS
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { //Establecer la interfaz de conexion
   @WebSocketServer()
   server: Server;
   //Constructor
   constructor(
-      // 🔹 Conexión inicial
+    private readonly chatService: ChatService,
+    private readonly channelsService: ChannelsService,
+    private readonly jwtService: JwtService, // <-- Inyectado del compañero
+    private readonly messageService : MessageService// <-- Inyectado de tu código
+  ) { }
+    // 🔹 Conexión inicial
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
@@ -86,22 +91,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
   // ==============================
   @SubscribeMessage('editMessage')
   async handleEditMessage(
-    @MessageBody() payload: { idMessage: string; newText: string },
+    @MessageBody() payload: UpdateChatDto,
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const message = await this.messageService.findOne(Number(payload.idMessage)); // ✅ Conversión a número
+      const message = await this.messageService.findOne(Number(payload.idMessage)); //Conversión a número
       if (!message) {
         client.emit('error', { message: 'Mensaje no encontrado' });
         return;
       }
-
+      //Solo el autor del mensaje puede editarlo
       if (message.user.idUser !== client.data.idUser) {
         client.emit('error', { message: 'No puedes editar mensajes de otros usuarios' });
         return;
       }
-
-      const updated = await this.messageService.updateMessage(Number(payload.idMessage), payload.newText); // ✅ Conversión
+     //Actualizar mensaje con el servicio
+      const updated = await this.messageService.updateMessage(Number(payload.idMessage), payload.newText); //Conversión
+      //Emitir a todos los que estén en el canal
       const room = `Canal:${message.channel.idChannel}`;
       this.server.to(room).emit('messageEdited', updated);
 

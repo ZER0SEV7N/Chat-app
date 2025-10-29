@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './modal.css';
+import { API_URL } from '@/lib/config';
 interface AddUserModalProps {
   onClose: () => void;
   onChannelCreated: (channel: any) => void;
@@ -19,7 +20,7 @@ export default function AddUserModal({ onClose, onChannelCreated, channels }: Ad
       alert(`Ya tienes un DM con ${username}`);
       return;
     }      
-    const res = await fetch('http://localhost:3000/chat/private', {
+    const res = await fetch(`${API_URL}/chat/private`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

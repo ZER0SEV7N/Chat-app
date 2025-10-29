@@ -5,6 +5,7 @@ import ChatList from './chatList';
 import ChatWindow from './chatWindow';
 import CreateChannelModal from './CreateChannelModal';
 import AddUserModal from './AddUserModal';
+import { API_URL } from "@/lib/config";
 
 export default function ChatPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -36,7 +37,7 @@ export default function ChatPage() {
     const user = localStorage.getItem("username");
     if (user) setUsername(user);
     //Establecer conexion con el socket
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io(API_URL, {
       auth: { token },
     });
     //Si se obtuvo el token y el socket
@@ -102,12 +103,12 @@ export default function ChatPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const resUser = await fetch('http://localhost:3000/users/channels', {
+        const resUser = await fetch(`${API_URL}/users/channels`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const userChannels = resUser.ok ? await resUser.json() : [];
 
-        const resPublic = await fetch('http://localhost:3000/channels/public');
+        const resPublic = await fetch(`${API_URL}/channels/public`);
         const publicChannels = resPublic.ok ? await resPublic.json() : [];
 
         const allChannels = [...publicChannels, ...userChannels];
@@ -148,7 +149,7 @@ export default function ChatPage() {
     const token = localStorage.getItem('token');
     //Capturar errores
     try {
-      const res = await fetch(`http://localhost:3000/channels/${idChannel}`, {
+      const res = await fetch(`${API_URL}/channels/${idChannel}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,

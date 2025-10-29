@@ -1,5 +1,6 @@
- import React, { useState } from "react";
+import React, { useState } from "react";
 import './modal.css';
+import { API_URL } from "@/lib/config";
 
 interface CreateChannelModalProps {
   onClose: () => void;
@@ -13,7 +14,7 @@ export default function CreateChannelModal({ onClose, onChannelCreated }: Create
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); //evita recargar la página al enviar el form
     try {
-      const res = await fetch('http://localhost:3000/channels', {
+      const res = await fetch(`${API_URL}/channels`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, description }),
@@ -23,7 +24,7 @@ export default function CreateChannelModal({ onClose, onChannelCreated }: Create
 
       if (res.ok) {
         onChannelCreated(data);
-        onClose(); // ✅ cierra el modal después de crear
+        onClose(); //cierra el modal después de crear
       } else {
         alert(data.message || "Error al crear el canal");
       }

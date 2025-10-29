@@ -1,5 +1,5 @@
 //Importar funciones del class validator para los chats
-import { IsNotEmpty, IsString, IsInt, MinLength, isNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsString, IsInt, MinLength, } from 'class-validator';
 //Exportar los chat
 export class CreateChatDto {
     @IsInt({ message: 'El ID del canal debe ser un número entero' })
