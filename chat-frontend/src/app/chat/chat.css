@@ -64,8 +64,19 @@
   flex: 1;
   overflow-y: auto;
 }
+.delete-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 1rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
 
-
+.delete-btn:hover {
+  transform: scale(1.1);
+  color: #e63946; /* rojo suave */
+}
 
 /* === Cada canal individual === */
 .channel-item {
@@ -96,7 +107,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #fcfdff;
+  background: #fefefe;
+  overflow: hidden; 
 }
 
 /* === Encabezado del chat (nombre del canal) === */
@@ -105,13 +117,12 @@
   background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
   border-bottom: 1px solid #e5e7eb;
   display: flex;
-  flex-direction: column;
   gap: 6px;
 }
 
 .chat-header h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
   color: #0f0f0f;
 }
@@ -481,4 +492,27 @@ button {
   border-radius: 6px;
   padding: 4px 8px;
   margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .chat-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .mobile-chat {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .back-btn {
+    background: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
 }

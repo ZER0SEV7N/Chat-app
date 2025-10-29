@@ -32,11 +32,24 @@ export class ChannelsService {
         return channel;
     }
     
-    //Eliminar un canal
-    async removeChannel(idChannel: number){
-        const channel = await this.getChannelById(idChannel);
-        await this.channelrepository.remove(channel);
-        return { message: `Canal ${idChannel} eliminado correctamente` };
+    // Eliminar un canal (y sus mensajes)
+  // ============================================================
+  async removeChannel(idChannel: number) {
+    const channel = await this.channelrepository.findOne({
+      where: { idChannel },
+      relations: ['messages'], // incluimos mensajes para borrarlos en cascada
+    });
+    // Verificar si el canal existe
+    if (!channel) {
+        console.log(`❌ Canal ${idChannel} no encontrado`);
+        throw new NotFoundException(`Canal con ID ${idChannel} no encontrado`);
     }
-
+    //Evitar eliminar canales públicos
+    if (channel.isPublic) {
+        throw new Error('No se pueden eliminar canales públicos');
+    }
+    await this.channelrepository.remove(channel);
+    console.log(`El Canal ${idChannel} se ha eliminado correctamente`);
+    return { message: `Canal ${idChannel} eliminado correctamente` };
+  }
 }

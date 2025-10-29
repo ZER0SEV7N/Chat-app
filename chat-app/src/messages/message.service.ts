@@ -1,48 +1,67 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Message } from '../entities/message.entity';
-import { User } from '../entities/user.entity';
-import { Channel } from '../entities/channels.entity';
+import { Message } from 'src/entities/message.entity';
+import { User } from 'src/entities/user.entity';
+import { Channel } from 'src/entities/channels.entity';
 
 @Injectable()
 export class MessageService {
   constructor(
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,
+
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
     @InjectRepository(Channel)
     private readonly channelRepository: Repository<Channel>,
-  ) {}
+  ) { }
 
-  // ============================================================
-  // Crear un mensaje (con relación a usuario y canal)
-  // ============================================================
-  async create(text: string, idUser: number, idChannel: number): Promise<Message> {
+  // Crear mensaje
+  async create(text: string, idUser: number, idChannel: number) {
     const user = await this.userRepository.findOne({ where: { idUser } });
     if (!user) throw new NotFoundException('Usuario no encontrado');
 
     const channel = await this.channelRepository.findOne({ where: { idChannel } });
     if (!channel) throw new NotFoundException('Canal no encontrado');
 
-    const newMessage = this.messageRepository.create({
-      text,
-      user,
-      channel,
-    });
-
-    return this.messageRepository.save(newMessage);
+    const message = this.messageRepository.create({ text, user, channel });
+    return await this.messageRepository.save(message);
   }
 
-  // ============================================================
-  // Obtener historial de mensajes (por canal)
-  // ============================================================
-  async findAll(idChannel: number): Promise<Message[]> {
-    return this.messageRepository.find({
+  // Obtener todos los mensajes de un canal
+  async findAll(idChannel: number) {
+    return await this.messageRepository.find({
       where: { channel: { idChannel } },
+      relations: ['user', 'channel'],
       order: { createdAt: 'ASC' },
+    });
+  }
+
+  // Buscar un mensaje específico
+  async findOne(idMessage: number) {
+    return await this.messageRepository.findOne({
+      where: { idMessage },
       relations: ['user', 'channel'],
     });
+  }
+
+  // Editar mensaje
+  async updateMessage(idMessage: number, newText: string) {
+    const message = await this.findOne(idMessage);
+    if (!message) throw new NotFoundException('Mensaje no encontrado');
+
+    message.text = newText;
+    return await this.messageRepository.save(message);
+  }
+
+  // Eliminar mensaje
+  async removeMessage(idMessage: number) {
+    const message = await this.findOne(idMessage);
+    if (!message) throw new NotFoundException('Mensaje no encontrado');
+
+    await this.messageRepository.remove(message);
+    return { deleted: true, idMessage };
   }
 }
