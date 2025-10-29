@@ -1,24 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
-import { Search, Trash2, Edit3, Check, X } from "lucide-react"; // 👈 Agregamos iconos extra
+import { Search, Trash2, Edit3, Check, X, MoreVertical } from "lucide-react"; // 👈 Agregamos los 3 puntos
 
 interface Props {
   socket: any;
   channel: any;
 }
 
-// Exportar el componente principal del chat
 export default function ChatWindow({ socket, channel }: Props) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const [showPicker, setShowPicker] = useState(false);
-  const [showSearch, setShowSearch] = useState(false); // 🔍 control barra búsqueda
-  const [searchTerm, setSearchTerm] = useState(""); // texto de búsqueda
-  const [editingId, setEditingId] = useState<string | null>(null); // ID de mensaje en edición
-  const [editText, setEditText] = useState(""); // texto editado
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null); // 👈 Control menú de 3 puntos
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 🔹 Configurar notificaciones y audio
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
@@ -28,23 +27,18 @@ export default function ChatWindow({ socket, channel }: Props) {
     audioRef.current.volume = 0.7;
   }, []);
 
-  // 🔹 Manejar conexión de socket y eventos
   useEffect(() => {
     if (!socket || !channel) return;
 
-    // Limpieza de eventos anteriores para evitar duplicados
     socket.off("history");
     socket.off("newMessage");
     socket.off("messageDeleted");
     socket.off("messageEdited");
 
-    // Unirse al canal actual
     socket.emit("joinRoom", channel.idChannel);
 
-    // 🔹 Cargar historial
     const handleHistory = (history: any[]) => setMessages(history);
 
-    // 🔹 Nuevo mensaje recibido
     const handleNewMessage = (msg: any) => {
       if (msg.channel.idChannel !== channel.idChannel) return;
 
@@ -76,25 +70,21 @@ export default function ChatWindow({ socket, channel }: Props) {
       }
     };
 
-    // 🔹 Mensaje eliminado
     const handleDeletedMessage = (idMessage: string) => {
       setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
     };
 
-    // 🔹 Mensaje editado
     const handleEditedMessage = (updatedMsg: any) => {
       setMessages((prev) =>
         prev.map((m) => (m.idMessage === updatedMsg.idMessage ? updatedMsg : m))
       );
     };
 
-    // Escuchar eventos
     socket.on("history", handleHistory);
     socket.on("newMessage", handleNewMessage);
     socket.on("messageDeleted", handleDeletedMessage);
     socket.on("messageEdited", handleEditedMessage);
 
-    // 🔹 Limpieza al salir o cambiar de canal
     return () => {
       socket.emit("leaveRoom", channel.idChannel);
       socket.off("history", handleHistory);
@@ -104,21 +94,18 @@ export default function ChatWindow({ socket, channel }: Props) {
     };
   }, [socket, channel]);
 
-  // 🔹 Enviar mensaje
   const sendMessage = () => {
     if (!socket || input.trim() === "") return;
     socket.emit("sendMessage", { idChannel: channel.idChannel, text: input });
     setInput("");
   };
 
-  // 🔹 Eliminar mensaje
   const deleteMessage = (idMessage: string) => {
     if (!socket) return;
     socket.emit("deleteMessage", idMessage);
     setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
   };
 
-  // 🔹 Guardar edición
   const saveEdit = (idMessage: string) => {
     if (!socket || editText.trim() === "") return;
     socket.emit("editMessage", { idMessage, newText: editText });
@@ -131,19 +118,16 @@ export default function ChatWindow({ socket, channel }: Props) {
     setEditText("");
   };
 
-  // 🔹 Cancelar edición
   const cancelEdit = () => {
     setEditingId(null);
     setEditText("");
   };
 
-  // 😄 Agregar emoji
   const handleEmojiClick = (emojiData: any) => {
     setInput((prev) => prev + emojiData.emoji);
     setShowPicker(false);
   };
 
-  // ⏰ Formatear hora tipo WhatsApp
   const formatHour = (dateString: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -154,7 +138,6 @@ export default function ChatWindow({ socket, channel }: Props) {
     });
   };
 
-  // 🔍 Filtrar mensajes
   const filteredMessages = messages.filter((msg) =>
     msg.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -168,7 +151,6 @@ export default function ChatWindow({ socket, channel }: Props) {
 
   return (
     <div className="chat-container">
-      {/* 🔹 Encabezado */}
       <div className="chat-header">
         <div className="chat-header-info">
           <h2>#{channel.name}</h2>
@@ -177,19 +159,15 @@ export default function ChatWindow({ socket, channel }: Props) {
           </p>
         </div>
 
-        {/* 🔍 Botón de búsqueda */}
         <button
           type="button"
           className="search-btn"
-          aria-label="Buscar en el chat"
-          title="Buscar"
           onClick={() => setShowSearch(!showSearch)}
         >
-          <Search size={20} aria-hidden="true" />
+          <Search size={20} />
         </button>
       </div>
 
-      {/* Barra de búsqueda */}
       {showSearch && (
         <div className="chat-search-bar">
           <input
@@ -201,7 +179,6 @@ export default function ChatWindow({ socket, channel }: Props) {
         </div>
       )}
 
-      {/* Mensajes */}
       <div className="chat-messages">
         {filteredMessages.map((msg, i) => {
           const isOwn = msg.user?.username === localStorage.getItem("username");
@@ -221,46 +198,39 @@ export default function ChatWindow({ socket, channel }: Props) {
                   {msg.user?.username || "Anon"}:
                 </span>
 
-                {/* ✏️ Solo mis mensajes pueden editarse o eliminarse */}
                 {isOwn && (
                   <div className="message-actions">
-                    {editingId === msg.idMessage ? (
-                      <>
+                    <button
+                      className="menu-btn"
+                      onClick={() =>
+                        setMenuOpenId(
+                          menuOpenId === msg.idMessage ? null : msg.idMessage
+                        )
+                      }
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+
+                    {menuOpenId === msg.idMessage && (
+                      <div className="message-menu">
                         <button
-                          className="confirm-btn"
-                          title="Guardar"
-                          onClick={() => saveEdit(msg.idMessage)}
-                        >
-                          <Check size={14} />
-                        </button>
-                        <button
-                          className="cancel-btn"
-                          title="Cancelar"
-                          onClick={cancelEdit}
-                        >
-                          <X size={14} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          className="edit-btn"
-                          title="Editar"
                           onClick={() => {
                             setEditingId(msg.idMessage);
                             setEditText(msg.text);
+                            setMenuOpenId(null);
                           }}
                         >
-                          <Edit3 size={14} />
+                          ✏️ Editar
                         </button>
                         <button
-                          className="delete-btn"
-                          title="Eliminar"
-                          onClick={() => deleteMessage(msg.idMessage)}
+                          onClick={() => {
+                            deleteMessage(msg.idMessage);
+                            setMenuOpenId(null);
+                          }}
                         >
-                          <Trash2 size={14} />
+                          🗑️ Eliminar
                         </button>
-                      </>
+                      </div>
                     )}
                   </div>
                 )}
@@ -287,7 +257,6 @@ export default function ChatWindow({ socket, channel }: Props) {
         })}
       </div>
 
-      {/* Input */}
       <div className="chat-input-container">
         <button
           className="emoji-btn"
