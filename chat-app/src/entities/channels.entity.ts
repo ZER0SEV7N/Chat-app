@@ -1,6 +1,6 @@
 //Entidad canales
 //Importaciones necesarias:
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany, JoinTable, ManyToOne} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany, JoinTable, JoinColumn, ManyToOne} from "typeorm";
 import { Message } from "./message.entity";
 import { User } from "./user.entity";
 //Definicion de la entidad Channel
@@ -25,7 +25,17 @@ export class Channel {
     @OneToMany(() => Message, message => message.channel)
     messages: Message[];
 
-    //Relacion con usuarios (muchos a muchos)
-    @ManyToMany(() => User, (user) => user.channels)
+    //Relación muchos a muchos con usuarios (miembros del canal)
+    @ManyToMany(() => User, (user) => user.channels, { cascade: true })
+    @JoinTable({
+      name: "users_channels_channels",
+      joinColumn: { name: "channelsIdChannel", referencedColumnName: "idChannel" },
+      inverseJoinColumn: { name: "usersIdUser", referencedColumnName: "idUser" },
+    })
     members: User[];
+
+    @ManyToOne(() => User, (user) => user.createdChannels)
+    @JoinColumn({ name: "creatorId" })
+    creator: User;
+
 }

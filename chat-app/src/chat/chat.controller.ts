@@ -1,4 +1,8 @@
 //chat-app/src/chat/chat.controller.ts
+// Controlador encargado de manejar las rutas relacionadas al chat y canales
+// ============================================================
+
+//Importaciones necesarias
 import { Controller, Post, Body, Req, Delete, Param } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtService } from '@nestjs/jwt';

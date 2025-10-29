@@ -1,4 +1,7 @@
-//Importar los directorios
+// src/chat/chat.gateway.ts
+// ============================================================
+// Importar los directorios
+// ============================================================
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -15,19 +18,25 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { MessageService } from '../messages/message.service';
 import { ChannelsService } from '../channels/channels.service';
-//
-@WebSocketGateway({ cors: { origin: '*' } }) //habilitamos CORS
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { //Establecer la interfaz de conexion
+
+// ============================================================
+// Gateway del chat
+// ============================================================
+@WebSocketGateway({ cors: { origin: '*' } })
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
-  //Constructor
+
   constructor(
     private readonly chatService: ChatService,
     private readonly channelsService: ChannelsService,
-    private readonly jwtService: JwtService, // <-- Inyectado del compañero
-    private readonly messageService : MessageService// <-- Inyectado de tu código
-  ) { }
-    // 🔹 Conexión inicial
+    private readonly jwtService: JwtService,
+    private readonly messageService: MessageService,
+  ) {}
+
+  // ============================================================
+  // 🔹 Conexión inicial
+  // ============================================================
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
@@ -45,7 +54,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     console.log(`🔌 Cliente desconectado: ${client.id}`);
   }
 
-  // 🔹 Unirse a un canal
+  // ============================================================
+  // 👥 Unirse y salir de canales
+  // ============================================================
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
     @MessageBody() idChannel: number,
@@ -68,46 +79,47 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     console.log(`🚪 Usuario ${client.data.idUser} salió del canal ${idChannel}`);
   }
 
-  // ==============================
-  // 📩 MENSAJES
-  // ==============================
-
-  // Enviar mensaje
+  // ============================================================
+  // 💬 Enviar mensaje
+  // ============================================================
   @SubscribeMessage('sendMessage')
   async handleMessage(
     @MessageBody() payload: CreateChatDto,
     @ConnectedSocket() client: Socket,
   ) {
     const idUser = client.data.idUser;
-    //Crear el mensaje en la BD
     const message = await this.chatService.createMessage(idUser, payload.idChannel, payload.text);
-    //Enviar a todos los usuarios del canal
+
     const room = `Canal:${payload.idChannel}`;
     this.server.to(room).emit('newMessage', message);
   }
 
-  // ==============================
-  // ✏️ EDITAR MENSAJE
-  // ==============================
+  // ============================================================
+  // ✏️ Editar mensaje
+  // ============================================================
   @SubscribeMessage('editMessage')
   async handleEditMessage(
     @MessageBody() payload: UpdateChatDto,
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const message = await this.messageService.findOne(Number(payload.idMessage)); //Conversión a número
+      const message = await this.messageService.findOne(Number(payload.idMessage));
       if (!message) {
         client.emit('error', { message: 'Mensaje no encontrado' });
         return;
       }
-      //Solo el autor del mensaje puede editarlo
+
+      // Solo el autor puede editar su mensaje
       if (message.user.idUser !== client.data.idUser) {
         client.emit('error', { message: 'No puedes editar mensajes de otros usuarios' });
         return;
       }
-     //Actualizar mensaje con el servicio
-      const updated = await this.messageService.updateMessage(Number(payload.idMessage), payload.newText); //Conversión
-      //Emitir a todos los que estén en el canal
+
+      const updated = await this.messageService.updateMessage(
+        Number(payload.idMessage),
+        payload.newText,
+      );
+
       const room = `Canal:${message.channel.idChannel}`;
       this.server.to(room).emit('messageEdited', updated);
 
@@ -118,16 +130,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     }
   }
 
-  // ==============================
-  // 🗑️ ELIMINAR MENSAJE
-  // ==============================
+  // ============================================================
+  // 🗑️ Eliminar mensaje
+  // ============================================================
   @SubscribeMessage('deleteMessage')
   async handleDeleteMessage(
     @MessageBody() idMessage: string,
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const message = await this.messageService.findOne(Number(idMessage)); // ✅ Conversión a número
+      const message = await this.messageService.findOne(Number(idMessage));
       if (!message) {
         client.emit('error', { message: 'Mensaje no encontrado' });
         return;
@@ -138,7 +150,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
         return;
       }
 
-      await this.messageService.removeMessage(Number(idMessage)); // ✅ Conversión a número
+      await this.messageService.removeMessage(Number(idMessage));
       const room = `Canal:${message.channel.idChannel}`;
       this.server.to(room).emit('messageDeleted', Number(idMessage));
 
@@ -149,9 +161,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     }
   }
 
-  // ==============================
-  // ⚙️ CANALES
-  // ==============================
+  // ============================================================
+  // ⚙️ CANALES (crear / eliminar / listar)
+  // ============================================================
+
+  // Crear canal (por ejemplo, DM)
   @SubscribeMessage('createChannel')
   async handleCreateChannel(
     @MessageBody() payload: { userId: number; targetUsername: string },
@@ -164,6 +178,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     client.emit('channelCreated', channel);
   }
 
+  // Obtener canales del usuario
   @SubscribeMessage('getUserChannels')
   async handleGetUserChannels(
     @MessageBody() userId: number,
@@ -173,22 +188,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     client.emit('userChannels', channels);
   }
 
+  // ============================================================
+  // 🗑️ Eliminar canal (solo creador o admin)
+  // ============================================================
   @SubscribeMessage('deleteChannel')
   async handleDeleteChannel(
     @MessageBody() idChannel: number,
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const deleted = await this.channelsService.removeChannel(idChannel);
-      client.emit('channelDeleted', deleted);
+      // 🔹 Obtener el usuario que intenta eliminar el canal
+      const idUser = client.data.idUser;
 
+      // 🔹 Llamar al service con ambos IDs
+      const deleted = await this.channelsService.removeChannel(idChannel, idUser);
+
+      // 🔹 Emitir eventos al cliente y a la sala
+      client.emit('channelDeleted', deleted);
       const room = `Canal:${idChannel}`;
       this.server.to(room).emit('channelRemoved', { idChannel });
-      console.log(`🗑️ Canal privado eliminado (${idChannel})`);
+
+      console.log(`🗑️ Canal eliminado (${idChannel}) por usuario ${idUser}`);
       return deleted;
     } catch (err) {
       console.error('Error eliminando canal:', err.message);
-      client.emit('error', { message: 'No se pudo eliminar el canal' });
+      client.emit('error', { message: err.message || 'No se pudo eliminar el canal' });
     }
   }
 }

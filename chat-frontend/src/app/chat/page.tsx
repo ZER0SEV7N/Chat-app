@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 import ChatList from './chatList';
 import ChatWindow from './chatWindow';
-import CreateChannelModal from './CreateChannelModal';
-import AddUserModal from './AddUserModal';
+import CreateChannelModal from './Modal/CreateChannelModal';
+import AddUserModal from './Modal/AddUserModal';
 import { API_URL } from "@/lib/config";
 
 export default function ChatPage() {

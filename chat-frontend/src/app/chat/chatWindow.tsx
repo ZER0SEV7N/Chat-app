@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
 import { Search, Trash2, Edit3, Check, X } from "lucide-react"; // 👈 Agregamos iconos extra
+import EditChannelModal from "./Modal/EditChannelModal";
+import { API_URL } from "@/lib/config"; 
 
 interface Props {
   socket: any;
@@ -16,10 +18,15 @@ export default function ChatWindow({ socket, channel }: Props) {
   const [searchTerm, setSearchTerm] = useState(""); // texto de búsqueda
   const [editingId, setEditingId] = useState<string | null>(null); // ID de mensaje en edición
   const [editText, setEditText] = useState(""); // texto editado
+  const [showEditModal, setShowEditModal] = useState(false); 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
+  const [username, setUsername] = useState("");  
   // 🔹 Configurar notificaciones y audio
   useEffect(() => {
+    if (typeof window !== "undefined") {
+    const storedUsername = localStorage.getItem("username") || "";
+    setUsername(storedUsername);
+    }
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -170,6 +177,17 @@ export default function ChatWindow({ socket, channel }: Props) {
     <div className="chat-container">
       {/* 🔹 Encabezado */}
       <div className="chat-header">
+        {/* ⚙️ Botón de edición de canal (solo para creador y canales públicos) */}
+        {channel.isPublic && channel.creator?.username === username && (
+          <button
+            type="button"
+            className="edit-channel-btn"
+            title="Editar cQanal"
+            onClick={() => setShowEditModal(true)}
+          >
+            <Edit3 size={18} />
+          </button>
+        )}
         <div className="chat-header-info">
           <h2>#{channel.name}</h2>
           <p className="chat-description">
@@ -178,13 +196,8 @@ export default function ChatWindow({ socket, channel }: Props) {
         </div>
 
         {/* 🔍 Botón de búsqueda */}
-        <button
-          type="button"
-          className="search-btn"
-          aria-label="Buscar en el chat"
-          title="Buscar"
-          onClick={() => setShowSearch(!showSearch)}
-        >
+        <button type="button" className="search-btn"
+          aria-label="Buscar en el chat" title="Buscar" onClick={() => setShowSearch(!showSearch)} >
           <Search size={20} aria-hidden="true" />
         </button>
       </div>
@@ -192,12 +205,7 @@ export default function ChatWindow({ socket, channel }: Props) {
       {/* Barra de búsqueda */}
       {showSearch && (
         <div className="chat-search-bar">
-          <input
-            type="text"
-            placeholder="Buscar en el chat..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <input type="text" placeholder="Buscar en el chat..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       )}
 
@@ -205,9 +213,7 @@ export default function ChatWindow({ socket, channel }: Props) {
       <div className="chat-messages">
         {filteredMessages.map((msg, i) => {
           const isOwn = msg.user?.username === localStorage.getItem("username");
-          const highlight =
-            searchTerm &&
-            msg.text.toLowerCase().includes(searchTerm.toLowerCase());
+          const highlight = searchTerm && msg.text.toLowerCase().includes(searchTerm.toLowerCase());
 
           return (
             <div
@@ -226,38 +232,22 @@ export default function ChatWindow({ socket, channel }: Props) {
                   <div className="message-actions">
                     {editingId === msg.idMessage ? (
                       <>
-                        <button
-                          className="confirm-btn"
-                          title="Guardar"
-                          onClick={() => saveEdit(msg.idMessage)}
-                        >
+                        <button className="confirm-btn" title="Guardar" onClick={() => saveEdit(msg.idMessage)} >
                           <Check size={14} />
                         </button>
-                        <button
-                          className="cancel-btn"
-                          title="Cancelar"
-                          onClick={cancelEdit}
-                        >
+                        <button className="cancel-btn" title="Cancelar" onClick={cancelEdit}>
                           <X size={14} />
                         </button>
                       </>
                     ) : (
                       <>
-                        <button
-                          className="edit-btn"
-                          title="Editar"
-                          onClick={() => {
-                            setEditingId(msg.idMessage);
-                            setEditText(msg.text);
-                          }}
-                        >
+                        <button className="edit-btn" title="Editar"
+                          onClick={() => { setEditingId(msg.idMessage);
+                                            setEditText(msg.text);
+                          }}>
                           <Edit3 size={14} />
                         </button>
-                        <button
-                          className="delete-btn"
-                          title="Eliminar"
-                          onClick={() => deleteMessage(msg.idMessage)}
-                        >
+                        <button className="delete-btn" title="Eliminar" onClick={() => deleteMessage(msg.idMessage)} >
                           <Trash2 size={14} />
                         </button>
                       </>
@@ -267,14 +257,8 @@ export default function ChatWindow({ socket, channel }: Props) {
               </div>
 
               {editingId === msg.idMessage ? (
-                <input
-                  type="text"
-                  className="edit-input"
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && saveEdit(msg.idMessage)}
-                  autoFocus
-                />
+                <input type="text" className="edit-input" value={editText}
+                  onChange={(e) => setEditText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveEdit(msg.idMessage)} autoFocus />
               ) : (
                 <span>{msg.text}</span>
               )}
@@ -289,9 +273,7 @@ export default function ChatWindow({ socket, channel }: Props) {
 
       {/* Input */}
       <div className="chat-input-container">
-        <button
-          className="emoji-btn"
-          onClick={() => setShowPicker(!showPicker)}
+        <button className="emoji-btn" onClick={() => setShowPicker(!showPicker)}
         >
           😀
         </button>
@@ -302,17 +284,22 @@ export default function ChatWindow({ socket, channel }: Props) {
           </div>
         )}
 
-        <input
-          type="text"
-          placeholder="Escribe un mensaje..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-        />
+        <input type="text" placeholder="Escribe un mensaje..." value={input} 
+          onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
         <button className="send-btn" onClick={sendMessage}>
           Enviar
         </button>
       </div>
+      {/*Modal de edicion */}
+      {showEditModal && (
+        <EditChannelModal channel={channel} username={username} onClose={() => setShowEditModal(false)}
+        onChannelUpdate={(updated) =>{
+          //Actualiza el nombre/desc del canal sin recargar
+          Object.assign(channel, updated);
+          setShowEditModal(false);
+        }}
+        />
+      )}
     </div>
   );
 }
