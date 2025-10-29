@@ -1,3 +1,4 @@
+//Importar los directorios
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -15,19 +16,13 @@ import { JwtService } from '@nestjs/jwt';
 import { MessageService } from '../messages/message.service';
 import { ChannelsService } from '../channels/channels.service';
 
-@WebSocketGateway({ cors: { origin: '*' } })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+@WebSocketGateway({ cors: { origin: '*' } }) //habilitamos CORS
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { //Establecer la interfaz de conexion
   @WebSocketServer()
   server: Server;
-
+  //Constructor
   constructor(
-    private readonly chatService: ChatService,
-    private readonly jwtService: JwtService,
-    private readonly messageService: MessageService,
-    private readonly channelsService: ChannelsService,
-  ) { }
-
-  // 🔹 Conexión inicial
+      // 🔹 Conexión inicial
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
@@ -75,11 +70,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Enviar mensaje
   @SubscribeMessage('sendMessage')
   async handleMessage(
-    @MessageBody() payload: { idChannel: number; text: string },
+    @MessageBody() payload: CreateChatDto,
     @ConnectedSocket() client: Socket,
   ) {
     const idUser = client.data.idUser;
+    //Crear el mensaje en la BD
     const message = await this.chatService.createMessage(idUser, payload.idChannel, payload.text);
+    //Enviar a todos los usuarios del canal
     const room = `Canal:${payload.idChannel}`;
     this.server.to(room).emit('newMessage', message);
   }

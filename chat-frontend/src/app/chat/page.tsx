@@ -9,12 +9,12 @@ import AddUserModal from './AddUserModal';
 export default function ChatPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [channels, setChannels] = useState<any[]>([]);
-  const [selectedChannel, setSelectedChannel] = useState<any | null>(null);
+  const [selectedChannel, setSelectedChannel] = useState<any | null>(null); 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [username, setUsername] = useState('Usuario');
 
-  // 🔔 Pedir permiso para mostrar notificaciones
+  //Pedir permiso para mostrar notificaciones
   useEffect(() => {
     if (typeof window !== 'undefined' && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -25,23 +25,24 @@ export default function ChatPage() {
 
   // 🔌 Conexión con el servidor
   useEffect(() => {
+    //Obtener el token JWT del localStorage
     const token = localStorage.getItem("token");
+    //Si no exite, se retorna al comienzo
     if (!token) {
       window.location.href = '/';
       return;
     }
-
+    //Obtener el username del localStorage y establecerlo como name de usuario
     const user = localStorage.getItem("username");
     if (user) setUsername(user);
-
+    //Establecer conexion con el socket
     const newSocket = io("http://localhost:3000", {
       auth: { token },
     });
-
+    //Si se obtuvo el token y el socket
     newSocket.on("connect", () => {
       console.log("✅ Conectado al servidor de chat");
     });
-
     newSocket.on("unauthorized", () => {
       alert("Sesión expirada. Redirigiendo al login.");
       handleLogout();
@@ -69,6 +70,16 @@ export default function ChatPage() {
         audio.play().catch((err) => console.warn("Error reproduciendo sonido:", err));
       }
     });
+    //Escucgar cuando el backend elmine un canal (DM)
+    newSocket.on("channelRemoved", ({ idChannel  }) => {
+      console.log("Canal Eliminado", idChannel );
+      setChannels((prev) => prev.filter((ch) => ch.idChannel !== idChannel ));
+      //Si el canal eliminado estaba seleccionado, se limpia
+      setSelectedChannel((prev: { idchannel: any; }) =>
+        prev && prev.idchannel === idChannel  ? null : prev
+      );
+    });
+
 
     setSocket(newSocket);
 
