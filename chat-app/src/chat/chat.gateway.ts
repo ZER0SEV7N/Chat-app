@@ -15,26 +15,41 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { MessageService } from '../messages/message.service';
 import { ChannelsService } from '../channels/channels.service';
-//
-@WebSocketGateway({ cors: { origin: '*' } }) //habilitamos CORS
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { //Establecer la interfaz de conexion
+
+@WebSocketGateway({ cors: { origin: '*' } }) // habilitamos CORS
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
+
+  // 🧠 Mapa para guardar usuarios conectados (userId -> socketId)
+  private onlineUsers = new Map<number, string>();
+
   //Constructor
   constructor(
     private readonly chatService: ChatService,
     private readonly channelsService: ChannelsService,
-    private readonly jwtService: JwtService, // <-- Inyectado del compañero
-    private readonly messageService : MessageService// <-- Inyectado de tu código
-  ) { }
-    // 🔹 Conexión inicial
+    private readonly jwtService: JwtService,
+    private readonly messageService: MessageService,
+  ) {}
+
+  // ==============================
+  // 🔹 CONEXIÓN / DESCONEXIÓN
+  // ==============================
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
       if (!token) throw new Error('No se ha enviado el token');
+
       const payload = this.jwtService.verify(token);
       client.data.idUser = payload.sub;
-      console.log(`✅ Cliente conectado: ${client.id}, Usuario ID: ${client.data.idUser}`);
+
+      // 🟢 Guardamos al usuario como conectado
+      this.onlineUsers.set(payload.sub, client.id);
+
+      console.log(`✅ Cliente conectado: Usuario ID ${client.data.idUser}`);
+
+      // 🔄 Notificar a todos que este usuario está en línea
+      this.server.emit('userStatus', { userId: payload.sub, status: 'online' });
     } catch (error) {
       console.log(`❌ Error de autenticación: ${error.message}`);
       client.disconnect();
@@ -42,46 +57,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`🔌 Cliente desconectado: ${client.id}`);
+    const userId = client.data.idUser;
+    if (userId) {
+      // 🔴 Eliminamos del mapa
+      this.onlineUsers.delete(userId);
+      console.log(`🔌 Cliente desconectado: Usuario ID ${userId}`);
+
+      // 🔄 Notificar a todos que el usuario está offline
+      this.server.emit('userStatus', { userId, status: 'offline' });
+    }
   }
 
-  // 🔹 Unirse a un canal
-  @SubscribeMessage('joinRoom')
-  async handleJoinRoom(
-    @MessageBody() idChannel: number,
-    @ConnectedSocket() client: Socket,
-  ) {
-    const room = `Canal:${idChannel}`;
-    client.join(room);
-    console.log(`👥 Usuario ${client.data.idUser} se unió a ${room}`);
-
-    const history = await this.chatService.getMessages(idChannel);
-    client.emit('history', history);
-  }
-
-  @SubscribeMessage('leaveRoom')
-  async handleLeaveRoom(
-    @MessageBody() idChannel: number,
-    @ConnectedSocket() client: Socket,
-  ) {
-    client.leave(`Canal:${idChannel}`);
-    console.log(`🚪 Usuario ${client.data.idUser} salió del canal ${idChannel}`);
+  // ==============================
+  // 📡 ESTADO DE USUARIOS
+  // ==============================
+  @SubscribeMessage('getOnlineUsers')
+  handleGetOnlineUsers(@ConnectedSocket() client: Socket) {
+    const users = Array.from(this.onlineUsers.keys());
+    client.emit('onlineUsers', users);
   }
 
   // ==============================
   // 📩 MENSAJES
   // ==============================
 
-  // Enviar mensaje
   @SubscribeMessage('sendMessage')
   async handleMessage(
     @MessageBody() payload: CreateChatDto,
     @ConnectedSocket() client: Socket,
   ) {
     const idUser = client.data.idUser;
-    //Crear el mensaje en la BD
-    const message = await this.chatService.createMessage(idUser, payload.idChannel, payload.text);
-    //Enviar a todos los usuarios del canal
+    const message = await this.chatService.createMessage(
+      idUser,
+      payload.idChannel,
+      payload.text,
+    );
     const room = `Canal:${payload.idChannel}`;
     this.server.to(room).emit('newMessage', message);
   }
@@ -95,22 +105,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const message = await this.messageService.findOne(Number(payload.idMessage)); //Conversión a número
+      const message = await this.messageService.findOne(Number(payload.idMessage));
       if (!message) {
         client.emit('error', { message: 'Mensaje no encontrado' });
         return;
       }
-      //Solo el autor del mensaje puede editarlo
       if (message.user.idUser !== client.data.idUser) {
         client.emit('error', { message: 'No puedes editar mensajes de otros usuarios' });
         return;
       }
-     //Actualizar mensaje con el servicio
-      const updated = await this.messageService.updateMessage(Number(payload.idMessage), payload.newText); //Conversión
-      //Emitir a todos los que estén en el canal
+
+      const updated = await this.messageService.updateMessage(
+        Number(payload.idMessage),
+        payload.newText,
+      );
       const room = `Canal:${message.channel.idChannel}`;
       this.server.to(room).emit('messageEdited', updated);
-
       console.log(`✏️ Mensaje editado (ID: ${payload.idMessage})`);
     } catch (err) {
       console.error('Error editando mensaje:', err.message);
@@ -127,18 +137,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect { /
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const message = await this.messageService.findOne(Number(idMessage)); // ✅ Conversión a número
+      const message = await this.messageService.findOne(Number(idMessage));
       if (!message) {
         client.emit('error', { message: 'Mensaje no encontrado' });
         return;
       }
-
       if (message.user.idUser !== client.data.idUser) {
         client.emit('error', { message: 'No puedes eliminar mensajes de otros usuarios' });
         return;
       }
 
-      await this.messageService.removeMessage(Number(idMessage)); // ✅ Conversión a número
+      await this.messageService.removeMessage(Number(idMessage));
       const room = `Canal:${message.channel.idChannel}`;
       this.server.to(room).emit('messageDeleted', Number(idMessage));
 
