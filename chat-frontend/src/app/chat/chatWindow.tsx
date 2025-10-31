@@ -177,7 +177,7 @@ export default function ChatWindow({ socket, channel }: Props) {
   if (!channel)
     return (
       <div className="chat-empty">
-        <p>Selecciona un canal para comenzar a chatear 💬</p>
+        <p className="chat-empty-message">Selecciona un Grupo para comenzar a chatear 💬</p>
       </div>
     );
 
@@ -251,9 +251,7 @@ export default function ChatWindow({ socket, channel }: Props) {
               <div className="chat-message-header">
                 <span className="chat-username-messages">
                   {msg.user?.username || "Anon"}:
-                </span>
-
-                {/* ✏️ Solo mis mensajes pueden editarse o eliminarse */}
+                  {/* ✏️ Solo mis mensajes pueden editarse o eliminarse */}
                 {isOwn && (
                   <div className="message-actions">
                     {editingId === msg.idMessage ? (
@@ -296,8 +294,8 @@ export default function ChatWindow({ socket, channel }: Props) {
                     )}
                   </div>
                 )}
+                </span>
               </div>
-
               {editingId === msg.idMessage ? (
                 <input
                   type="text"
@@ -351,7 +349,7 @@ export default function ChatWindow({ socket, channel }: Props) {
           idUser={currentUserId}
           onClose={() => setShowEditModal(false)}
           onChannelUpdate={(updated) => {
-            // ✅ Actualiza nombre/desc del canal sin recargar
+            //Actualiza nombre/desc del canal sin recargar
             Object.assign(channel, updated);
             setShowEditModal(false);
           }}

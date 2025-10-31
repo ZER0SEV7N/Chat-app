@@ -12,6 +12,7 @@ interface Props {
   onDeleteChannel: (idChannel: number) => void; //Funcion para eliminar un canal
   username: string; //Nombre de usuario del usuario actual
 }
+
 //Definir y exportar el componente ChatList
 export default function ChatList({
   channels,
@@ -21,18 +22,26 @@ export default function ChatList({
   onLogout,
   onDeleteChannel,
   username,
-  //Desestructurar las props recibidas
 }: Props) {
+  // Separar canales en grupos y MDs
+  const groups = channels.filter(ch => ch?.isPublic);
+  const directMessages = channels.filter(ch => ch && !ch.isPublic);
+
+  // Formatear nombre para MDs
+  const formatDMName = (channelName: string) => {
+    if (typeof channelName === "string" && channelName.startsWith("DM ")) {
+      const parts = channelName.replace("DM ", "").split("-");
+      const currentUser = username;
+      const otherUser = parts[0] === currentUser ? parts[1] : parts[0];
+      return otherUser;
+    }
+    return channelName;
+  };
+
   // Confirmación de borrado con ventana nativa
   const handleDeleteClick = (ch: any) => {
     if (!ch.isPublic) {
-      let displayName = ch.name || "";
-      if (typeof ch.name === "string" && ch.name.startsWith("DM ")) {
-        const parts = ch.name.replace("DM ", "").split("-");
-        const currentUser = username;
-        const otherUser = parts[0] === currentUser ? parts[1] : parts[0];
-        displayName = otherUser;
-      }
+      const displayName = formatDMName(ch.name);
       const confirmDelete = confirm(
         `¿Seguro que deseas eliminar este DM con ${displayName}?`
       );
@@ -51,67 +60,83 @@ export default function ChatList({
         </button>
       </div>
 
-      {/* Canales en donde esta el usuario */}
-      <h2 className="chat-section-title">Canales</h2>
-      <ul className="channel-list">
-        {channels.map((ch, index) => {
-          if (!ch) return null; // Previene errores si el canal viene vacío
-          let displayName = ch.name || "Canal sin nombre";
+      {/* Sección de Grupos */}
+      <div className="channels-section">
+        <h2 className="section-title">🌐 Grupos</h2>
+        {groups.length > 0 ? (
+          <ul className="channel-list">
+            {groups.map((ch, index) => (
+              <li
+                key={ch.idChannel || `group-${index}`}
+                className="channel-item group-item"
+                onClick={() => onSelectChannel(ch)}
+              >
+                <div className="channel-info">
+                  <strong className="channel-name">{ch.name || "Grupo sin nombre"}</strong>
+                  <small className="channel-type"> Público</small>
+                </div>
+                {ch.description && (
+                  <p className="channel-description">{ch.description}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="empty-state">No tienes grupos</p>
+        )}
+      </div>
 
-          // Si es un canal privado, mostrar el nombre del otro usuario
-          if (!ch.isPublic && typeof ch.name === "string" && ch.name.startsWith("DM ")) {
-            const currentUser = username;
-            const parts = ch.name.replace("DM ", "").split("-");
-            // Si el usuario actual es el primero, mostrar el segundo, y viceversa
-            const otherUser = parts[0] === currentUser ? parts[1] : parts[0];
-            displayName = `DM ${otherUser}`;
-          }
-
-          return (
-            //Mostrar cada canal en la lista
-            <li
-              key={ch.idChannel || `channel-${index}`} //Evita warning de keys duplicadas
-              className="channel-item"
-              onClick={() => onSelectChannel(ch)}
-            >
-              <div className="channel-info">
-                <strong>{displayName}</strong>
-                <small className="channel-type">
-                  {ch.isPublic ? "🌐 Público" : "💬 Privado"}{" "}
-                  {/* Colocar un emoji al final para diferenciar entre publicos y privados */}
-                </small>
-              </div>
-
-              {/*Boton para eliminar DM*/}
-              {!ch.isPublic && (
-                <button
-                  className="delete-btn"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Evita que se seleccione el canal al eliminarlo
-                    handleDeleteClick(ch);
-                  }}
-                  title="Eliminar canal"
+      {/* Sección de Mensajes Directos */}
+      <div className="channels-section">
+        <h2 className="section-title">💬 Mensajes Directos</h2>
+        {directMessages.length > 0 ? (
+          <ul className="channel-list">
+            {directMessages.map((ch, index) => {
+              const displayName = formatDMName(ch.name);
+              
+              return (
+                <li
+                  key={ch.idChannel || `dm-${index}`}
+                  className="channel-item dm-item"
+                  onClick={() => onSelectChannel(ch)}
                 >
-                  🗑️
-                </button>
-              )}
+                  <div className="channel-info">
+                    <strong className="channel-name">{displayName}</strong>
+                    <small className="channel-type"> Privado</small>
+                    {/* Botón para eliminar DM */}
+                  <button
+                    className="delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(ch);
+                    }}
+                    title={`Eliminar conversación con ${displayName}`}
+                  >
+                    🗑️
+                  </button>
+                  </div>
+                  
+                  
 
-              {/* Mostrar la descripción si existe */}
-              {ch.description && (
-                <p className="channel-description">{ch.description}</p>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                  {ch.description && (
+                    <p className="channel-description">{ch.description}</p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="empty-state"> No tienes mensajes directos</p>
+        )}
+      </div>
 
       {/* Botones de acción lateral */}
       <div className="chat-list-buttons">
         <button className="sidebar-button" onClick={onCreateChannel}>
-          ➕ Nuevo Canal
+          ➕ Nuevo Grupo
         </button>
         <button className="sidebar-button" onClick={onAddUser}>
-          👥 Agregar un nuevo usuario
+          👥 Iniciar un DM
         </button>
       </div>
     </div>

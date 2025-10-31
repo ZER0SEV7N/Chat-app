@@ -71,9 +71,9 @@ export default function ChatPage() {
         audio.play().catch((err) => console.warn("Error reproduciendo sonido:", err));
       }
     });
-    //Escucgar cuando el backend elmine un canal (DM)
+    //Escuchar cuando el backend elmine un canal (DM)
     newSocket.on("channelRemoved", ({ idChannel  }) => {
-      console.log("Canal Eliminado", idChannel );
+      console.log("Grupo Eliminado", idChannel );
       setChannels((prev) => prev.filter((ch) => ch.idChannel !== idChannel ));
       //Si el canal eliminado estaba seleccionado, se limpia
       setSelectedChannel((prev: { idchannel: any; }) =>
@@ -114,7 +114,7 @@ export default function ChatPage() {
         const allChannels = [...publicChannels, ...userChannels];
         setChannels(allChannels);
       } catch (err) {
-        console.error('Error al obtener canales:', err);
+        console.error('Error al obtener los grupos:', err);
       }  
     }; 
   fetchChannels();
@@ -161,7 +161,7 @@ export default function ChatPage() {
       setChannels((prev) => prev.filter((ch) => ch.idChannel !== idChannel));
     } else {
       const data = await res.json();
-      alert(`Error: ${data.message || "No se pudo eliminar el canal"}`);
+      alert(`Error: ${data.message || "No se pudo eliminar el Grupo"}`);
     }
   } catch (err) {
     console.error("Error al eliminar el canal:", err);
