@@ -1,13 +1,18 @@
-import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
+//chat-app/src/chat/chat.controller.ts
+// Controlador encargado de manejar las rutas relacionadas al chat y canales
+// ============================================================
+
+//Importaciones necesarias
+import { Controller, Post, Body, Req, Delete, Param } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
-
+//Controlador para manejar las rutas del chat
 @Controller('chat')
 export class ChatController {
   constructor(
-    private readonly chatService: ChatService,
-    private readonly jwtService: JwtService,
+    private readonly chatService: ChatService, //Inyectar el servicio de chat
+    private readonly jwtService: JwtService, //Inyectar el servicio JWT
   ) {}
 
   //Crear o recuperar canal privado (por username)
@@ -21,11 +26,13 @@ export class ChatController {
     if (!authHeader) {
       throw new Error('Falta el token de autorización');
     }
-
+    //Extraer el token del encabezado
     const token = authHeader.split(' ')[1];
     const payload = this.jwtService.verify(token);
-
+    //Obtener el idUser del payload del token
     const userId = payload.sub; // el id del usuario autenticado
     return this.chatService.getOrCreatePrivateChannel(userId, body.targetUsername);
   }
+
+  
 }

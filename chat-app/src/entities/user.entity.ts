@@ -32,6 +32,10 @@ export class User {
     messages: Message[];
 
     @ManyToMany(() => Channel, (channel) => channel.members)
-    @JoinTable()
     channels: Channel[];
+        
+    //Canales creados por el usuario
+    @OneToMany(() => Channel, (channel) => channel.creator)
+    createdChannels: Channel[];
+
 }
