@@ -71,40 +71,91 @@ export default function CreateChannelModal({
     }
   };
 
+  // Manejar teclas del teclado
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      onClose();
+    }
+  };
+
   /*===============================================================
   Renderizado del modal
   ===============================================================*/
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Nuevo Canal</h2>
+    <div className="modal-overlay" onClick={onClose}>
+      <div 
+        className="modal-content" 
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Header del modal */}
+        <div className="modal-header">
+          <h2>Crear Nuevo Canal</h2>
+          <button 
+            className="modal-close" 
+            onClick={onClose}
+            aria-label="Cerrar modal"
+          >
+            ×
+          </button>
+        </div>
 
         {/* Formulario para crear canal */}
-        <form onSubmit={handleCreate}>
-          {/* Campo para el nombre del canal */}
-          <input
-            type="text"
-            placeholder="Nombre del canal"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+        <form onSubmit={handleCreate} className="modal-form">
+          <div className="form-group">
+            <label htmlFor="channel-name" className="form-label">
+              Nombre del canal
+            </label>
+            <input
+              id="channel-name"
+              type="text"
+              placeholder="Ej: Proyecto Alpha, Amigos, etc."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={isCreating}
+              required
+              autoFocus
+            />
+          </div>
 
-          {/* Campo para la descripción (opcional) */}
-          <textarea
-            placeholder="Descripción (opcional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <div className="form-group">
+            <label htmlFor="channel-description" className="form-label">
+              Descripción <span className="optional">(opcional)</span>
+            </label>
+            <textarea
+              id="channel-description"
+              placeholder="Describe el propósito de este canal..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={isCreating}
+              rows={3}
+            />
+          </div>
 
           {/* Botones del modal */}
-          <div className="modal-buttons">
-            <button type="submit" className="btn-primary" disabled={isCreating}>
-              {isCreating ? "Creando..." : "Crear"}
-            </button>
-
-            <button type="button" className="btn-secondary" onClick={onClose}>
+          <div className="modal-footer">
+            <button 
+              type="button" 
+              className="btn-secondary" 
+              onClick={onClose}
+              disabled={isCreating}
+            >
               Cancelar
+            </button>
+            
+            <button 
+              type="submit" 
+              className="btn-primary" 
+              disabled={isCreating || !name.trim()}
+            >
+              {isCreating ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Creando...
+                </>
+              ) : (
+                'Crear Canal'
+              )}
             </button>
           </div>
         </form>
