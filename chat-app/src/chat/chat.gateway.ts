@@ -1,7 +1,7 @@
-// src/chat/chat.gateway.ts
-// ============================================================
-// Importar los directorios
-// ============================================================
+//src/chat/chat.gateway.ts
+//============================================================
+//Importar los directorios
+//============================================================
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -19,14 +19,14 @@ import { JwtService } from '@nestjs/jwt';
 import { MessageService } from '../messages/message.service';
 import { ChannelsService } from '../channels/channels.service';
 
-// ============================================================
-// Gateway del chat
-// ============================================================
+//============================================================
+//Gateway del chat
+//============================================================
 @WebSocketGateway({ cors: { origin: '*' } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
-
+  //Constructor con inyección de dependencias
   constructor(
     private readonly chatService: ChatService,
     private readonly channelsService: ChannelsService,
@@ -34,9 +34,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly messageService: MessageService,
   ) {}
 
-  // ============================================================
-  // 🔹 Conexión inicial
-  // ============================================================
+  //============================================================
+  //Conexión inicial
+  //============================================================
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
@@ -153,7 +153,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.messageService.removeMessage(Number(idMessage));
       const room = `Canal:${message.channel.idChannel}`;
       this.server.to(room).emit('messageDeleted', Number(idMessage));
-
+      // Notificar a todos los clientes que el canal fue eliminado
+      this.server.to(room).emit('messageDeleted', {
+        idMessage: Number(idMessage),
+        deletedBy: client.data.idUser
+      });
       console.log(`🗑️ Mensaje eliminado (ID: ${idMessage})`);
     } catch (err) {
       console.error('Error eliminando mensaje:', err.message);
@@ -164,21 +168,76 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // ============================================================
   // ⚙️ CANALES (crear / eliminar / listar)
   // ============================================================
-
-  // Crear canal (por ejemplo, DM)
   @SubscribeMessage('createChannel')
   async handleCreateChannel(
     @MessageBody() payload: { userId: number; targetUsername: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const channel = await this.chatService.getOrCreatePrivateChannel(
-      payload.userId,
-      payload.targetUsername,
-    );
-    client.emit('channelCreated', channel);
-  }
+    try {
+      const channel = await this.chatService.getOrCreatePrivateChannel(
+        payload.userId,
+        payload.targetUsername,
+      );
 
-  // Obtener canales del usuario
+      // ✅ EMITIR A AMBOS USUARIOS DEL DM
+      // Obtener los IDs de los miembros del canal
+      const channelWithMembers = await this.channelsService.getChannelById(channel.channel.idChannel);
+      
+      // Emitir al usuario que creó el DM
+      client.emit('channelCreated', channel);
+      
+      // Emitir al otro usuario del DM (si está conectado)
+      const otherMember = channelWithMembers.members.find(member => member.idUser !== payload.userId);
+      if (otherMember) {
+        // Buscar el socket del otro usuario y emitirle el nuevo canal
+        this.server.emit('newChannelAvailable', {
+          channel: channel.channel,
+          forUserId: otherMember.idUser
+        });
+      }
+
+      console.log(`💬 Nuevo DM creado entre ${payload.userId} y ${otherMember?.idUser}`);
+      return channel;
+    } catch (error) {
+      console.error('Error creando canal:', error.message);
+      client.emit('error', { message: error.message || 'Error al crear el chat' });
+    }
+  }
+  //Metodo para crear canales privados (DM)º
+  @SubscribeMessage('createPrivateChannel')
+  async handleCreatePrivateChannel(
+    @MessageBody() payload: { targetUsername: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    //Crear o recuperar el canal privado
+    try{
+      const idUser = client.data.idUser;
+      const channel = await this.chatService.getOrCreatePrivateChannel(
+        idUser,
+        payload.targetUsername,
+      );
+
+      //NOTIFICAR A AMBOS USUARIOS
+      const channelWithMembers = await this.channelsService.getChannelById(channel.channel.idChannel);
+      
+      //Para el usuario que creó el DM
+      client.emit('channelCreated', channel);
+      
+      //Para el otro usuario
+      const otherMember = channelWithMembers.members.find(member => member.idUser !== idUser);
+      if (otherMember) {
+        this.server.emit('channelCreated', {
+          channel: channel.channel,
+          displayName: `DM ${client.data.idUser}` // El otro usuario verá el nombre del creador
+        });
+      }
+      return channel;
+    } catch (error) {
+      console.error('Error creando canal privado:', error.message);
+      client.emit('error', { message: error.message || 'Error al crear el chat privado' });
+    }
+  }
+  //Obtener canales del usuario
   @SubscribeMessage('getUserChannels')
   async handleGetUserChannels(
     @MessageBody() userId: number,
@@ -188,31 +247,58 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('userChannels', channels);
   }
 
-  // ============================================================
-  // 🗑️ Eliminar canal (solo creador o admin)
-  // ============================================================
+  //============================================================
+  //Eliminar Grupo (Canal solo para creadores o admins / MD por cualquiera de los dos)
+  //============================================================
   @SubscribeMessage('deleteChannel')
   async handleDeleteChannel(
     @MessageBody() idChannel: number,
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      // 🔹 Obtener el usuario que intenta eliminar el canal
+      //Obtener el usuario que intenta eliminar el canal
       const idUser = client.data.idUser;
 
-      // 🔹 Llamar al service con ambos IDs
+      //Llamar al service con ambos IDs
       const deleted = await this.channelsService.removeChannel(idChannel, idUser);
 
-      // 🔹 Emitir eventos al cliente y a la sala
-      client.emit('channelDeleted', deleted);
-      const room = `Canal:${idChannel}`;
-      this.server.to(room).emit('channelRemoved', { idChannel });
+      //Emitir eventos a TODOS los clientes conectados (no solo a la sala)
+      //Esto asegura que todos los usuarios que tengan el canal en su lista lo actualicen
+      this.server.emit('channelRemoved', { 
+        idChannel,
+        deletedBy: idUser,
+        message: deleted.message 
+      });
 
-      console.log(`🗑️ Canal eliminado (${idChannel}) por usuario ${idUser}`);
+      //También emitir a la sala específica para limpiar el chat activo
+      const room = `Grupo:${idChannel}`;
+      this.server.to(room).emit('channelRemoved', { 
+        idChannel,
+        deletedBy: idUser,
+        message: deleted.message 
+      });
+
+      console.log(` 🗑️ Grupo eliminado (${idChannel}) por usuario ${idUser}`);
       return deleted;
     } catch (err) {
-      console.error('Error eliminando canal:', err.message);
-      client.emit('error', { message: err.message || 'No se pudo eliminar el canal' });
+      console.error('Error eliminando grupo:', err.message);
+      client.emit('error', { message: err.message || 'No se pudo eliminar el grupo' });
+    }
+  }
+  //============================================================
+  //Sincronizar lista de canales (opcional - para forzar actualización)
+  //============================================================
+  @SubscribeMessage('refreshChannels')
+  async handleRefreshChannels(
+    @MessageBody() userId: number,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const channels = await this.chatService.getUserChannels(userId);
+      client.emit('channelsRefreshed', channels);
+    } catch (err) {
+      console.error('Error refrescando canales:', err.message);
+      client.emit('error', { message: 'Error al actualizar la lista de canales' });
     }
   }
 }

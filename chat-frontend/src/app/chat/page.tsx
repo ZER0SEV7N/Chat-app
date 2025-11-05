@@ -1,3 +1,6 @@
+//chat-frontend/src/app/chat/page.tsx
+//Página principal del chat
+//Para manejar la lógica del chat y la conexión con el servidor via sockets
 'use client';
 import { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
@@ -7,13 +10,69 @@ import CreateChannelModal from './Modal/CreateChannelModal';
 import AddUserModal from './Modal/AddUserModal';
 import { API_URL } from "@/lib/config";
 
+//Componente principal del chat
 export default function ChatPage() {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [channels, setChannels] = useState<any[]>([]);
-  const [selectedChannel, setSelectedChannel] = useState<any | null>(null); 
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [username, setUsername] = useState('Usuario');
+  const [socket, setSocket] = useState<Socket | null>(null); //Estado para el socket
+  const [channels, setChannels] = useState<any[]>([]); //Lista de canales
+  const [selectedChannel, setSelectedChannel] = useState<any | null>(null); //Canal seleccionado 
+  const [showCreateModal, setShowCreateModal] = useState(false); //Estado para mostrar modal de creación
+  const [showAddUserModal, setShowAddUserModal] = useState(false); //Estado para mostrar modal de agregar usuario
+  const [username, setUsername] = useState('Usuario'); //Nombre de usuario actual
+
+  // 🔒 FUNCIÓN MEJORADA: Cargar y filtrar canales por usuario actual
+  const fetchChannels = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+      const currentUser = localStorage.getItem('username');
+      console.log('👤 Usuario actual:', currentUser);
+
+      const resUser = await fetch(`${API_URL}/users/channels`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      // Obtener canales del usuario
+      const userChannels = resUser.ok ? await resUser.json() : [];
+      console.log('📦 Canales sin filtrar del backend:', userChannels);
+
+      // 🔒 FILTRAR CANALES: Solo mostrar DMs que pertenecen al usuario actual
+      const filteredUserChannels = userChannels.filter((channel: any) => {
+        // Los canales públicos siempre se muestran
+        if (channel.isPublic) return true;
+        
+        // Para DMs privados, verificar que el usuario actual sea participante
+        if (channel.name && channel.name.startsWith('DM ')) {
+          const cleanName = channel.name.replace('DM ', '');
+          const usernames = cleanName.split('-');
+          const userIsParticipant = usernames.includes(currentUser || '');
+          
+          console.log(`🔍 Verificando DM ${channel.name}:`, {
+            usernames,
+            currentUser,
+            userIsParticipant
+          });
+          
+          return userIsParticipant;
+        }
+        
+        // Si no podemos verificar, no mostrar el canal por seguridad
+        console.warn('⚠️ Canal no válido o sin formato DM:', channel);
+        return false;
+      });
+
+      console.log('✅ Canales filtrados:', filteredUserChannels);
+
+      const resPublic = await fetch(`${API_URL}/channels/public`);
+      const publicChannels = resPublic.ok ? await resPublic.json() : [];
+      
+      const allChannels = [...publicChannels, ...filteredUserChannels];
+      setChannels(allChannels);
+      
+    } catch (err) {
+      console.error('Error al obtener los grupos:', err);
+    }  
+  };
 
   //Pedir permiso para mostrar notificaciones
   useEffect(() => {
@@ -24,7 +83,7 @@ export default function ChatPage() {
     }
   }, []);
 
-  // 🔌 Conexión con el servidor
+  //Conexión con el servidor
   useEffect(() => {
     //Obtener el token JWT del localStorage
     const token = localStorage.getItem("token");
@@ -33,29 +92,33 @@ export default function ChatPage() {
       window.location.href = '/';
       return;
     }
+    
     //Obtener el username del localStorage y establecerlo como name de usuario
     const user = localStorage.getItem("username");
     if (user) setUsername(user);
+    
     //Establecer conexion con el socket
     const newSocket = io(API_URL, {
       auth: { token },
     });
+    
     //Si se obtuvo el token y el socket
     newSocket.on("connect", () => {
-      console.log("✅ Conectado al servidor de chat");
+      console.log("Conectado al servidor de chat");
     });
+    
     newSocket.on("unauthorized", () => {
       alert("Sesión expirada. Redirigiendo al login.");
       handleLogout();
     });
 
-    // 🧠 Escuchar mensajes y mostrar notificación + sonido si el mensaje no es tuyo
+    //Escuchar mensajes y mostrar notificación + sonido si el mensaje no es tuyo
     newSocket.on("message", (msg: any) => {
       console.log("📩 Mensaje recibido:", msg);
 
       const currentUser = localStorage.getItem("username");
 
-      // 🔒 Solo mostrar notificación si el mensaje NO lo envió el usuario actual
+      //Solo mostrar notificación si el mensaje NO lo envió el usuario actual
       if (msg.senderName !== currentUser) {
         // Mostrar notificación
         if (Notification.permission === "granted") {
@@ -65,22 +128,92 @@ export default function ChatPage() {
           });
         }
 
-        // 🔊 Reproducir sonido
+        //Reproducir sonido
         const audio = new Audio("/message.mp3");
         audio.volume = 0.7;
         audio.play().catch((err) => console.warn("Error reproduciendo sonido:", err));
       }
     });
-    //Escuchar cuando el backend elmine un canal (DM)
-    newSocket.on("channelRemoved", ({ idChannel  }) => {
-      console.log("Grupo Eliminado", idChannel );
-      setChannels((prev) => prev.filter((ch) => ch.idChannel !== idChannel ));
+
+    //Escuchar cuando el backend elimine un canal (DM)
+    newSocket.on("channelRemoved", ({ idChannel }) => {
+      console.log("📢 Canal eliminado:", idChannel);
+      setChannels((prev) => prev.filter((ch) => ch.idChannel !== idChannel));
+      
       //Si el canal eliminado estaba seleccionado, se limpia
-      setSelectedChannel((prev: { idchannel: any; }) =>
-        prev && prev.idchannel === idChannel  ? null : prev
+      setSelectedChannel((prev: { idChannel: any; }) =>
+        prev && prev.idChannel === idChannel ? null : prev
       );
     });
 
+    // 🔒 EVENTO MEJORADO: Escuchar cuando se crea un nuevo DM
+    newSocket.on("channelCreated", (data) => {
+      console.log("💬 Nuevo DM creado via socket:", data);
+      
+      const currentUser = localStorage.getItem('username');
+      const newChannel = data.channel || data;
+      
+      if (newChannel && newChannel.idChannel) {
+        // 🔒 VERIFICAR que este DM es para el usuario actual
+        const shouldAddChannel = newChannel.isPublic || 
+          (newChannel.name && newChannel.name.includes(currentUser || ''));
+        
+        if (shouldAddChannel) {
+          setChannels((prev) => {
+            // Evitar duplicados
+            const exists = prev.some(ch => ch.idChannel === newChannel.idChannel);
+            if (exists) return prev;
+            return [newChannel, ...prev];
+          });
+          
+          // Solo seleccionar si no hay otro canal seleccionado
+          setSelectedChannel((prev: any) => prev || newChannel);
+        } else {
+          console.log('🚫 DM ignorado - no pertenece al usuario actual:', newChannel.name);
+        }
+      }
+    });
+
+    //ESCUCHAR CUANDO ALGUIEN TE AGREGA A UN DM
+    newSocket.on("newChannelAvailable", (data) => {
+      console.log("💬 Tienes un nuevo DM:", data);
+      
+      //Verificar si este DM es para el usuario actual
+      const currentUserId = localStorage.getItem('idUser');
+      if (data.forUserId && currentUserId && data.forUserId.toString() === currentUserId) {
+        // Recargar la lista de canales para incluir el nuevo DM
+        fetchChannels();
+        console.log("🔄 Actualizando lista de canales - nuevo DM recibido");
+      }
+    });
+
+    // 🔒 EVENTO MEJORADO: Escuchar cuando cualquier canal nuevo está disponible
+    newSocket.on("channelAdded", (newChannel) => {
+      console.log("📥 Nuevo canal disponible:", newChannel);
+      
+      const currentUser = localStorage.getItem('username');
+      
+      // 🔒 VERIFICAR que el canal sea público o pertenezca al usuario actual
+      const shouldAdd = newChannel.isPublic || 
+        (newChannel.name && newChannel.name.includes(currentUser || ''));
+      
+      if (shouldAdd) {
+        // Verificar si ya existe
+        const exists = channels.some(ch => ch.idChannel === newChannel.idChannel);
+        if (!exists) {
+          setChannels((prev) => [newChannel, ...prev]);
+          console.log("✅ Nuevo canal agregado a la lista");
+        }
+      } else {
+        console.log('🚫 Canal ignorado - no pertenece al usuario actual:', newChannel.name);
+      }
+    });
+
+    // 🔄 ESCUCHAR SOLICITUD DE ACTUALIZACIÓN DE CANALES
+    newSocket.on("refreshChannels", () => {
+      console.log("🔄 Actualizando lista de canales...");
+      fetchChannels();
+    });
 
     setSocket(newSocket);
 
@@ -88,37 +221,13 @@ export default function ChatPage() {
       newSocket.disconnect();
       console.log("🔌 Socket desconectado");
     };
-  }, [selectedChannel]);
+  }, [selectedChannel]); //Quitar 'channels' de las dependencias para evitar loops
 
-  // 🚪 Logout
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    socket?.disconnect();
-    window.location.href = '/';
-  };
-
-  // 📡 Cargar canales
+  // Cargar canales al inicio
   useEffect(() => {
-    const fetchChannels = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-      try {
-        const resUser = await fetch(`${API_URL}/users/channels`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const userChannels = resUser.ok ? await resUser.json() : [];
-
-        const resPublic = await fetch(`${API_URL}/channels/public`);
-        const publicChannels = resPublic.ok ? await resPublic.json() : [];
-
-        const allChannels = [...publicChannels, ...userChannels];
-        setChannels(allChannels);
-      } catch (err) {
-        console.error('Error al obtener los grupos:', err);
-      }  
-    }; 
-  fetchChannels();
+    fetchChannels();
   }, []);
+
   //Actualizar el título de la página según el canal seleccionado
   useEffect(() => {
     if (selectedChannel?.name) {
@@ -128,47 +237,86 @@ export default function ChatPage() {
     }
   }, [selectedChannel]);
 
-  // ⚙️ Manejadores de canales
-  const handleSelectChannel = (channel: any) => setSelectedChannel(channel);
+  //Logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    socket?.disconnect();
+    window.location.href = '/';
+  };
 
+  //Manejador único para seleccionar canales
+  const handleSelectChannel = (channel: any) => {
+    console.log('🎯 Seleccionando canal:', channel?.name);
+    setSelectedChannel(channel);
+  };
+
+  //Metodo para manejar canal creado (desde modal)
   const handleChannelCreated = (channel: any) => {
-    // Verificar si ya existe
-    const exists = channels.some(ch => !ch.isPublic && ch.idChannel === channel.idChannel);
-    if (exists) {
-      alert(`Ya tienes un DM con ${channel.name}`);
+    console.log('🔄 handleChannelCreated recibió:', channel);
+
+    // Validación más estricta
+    if (!channel || (!channel.idChannel && !channel.channelId && !channel.id)) {
+      console.error('❌ Error: Canal inválido recibido', channel);
+      alert('Error: No se pudo crear el canal. Intenta nuevamente.');
       return;
     }
 
-    // Si no existe, añadirlo
-    setChannels((prev) => [channel, ...prev]);
+    // Normalizar la estructura del canal
+    const normalizedChannel = {
+      ...channel,
+      idChannel: channel.idChannel || channel.channelId || channel.id,
+      name: channel.name || `DM con ${channel.targetUsername || 'usuario'}`,
+      isPublic: false // Forzar que sea privado
+    };
+
+    // Cerrar modales inmediatamente
     setShowAddUserModal(false);
     setShowCreateModal(false);
-  };
-  //Eliminar canales privados (de momento)
-  const handleDeleteChannel = async (idChannel: number) => {
-    const token = localStorage.getItem('token');
-    //Capturar errores
-    try {
-      const res = await fetch(`${API_URL}/channels/${idChannel}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+
+    // Agregar a la lista y seleccionar
+    setChannels((prev) => {
+      const exists = prev.some(ch => 
+        ch.idChannel === normalizedChannel.idChannel
+      );
+      
+      if (exists) {
+
+        return prev.map(ch => 
+          ch.idChannel === normalizedChannel.idChannel ? normalizedChannel : ch
+        );
+      }
+
+      return [normalizedChannel, ...prev];
     });
-    if(res.ok){
-      alert("DM eliminado correctamente");
-      // 🔄 Quitar el canal de la lista sin recargar
-      setChannels((prev) => prev.filter((ch) => ch.idChannel !== idChannel));
-    } else {
-      const data = await res.json();
-      alert(`Error: ${data.message || "No se pudo eliminar el Grupo"}`);
+
+    // Seleccionar el canal después de un delay
+    setTimeout(() => {
+      console.log('🎯 Seleccionando canal:', normalizedChannel.name);
+      setSelectedChannel(normalizedChannel);
+    }, 100);
+  };
+
+  //Eliminar canales privados usando sockets
+  const handleDeleteChannel = async (idChannel: number) => {
+    if (!socket) {
+      alert("Error: No hay conexión con el servidor");
+      return;
     }
-  } catch (err) {
-    console.error("Error al eliminar el canal:", err);
+    try{
+      // Emitir evento de socket para eliminar el canal
+      socket.emit("deleteChannel", idChannel);
+      
+      // El canal se eliminará automáticamente cuando llegue el evento 'channelRemoved'
+      console.log("Solicitando eliminación del canal:", idChannel);
+      
+    }catch (err) {
+      console.error("Error al eliminar el canal:", err);
+      alert("Error al eliminar el canal");
+    }
   }
-}
+
   //Renderizado
-  return (
+  return(
     <div className="chat-layout">
       <ChatList
         channels={channels}
@@ -193,6 +341,7 @@ export default function ChatPage() {
         <AddUserModal
           onClose={() => setShowAddUserModal(false)}
           onChannelCreated={handleChannelCreated}
+          onChannelSelected={handleSelectChannel}
           channels={channels}
         />
       )}

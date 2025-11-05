@@ -73,6 +73,44 @@ export default function ChatList({
           🚪 Cerrar sesión
         </button>
       </div>
+      {/* Sección de Mensajes Directos */}
+      <div className="channels-section">
+        <h2 className="section-title"> 💬 Mensajes Directos</h2>
+        {directMessages.length > 0 ? (
+          <ul className="channel-list">
+            {directMessages.map((ch, index) => {
+              const displayName = formatDMName(ch.name);
+              
+              return (
+                <li
+                  key={generateUniqueKey(ch, 'dm', index)}
+                  className="channel-item dm-item"
+                  onClick={() => onSelectChannel(ch)}
+                >
+                  <div className="channel-info">
+                    <strong className="channel-name">{displayName}</strong>
+                    <small className="channel-type"> Privado</small>
+                    {/* Botón para eliminar DM */}
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(ch);
+                      }}
+                      title={`Eliminar conversación con ${displayName}`}
+                    > 🗑️ Eliminar</button>
+                  </div>
+                  {ch.description && (
+                    <p className="channel-description">{ch.description}</p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="empty-state"> No tienes mensajes directos</p>
+        )}
+      </div>
 
       {/* Sección de Grupos */}
       <div className="channels-section">
@@ -100,44 +138,7 @@ export default function ChatList({
         )}
       </div>
 
-      {/* Sección de Mensajes Directos */}
-      <div className="channels-section">
-        <h2 className="section-title"> 💬 Mensajes Directos</h2>
-        {directMessages.length > 0 ? (
-          <ul className="channel-list">
-            {directMessages.map((ch, index) => {
-              const displayName = formatDMName(ch.name);
-              
-              return (
-                <li
-                  key={generateUniqueKey(ch, 'dm', index)}
-                  className="channel-item dm-item"
-                  onClick={() => onSelectChannel(ch)}
-                >
-                  <div className="channel-info">
-                    <strong className="channel-name">{displayName}</strong>
-                    <small className="channel-type"> Privado</small>
-                    {/* Botón para eliminar DM */}
-                    <button
-                      className="delete-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(ch);
-                      }}
-                      title={`Eliminar conversación con ${displayName}`}
-                    > 🗑️ Eliminar MD</button>
-                  </div>
-                  {ch.description && (
-                    <p className="channel-description">{ch.description}</p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="empty-state"> No tienes mensajes directos</p>
-        )}
-      </div>
+      
 
       {/* Botones de acción lateral */}
       <div className="chat-list-buttons">

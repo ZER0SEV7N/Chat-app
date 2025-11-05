@@ -54,7 +54,7 @@ export default function EditChannelModal({
       alert("Canal inválido o sin identificador.");
       return;
     }
-    
+
     try {
       const res = await fetch(`${API_URL}/channels/${channel.idChannel}`, {
         method: "PATCH",
@@ -128,8 +128,7 @@ export default function EditChannelModal({
 
   //Verificar si el usuario actual es el creador del canal
   //(ajustado a channel.creator?.username o createdBy)
-  const isCreator =
-    channel.creator?.username === username || channel.createdBy === username;
+  const isCreator = channel.creator?.username === username || channel.createdBy === username;
 
   //Renderizado del modal
   return (
@@ -137,13 +136,13 @@ export default function EditChannelModal({
       <div className="modal-content">
         <h2>Editar Canal</h2>
 
-        {/* ⚠️ Si no es creador, mostrar aviso y bloquear edición */}
+        {/*Si no es creador, mostrar aviso y bloquear edición */}
         {!isCreator ? (
           <p className="no-access-msg">
             Solamente el creador puede modificar este canal.
           </p>
         ) : (
-          /* 📝 Formulario de edición de canal */
+          /*Formulario de edición de canal */
           <form onSubmit={handleSave}>
             <input
               type="text"
@@ -152,7 +151,7 @@ export default function EditChannelModal({
               onChange={(e) => setName(e.target.value)}
               required
             />
-
+            
             <textarea
               placeholder="Descripción"
               value={description}

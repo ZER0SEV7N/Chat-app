@@ -3,7 +3,7 @@
 // ============================================================
 
 //Importaciones necesarias
-import { Controller, Post, Body, Req, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Body, Req, Delete, Param, Get } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
@@ -34,5 +34,22 @@ export class ChatController {
     return this.chatService.getOrCreatePrivateChannel(userId, body.targetUsername);
   }
 
-  
+  //Obtener todos los usuarios del sistema
+  @Get('users')
+  async getAllUsers(@Req() req: Request) {
+    // Extraer token JWT desde encabezado Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new Error('Falta el token de autorización');
+    }
+    
+    //Extraer el token del encabezado
+    const token = authHeader.split(' ')[1];
+    const payload = this.jwtService.verify(token);
+    
+    //Obtener el idUser del payload del token
+    const currentUserId = payload.sub;
+    
+    return this.chatService.getAllUsers(currentUserId);
+  }
 }
