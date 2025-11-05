@@ -30,23 +30,37 @@ export default function CreateChannelModal({
 
     try {
       // Obtener el usuario actual (asumimos que está guardado en localStorage)
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = localStorage.getItem("token");
 
-      // Verificar si el usuario está autenticado
-      if (!user?.idUser) {
+
+      //Verificar si el usuario está autenticado
+      if(!token){
         alert("Error: usuario no autenticado");
         setIsCreating(false);
         return;
       }
-
-      // Enviar la solicitud al backend
+      //Primero obtener el ID del usuario desde el backend
+      const user = await fetch(`${API_URL}/users/profile`, {
+        headers: { 
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+      //SI el usuario existe
+      if(!user.ok) {
+        alert("Error al obtener datos del usuario");
+        setIsCreating(false);
+        return;
+      }
+      //Extraer los datos del usuario
+      const userData = await user.json();
+      //Enviar la solicitud al backend
       const res = await fetch(`${API_URL}/channels`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
           description,
-          creatorId: user.idUser, // Se envía el ID del creador
+          creatorId: userData.idUser, // Se envía el ID del creador
         }),
       });
 
@@ -90,13 +104,9 @@ export default function CreateChannelModal({
       >
         {/* Header del modal */}
         <div className="modal-header">
-          <h2>Crear Nuevo Canal</h2>
-          <button 
-            className="modal-close" 
-            onClick={onClose}
-            aria-label="Cerrar modal"
-          >
-            ×
+          <h2>Crear Nuevo Grupo</h2>
+          <button className="modal-close" 
+            onClick={onClose} aria-label="Cerrar modal">×
           </button>
         </div>
 
@@ -104,12 +114,12 @@ export default function CreateChannelModal({
         <form onSubmit={handleCreate} className="modal-form">
           <div className="form-group">
             <label htmlFor="channel-name" className="form-label">
-              Nombre del canal
+              Nombre del grupo
             </label>
             <input
               id="channel-name"
               type="text"
-              placeholder="Ej: Proyecto Alpha, Amigos, etc."
+              placeholder="Ej: Proyecto Alpha, Amigos, Team Dinamita, etc."
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isCreating}
@@ -124,7 +134,7 @@ export default function CreateChannelModal({
             </label>
             <textarea
               id="channel-description"
-              placeholder="Describe el propósito de este canal..."
+              placeholder="Describe el propósito de este Grupo..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isCreating}

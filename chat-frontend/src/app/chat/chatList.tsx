@@ -1,4 +1,4 @@
-// chat-frontend/src/app/chat/chatList.tsx
+//chat-frontend/src/app/chat/chatList.tsx
 import React from "react";
 //Importar estilos CSS
 import './chat.css';
@@ -23,11 +23,18 @@ export default function ChatList({
   onDeleteChannel,
   username,
 }: Props) {
-  // Separar canales en grupos y MDs
-  const groups = channels.filter(ch => ch?.isPublic);
-  const directMessages = channels.filter(ch => ch && !ch.isPublic);
+  //Separar canales en grupos y MDs
+  const uniqueChannels = channels.filter((channel, index, self) => 
+    index === self.findIndex(ch => 
+      ch.idChannel === channel.idChannel && ch.idChannel !== undefined
+    )
+  );
 
-  // Formatear nombre para MDs
+  // Luego usar uniqueChannels en lugar de channels
+  const groups = uniqueChannels.filter(ch => ch?.isPublic);
+  const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
+
+  //Formatear nombre para MDs
   const formatDMName = (channelName: string) => {
     if (typeof channelName === "string" && channelName.startsWith("DM ")) {
       const parts = channelName.replace("DM ", "").split("-");
@@ -48,7 +55,14 @@ export default function ChatList({
       if (confirmDelete) onDeleteChannel(ch.idChannel);
     }
   };
-
+  //Función para generar keys únicas
+  const generateUniqueKey = (ch: any, type: 'group' | 'dm', index: number) => {
+    if (ch.idChannel) {
+      return `${type}-${ch.idChannel}`;
+    }
+    //Si no hay idChannel, crear una key única basada en múltiples propiedades
+    return `${type}-${ch.name}-${ch.creatorId || 'unknown'}-${index}`;
+  };
   //Renderizado del componente
   return (
     <div className="chat-list">
@@ -62,12 +76,12 @@ export default function ChatList({
 
       {/* Sección de Grupos */}
       <div className="channels-section">
-        <h2 className="section-title">🌐 Grupos</h2>
+        <h2 className="section-title"> 🌐 Grupos</h2>
         {groups.length > 0 ? (
           <ul className="channel-list">
             {groups.map((ch, index) => (
               <li
-                key={ch.idChannel || `group-${index}`}
+                key={generateUniqueKey(ch, 'group', index)}
                 className="channel-item group-item"
                 onClick={() => onSelectChannel(ch)}
               >
@@ -82,13 +96,13 @@ export default function ChatList({
             ))}
           </ul>
         ) : (
-          <p className="empty-state">No tienes grupos</p>
+          <p className="empty-state"> No tienes grupos</p>
         )}
       </div>
 
       {/* Sección de Mensajes Directos */}
       <div className="channels-section">
-        <h2 className="section-title">💬 Mensajes Directos</h2>
+        <h2 className="section-title"> 💬 Mensajes Directos</h2>
         {directMessages.length > 0 ? (
           <ul className="channel-list">
             {directMessages.map((ch, index) => {
@@ -96,7 +110,7 @@ export default function ChatList({
               
               return (
                 <li
-                  key={ch.idChannel || `dm-${index}`}
+                  key={generateUniqueKey(ch, 'dm', index)}
                   className="channel-item dm-item"
                   onClick={() => onSelectChannel(ch)}
                 >
@@ -104,20 +118,15 @@ export default function ChatList({
                     <strong className="channel-name">{displayName}</strong>
                     <small className="channel-type"> Privado</small>
                     {/* Botón para eliminar DM */}
-                  <button
-                    className="delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteClick(ch);
-                    }}
-                    title={`Eliminar conversación con ${displayName}`}
-                  >
-                    🗑️
-                  </button>
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(ch);
+                      }}
+                      title={`Eliminar conversación con ${displayName}`}
+                    > 🗑️ Eliminar MD</button>
                   </div>
-                  
-                  
-
                   {ch.description && (
                     <p className="channel-description">{ch.description}</p>
                   )}

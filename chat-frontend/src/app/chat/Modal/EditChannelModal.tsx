@@ -6,16 +6,16 @@ import React, { useEffect, useState } from "react";
 import "./modal.css"; // Estilos del modal
 import { API_URL } from "@/lib/config"; // URL base del backend
 
-// 📘 Interfaz de propiedades que recibe el modal
+//Interfaz de propiedades que recibe el modal
 interface EditChannelModalProps {
-  channel: any; // Canal actual seleccionado
-  onClose: () => void; // Función para cerrar el modal
-  onChannelUpdate: (updated: any) => void; // Callback al guardar cambios
-  username: string; // Usuario actual (para verificar permisos)
-  idUser: number; // ID del usuario actual (para enviarlo al backend)
+  channel: any; //Canal actual seleccionado
+  onClose: () => void; //Función para cerrar el modal
+  onChannelUpdate: (updated: any) => void; //Callback al guardar cambios
+  username: string; //Usuario actual (para verificar permisos)
+  idUser: number; //ID del usuario actual (para enviarlo al backend)
 }
 
-// 🧩 Componente principal
+//Componente principal
 export default function EditChannelModal({
   channel,
   onClose,
@@ -23,56 +23,56 @@ export default function EditChannelModal({
   username,
   idUser,
 }: EditChannelModalProps) {
-  // 🧠 Estados locales del formulario
+  //Estados locales del formulario
   const [name, setName] = useState(channel.name || "");
   const [description, setDescription] = useState(channel.description || "");
   const [isPublic, setIsPublic] = useState(channel.isPublic);
-  const [users, setUsers] = useState<any[]>([]); // Usuarios que pertenecen al canal
-  const [newUser, setNewUser] = useState(""); // Usuario a agregar
+  const [users, setUsers] = useState<any[]>([]); //Usuarios que pertenecen al canal
+  const [newUser, setNewUser] = useState(""); //Usuario a agregar
 
-  // 🧭 Cargar lista de usuarios del canal al abrir el modal
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
+  //Cargar lista de usuarios del canal al abrir el modal
+  useEffect(() => { 
+    const fetchUsers = async () => { 
+      try{
         const res = await fetch(`${API_URL}/channels/${channel.idChannel}/users`);
         const data = await res.json();
 
         if (res.ok) setUsers(data);
         else console.error("Error al cargar usuarios del canal:", data);
-      } catch (err) {
+      }catch(err) {
         console.error("Error al obtener los datos del usuario:", err);
       }
     };
-
-    if (channel?.idChannel) fetchUsers();
+    if(channel?.idChannel) fetchUsers();
   }, [channel.idChannel]);
 
-  // 💾 Guardar los cambios del canal (nombre, descripción, visibilidad)
+  //Guardar los cambios del canal (nombre, descripción, visibilidad)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    //Validar que el canal tenga un id válido
     if (!channel?.idChannel) {
       alert("Canal inválido o sin identificador.");
       return;
     }
-
+    
     try {
       const res = await fetch(`${API_URL}/channels/${channel.idChannel}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        // ✅ Se envía también el idUser para mantener al creador
+        //Se envía también el idUser para mantener al creador
         body: JSON.stringify({
           name,
           description,
           isPublic,
-          idUser, // Se mantiene la propiedad del creador aunque cambie visibilidad
+          idUser, //Se mantiene la propiedad del creador aunque cambie visibilidad
         }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        onChannelUpdate(data); // Notificar al componente padre del cambio
-        onClose(); // Cerrar modal
+        onChannelUpdate(data); //Notificar al componente padre del cambio
+        onClose(); //Cerrar modal
       } else {
         alert(data.message || "Error al actualizar el canal");
       }
@@ -81,7 +81,7 @@ export default function EditChannelModal({
     }
   };
 
-  // 👥 Agregar un usuario al canal
+  //Agregar un usuario al canal
   const handleAddUser = async () => {
     if (!newUser.trim()) return;
     try {
@@ -94,7 +94,7 @@ export default function EditChannelModal({
       const data = await res.json();
 
       if (res.ok) {
-        setUsers((prev) => [...prev, data]); // Añadir el nuevo usuario a la lista local
+        setUsers((prev) => [...prev, data]); //Añadir el nuevo usuario a la lista local
         setNewUser("");
       } else {
         alert(data.message || "Error al agregar usuario al canal");
@@ -104,7 +104,7 @@ export default function EditChannelModal({
     }
   };
 
-  // ❌ Expulsar (kickear) un usuario del canal
+  //Expulsar (kickear) un usuario del canal
   const handleKickUser = async (idUser: number) => {
     const confirmKick = confirm("¿Deseas expulsar este usuario del canal?");
     if (!confirmKick) return;
@@ -116,7 +116,7 @@ export default function EditChannelModal({
       );
 
       if (res.ok) {
-        setUsers(users.filter((u) => u.idUser !== idUser)); // Quitarlo del estado local
+        setUsers(users.filter((u) => u.idUser !== idUser)); //Quitarlo del estado local
       } else {
         const data = await res.json();
         alert(data.message || "No se pudo expulsar usuario");
@@ -126,12 +126,12 @@ export default function EditChannelModal({
     }
   };
 
-  // 🔐 Verificar si el usuario actual es el creador del canal
-  // (ajustado a channel.creator?.username o createdBy)
+  //Verificar si el usuario actual es el creador del canal
+  //(ajustado a channel.creator?.username o createdBy)
   const isCreator =
     channel.creator?.username === username || channel.createdBy === username;
 
-  // 🎨 Renderizado del modal
+  //Renderizado del modal
   return (
     <div className="modal-overlay">
       <div className="modal-content">
