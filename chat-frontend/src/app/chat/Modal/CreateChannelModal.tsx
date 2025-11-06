@@ -30,10 +30,11 @@ export default function CreateChannelModal({
 
     try {
       // Obtener el usuario actual (asumimos que está guardado en localStorage)
+      const token = localStorage.getItem("token");
       const user = JSON.parse(localStorage.getItem("user") || "{}");
 
       // Verificar si el usuario está autenticado
-      if (!user?.idUser) {
+      if (!token) {
         alert("Error: usuario no autenticado");
         setIsCreating(false);
         return;

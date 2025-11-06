@@ -23,10 +23,19 @@ export default function ChatList({
   onDeleteChannel,
   username,
 }: Props) {
-  // Separar canales en grupos y MDs
-  const groups = channels.filter(ch => ch?.isPublic);
-  const directMessages = channels.filter(ch => ch && !ch.isPublic);
+  // Agregar esto antes de separar en grupos y MDs
+const uniqueChannels = channels.filter((channel, index, self) => 
+  index === self.findIndex(ch => 
+    ch.idChannel === channel.idChannel && ch.idChannel !== undefined
+  )
+);
 
+// Luego usar uniqueChannels en lugar de channels
+const groups = uniqueChannels.filter(ch => ch?.isPublic);
+const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
+
+
+  
   // Formatear nombre para MDs
   const formatDMName = (channelName: string) => {
     if (typeof channelName === "string" && channelName.startsWith("DM ")) {
@@ -49,6 +58,15 @@ export default function ChatList({
     }
   };
 
+  // Función para generar keys únicas
+  const generateUniqueKey = (ch: any, type: 'group' | 'dm', index: number) => {
+    if (ch.idChannel) {
+      return `${type}-${ch.idChannel}`;
+    }
+    // Si no hay idChannel, crear una key única basada en múltiples propiedades
+    return `${type}-${ch.name}-${ch.creatorId || 'unknown'}-${index}`;
+  };
+
   //Renderizado del componente
   return (
     <div className="chat-list">
@@ -67,7 +85,7 @@ export default function ChatList({
           <ul className="channel-list">
             {groups.map((ch, index) => (
               <li
-                key={ch.idChannel || `group-${index}`}
+                key={generateUniqueKey(ch, 'group', index)}
                 className="channel-item group-item"
                 onClick={() => onSelectChannel(ch)}
               >
@@ -96,7 +114,7 @@ export default function ChatList({
               
               return (
                 <li
-                  key={ch.idChannel || `dm-${index}`}
+                  key={generateUniqueKey(ch, 'dm', index)}
                   className="channel-item dm-item"
                   onClick={() => onSelectChannel(ch)}
                 >
@@ -104,19 +122,17 @@ export default function ChatList({
                     <strong className="channel-name">{displayName}</strong>
                     <small className="channel-type"> Privado</small>
                     {/* Botón para eliminar DM */}
-                  <button
-                    className="delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteClick(ch);
-                    }}
-                    title={`Eliminar conversación con ${displayName}`}
-                  >
-                    🗑️
-                  </button>
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(ch);
+                      }}
+                      title={`Eliminar conversación con ${displayName}`}
+                    >
+                      🗑️
+                    </button>
                   </div>
-                  
-                  
 
                   {ch.description && (
                     <p className="channel-description">{ch.description}</p>
