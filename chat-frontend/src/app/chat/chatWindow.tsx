@@ -5,11 +5,10 @@ import { Search, Trash2, Edit3, Check, X } from "lucide-react"; //iconos extra
 interface Props {
   socket: any;
   channel: any;
-  onEditChannel: (channel: any) => void; // ✅ NUEVA PROP: Función para editar canal
+  onEditChannel: (channel: any) => void; //Función para editar canal
 }
-
 // Exportar el componente principal del chat
-export default function ChatWindow({ socket, channel, onEditChannel }: Props) { // ✅ RECIBIR onEditChannel
+export default function ChatWindow({ socket, channel, onEditChannel }: Props) { //onEditChannel
   const [messages, setMessages] = useState<any[]>([]); //estado de los mensajes
   const [input, setInput] = useState(""); //estado del input de mensaje
   const [showPicker, setShowPicker] = useState(false); //control del picker de emojis
@@ -337,9 +336,6 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
           Enviar
         </button>
       </div>
-
-      {/* ❌ ELIMINADO: Ya no necesitamos renderizar el modal aquí */}
-      {/* El modal se renderiza en page.tsx junto con los otros modales */}
     </div>
   );
 }
