@@ -2,6 +2,8 @@
 import React from "react";
 //Importar estilos CSS
 import './chat.css';
+import "./chat-responsive.css"; 
+import "./chat-dark.css";
 //Definir las propiedades del componente
 interface Props {
   channels: any[]; //Lista de canales

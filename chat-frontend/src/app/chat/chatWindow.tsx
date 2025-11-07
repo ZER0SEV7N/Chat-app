@@ -1,6 +1,11 @@
+//src/app/chat/chatWindows.tsx
+//Modulo para la ventana del chat
 import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
 import { Search, Trash2, Edit3, Check, X } from "lucide-react"; //iconos extra
+import "./chat.css";
+import "./chat-responsive.css"; 
+import "./chat-dark.css";
 
 interface Props {
   socket: any;
@@ -19,6 +24,7 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
   const audioRef = useRef<HTMLAudioElement | null>(null); //Referencia al audio de notificación
   const [username, setUsername] = useState("");  //nuevo estado para el nombre de usuario
   const [currentUserId, setCurrentUserId] = useState<number | null>(null); //nuevo estado para el ID del usuario
+  const messageEndRef = useRef<HTMLDivElement>(null); //Referencia al auto-scroll
 
   //Configurar notificaciones, usuario y audio
   useEffect(() => {
@@ -38,6 +44,23 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
       audioRef.current.volume = 0.7;
     }
   }, []);
+
+  //Funcion para hacer scroll al final de los mensajes
+  const scrollToBottom = () => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+  //scroll al fondo cuando cambian los mensajes
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+  //Scroll al fono cuando se cargue el componente
+  useEffect(() => {
+    //Un Delay para asegurar que el Dom este listo
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    return () => clearTimeout(timer);
+    }, [channel]);
 
   //Manejar conexión de socket y eventos
   useEffect(() => {
@@ -165,10 +188,48 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
     });
   };
 
-  //Filtrar mensajes
+  //Funcion para formatear la fecha tipo separadores
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if(date.toDateString() === today.toDateString()){
+      return "Hoy";
+    }else if(date.toDateString() === yesterday.toDateString()){
+      return "Ayer";
+    }else{
+      return date.toLocaleDateString("es-PE",{
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    }
+  };
+  //Agrupar los mensajes por dia
+  const groupMessagesByDay = (messages: any[]) => {
+    const groups: { [key: string]: any[] } = {};
+
+    messages.forEach((message) =>{
+      const date = new Date(message.createdAt || new Date().toISOString());
+      const dateKey = date.toDateString(); //Utilizar toDateString para agrupar por dia
+
+      if(!groups[dateKey]){
+        groups[dateKey] = [];
+      }   
+      groups[dateKey].push(message);
+    });
+    return groups;
+  }
+
+  // Filtrar mensajes y luego agruparlos
   const filteredMessages = messages.filter((msg) =>
     msg.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  const groupedMessages = groupMessagesByDay(filteredMessages);
 
   if (!channel)
     return (
@@ -198,7 +259,7 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
               title="Editar canal"
               onClick={() => {
                 console.log('🔄 Abriendo modal de edición para:', channel.name);
-                onEditChannel(channel); // ✅ LLAMAR A LA FUNCIÓN DEL PADRE
+                onEditChannel(channel); //LLAMAR A LA FUNCIÓN DEL PADRE
               }}
             >
               <Edit3 size={18} />
@@ -232,10 +293,17 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
 
       {/* Mensajes */}
       <div className="chat-messages">
-        {filteredMessages.map((msg, i) => {
+       {Object.entries(groupedMessages).map(([dateKey, dayMessages]) => (
+          <div key={dateKey}>
+            {/* Separador de día */}
+            <div className="day-separator">
+              <span>{formatDate(dayMessages[0].createdAt || new Date().toISOString())}</span>
+            </div>
+          
+          {/* Mensajes del día */}
+          {dayMessages.map((msg, i) => {
           const isOwn = msg.user?.username === localStorage.getItem("username");
-          const highlight =
-            searchTerm && msg.text.toLowerCase().includes(searchTerm.toLowerCase());
+          const highlight = searchTerm && msg.text.toLowerCase().includes(searchTerm.toLowerCase());
 
           return (
             <div
@@ -247,23 +315,22 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
               <div className="chat-message-header">
                 <span className="chat-username-messages">
                   {msg.user?.username || "Anon"}:
+                </span>
                   {/* Solo mis mensajes pueden editarse o eliminarse */}
-                {isOwn && (
+                  {isOwn && (
                   <div className="message-actions">
                     {editingId === msg.idMessage ? (
                       <>
                         <button
                           className="confirm-btn"
                           title="Guardar"
-                          onClick={() => saveEdit(msg.idMessage)}
-                        >
+                          onClick={() => saveEdit(msg.idMessage)}>
                           <Check size={14} />
                         </button>
                         <button
                           className="cancel-btn"
                           title="Cancelar"
-                          onClick={cancelEdit}
-                        >
+                          onClick={cancelEdit}>
                           <X size={14} />
                         </button>
                       </>
@@ -290,7 +357,6 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
                     )}
                   </div>
                 )}
-                </span>
               </div>
               {editingId === msg.idMessage ? (
                 <input
@@ -311,6 +377,11 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
             </div>
           );
         })}
+      </div>
+       ))}
+      
+      {/* Elemento invisible para auto-scroll */}
+        <div ref={messageEndRef} />
       </div>
 
       {/* Input */}

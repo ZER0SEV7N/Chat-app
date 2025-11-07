@@ -40,7 +40,7 @@ export default function CreateChannelModal({
         return;
       }
       //Primero obtener el ID del usuario desde el backend
-      const user = await fetch(`${API_URL}/users/profile`, {
+      const user = await fetch(`${API_URL}/users/channels`, {
         headers: { 
           'Authorization': `Bearer ${token}` 
         }

@@ -309,40 +309,6 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
               </p>
             )}
           </div>
-
-          {/* Búsqueda manual para usuarios que no aparecen en la lista */}
-          <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px' }}>
-            <p style={{ fontSize: '14px', marginBottom: '10px', color: '#6b7280' }}>
-              O ingresa manualmente un nombre de usuario:
-            </p>
-            <input
-              type="text"
-              placeholder="Nombre de usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyDown={handleKeyPress}
-              disabled={isLoading}
-              style={{ width: '100%' }}
-            />
-          </div>
-        </div>
-
-        {/* Footer del modal con botones de acción */}
-        <div className="modal-footer">
-          <button 
-            className="btn-secondary" 
-            onClick={onClose}
-            disabled={isLoading}
-          >
-            Cancelar
-          </button>
-          <button 
-            className="btn-primary" 
-            onClick={() => handleAdd()}
-            disabled={isLoading || !username.trim()}
-          >
-            {isLoading ? 'Creando...' : 'Iniciar Chat'}
-          </button>
         </div>
       </div>
     </div>

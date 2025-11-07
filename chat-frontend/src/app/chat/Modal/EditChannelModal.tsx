@@ -152,7 +152,8 @@ return (
         </div>
 
         <div className="modal-body">
-          <div className="modal-body-content"> {/* ✅ NUEVO CONTENEDOR CON SCROLL */}
+          <div className="modal-body-content"> 
+            {/*NUEVO CONTENEDOR CON SCROLL */}
             {!isCreator ? (
               <p className="no-access-message">
                 Solamente el creador puede modificar este canal.

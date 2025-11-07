@@ -1,0 +1,205 @@
+/* =======================================================
+   🌙 MODO OSCURO
+   ======================================================= */
+
+@media (prefers-color-scheme: dark) {
+  .chat-layout {
+    background: linear-gradient(135deg, #1a1f35 0%, #2d1b47 100%);
+  }
+
+  .responsive-chat-layout {
+    background: linear-gradient(135deg, #1a1f35 0%, #2d1b47 100%);
+  }
+
+  .chat-list {
+    background: #1a1a1a;
+    border-right-color: #333;
+  }
+
+  .section-title {
+    background: #2d2d2d;
+    color: #e0e0e0;
+    border-bottom-color: #333;
+  }
+
+  .channel-item {
+    border-bottom-color: #333;
+  }
+
+  .channel-item:hover {
+    background: #2d2d2d;
+  }
+
+  .channel-item.active {
+    background: #2d3748;
+  }
+
+  .channel-name {
+    color: #e0e0e0;
+  }
+
+  .channel-description {
+    color: #a0a0a0;
+  }
+
+  .sidebar-button {
+    background: #2d2d2d;
+    color: #818cf8;
+    border-color: #333;
+  }
+
+  .sidebar-button:hover {
+    background: #818cf8;
+    color: white;
+  }
+
+  .empty-state {
+    color: #666;
+    background: #2d2d2d;
+  }
+
+  .chat-container {
+    background: #1a1a1a;
+  }
+
+  .chat-messages {
+    background: #1a1a1a;
+  }
+
+  .chat-message {
+    background: #2d2d2d;
+    border-color: #333;
+    color: #e0e0e0;
+  }
+
+  .chat-message-content {
+    color: #e0e0e0;
+  }
+
+  .chat-username-messages {
+    color: #818cf8;
+  }
+
+  .chat-time {
+    color: #888;
+  }
+
+  .chat-search-bar {
+    background: #2d2d2d;
+    border-color: #333;
+  }
+
+  .chat-search-bar input {
+    background: #1a1a1a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .chat-search-bar input::placeholder {
+    color: #666;
+  }
+
+  .chat-search-bar input:focus {
+    background: #2d2d2d;
+    border-color: #818cf8;
+  }
+
+  .chat-input-container {
+    background: #2d2d2d;
+    border-top-color: #333;
+  }
+
+  .chat-input-container input {
+    background: #1a1a1a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .chat-input-container input:focus {
+    background: #2d2d2d;
+    border-color: #818cf8;
+  }
+
+  .emoji-btn {
+    color: #888;
+  }
+
+  .emoji-btn:hover {
+    background: #333;
+    color: #818cf8;
+  }
+
+  .message-actions button {
+    background: rgba(45, 45, 45, 0.9);
+    border-color: #444;
+    color: #888;
+  }
+
+  .message-actions button:hover {
+    background: #333;
+  }
+
+  .edit-input {
+    background: #1a1a1a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .edit-input:focus {
+    border-color: #818cf8;
+  }
+
+  /* Scrollbars en modo oscuro */
+  .chat-messages::-webkit-scrollbar-track {
+    background: #2d2d2d;
+  }
+
+  .chat-messages::-webkit-scrollbar-thumb {
+    background: #444;
+  }
+
+  .chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+  .channel-list::-webkit-scrollbar-track {
+    background: #2d2d2d;
+  }
+
+  .channel-list::-webkit-scrollbar-thumb {
+    background: #444;
+  }
+
+  .channel-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+  /* Separador de día en modo oscuro */
+  .day-separator::before {
+    background-color: #444;
+  }
+  
+  .day-separator span {
+    background-color: #1a1a1a;
+    color: #ccc;
+    border-color: #444;
+  }
+
+  .highlight {
+    background-color: rgba(245, 158, 11, 0.2);
+    border-left-color: #f59e0b;
+  }
+}
+
+/* Modo oscuro forzado con clase */
+.dark-mode .chat-layout,
+.dark-mode .responsive-chat-layout {
+  background: linear-gradient(135deg, #1a1f35 0%, #2d1b47 100%);
+}
+
+.dark-mode .chat-list {
+  background: #1a1a1a;
+  border-right-color: #333;
+}
+
+/* ... repetir todas las reglas del media query para la clase dark-mode ... */
