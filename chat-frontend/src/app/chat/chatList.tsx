@@ -1,4 +1,4 @@
-// chat-frontend/src/app/chat/chatList.tsx
+//chat-frontend/src/app/chat/chatList.tsx
 import React from "react";
 //Importar estilos CSS
 import './chat.css';
@@ -23,20 +23,18 @@ export default function ChatList({
   onDeleteChannel,
   username,
 }: Props) {
-  // Agregar esto antes de separar en grupos y MDs
-const uniqueChannels = channels.filter((channel, index, self) => 
-  index === self.findIndex(ch => 
-    ch.idChannel === channel.idChannel && ch.idChannel !== undefined
-  )
-);
+  //Separar canales en grupos y MDs
+  const uniqueChannels = channels.filter((channel, index, self) => 
+    index === self.findIndex(ch => 
+      ch.idChannel === channel.idChannel && ch.idChannel !== undefined
+    )
+  );
 
-// Luego usar uniqueChannels en lugar de channels
-const groups = uniqueChannels.filter(ch => ch?.isPublic);
-const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
+  // Luego usar uniqueChannels en lugar de channels
+  const groups = uniqueChannels.filter(ch => ch?.isPublic);
+  const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
 
-
-  
-  // Formatear nombre para MDs
+  //Formatear nombre para MDs
   const formatDMName = (channelName: string) => {
     if (typeof channelName === "string" && channelName.startsWith("DM ")) {
       const parts = channelName.replace("DM ", "").split("-");
@@ -57,16 +55,14 @@ const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
       if (confirmDelete) onDeleteChannel(ch.idChannel);
     }
   };
-
-  // Función para generar keys únicas
+  //Función para generar keys únicas
   const generateUniqueKey = (ch: any, type: 'group' | 'dm', index: number) => {
     if (ch.idChannel) {
       return `${type}-${ch.idChannel}`;
     }
-    // Si no hay idChannel, crear una key única basada en múltiples propiedades
+    //Si no hay idChannel, crear una key única basada en múltiples propiedades
     return `${type}-${ch.name}-${ch.creatorId || 'unknown'}-${index}`;
   };
-
   //Renderizado del componente
   return (
     <div className="chat-list">
@@ -77,36 +73,9 @@ const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
           🚪 Cerrar sesión
         </button>
       </div>
-
-      {/* Sección de Grupos */}
-      <div className="channels-section">
-        <h2 className="section-title">🌐 Grupos</h2>
-        {groups.length > 0 ? (
-          <ul className="channel-list">
-            {groups.map((ch, index) => (
-              <li
-                key={generateUniqueKey(ch, 'group', index)}
-                className="channel-item group-item"
-                onClick={() => onSelectChannel(ch)}
-              >
-                <div className="channel-info">
-                  <strong className="channel-name">{ch.name || "Grupo sin nombre"}</strong>
-                  <small className="channel-type"> Público</small>
-                </div>
-                {ch.description && (
-                  <p className="channel-description">{ch.description}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="empty-state">No tienes grupos</p>
-        )}
-      </div>
-
       {/* Sección de Mensajes Directos */}
       <div className="channels-section">
-        <h2 className="section-title">💬 Mensajes Directos</h2>
+        <h2 className="section-title"> 💬 Mensajes Directos</h2>
         {directMessages.length > 0 ? (
           <ul className="channel-list">
             {directMessages.map((ch, index) => {
@@ -129,11 +98,8 @@ const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
                         handleDeleteClick(ch);
                       }}
                       title={`Eliminar conversación con ${displayName}`}
-                    >
-                      🗑️
-                    </button>
+                    > 🗑️ Eliminar</button>
                   </div>
-
                   {ch.description && (
                     <p className="channel-description">{ch.description}</p>
                   )}
@@ -146,6 +112,31 @@ const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
         )}
       </div>
 
+      {/* Sección de Grupos */}
+      <div className="channels-section">
+        <h2 className="section-title"> 🌐 Grupos</h2>
+        {groups.length > 0 ? (
+          <ul className="channel-list">
+            {groups.map((ch, index) => (
+              <li
+                key={generateUniqueKey(ch, 'group', index)}
+                className="channel-item group-item"
+                onClick={() => onSelectChannel(ch)}
+              >
+                <div className="channel-info">
+                  <strong className="channel-name">{ch.name || "Grupo sin nombre"}</strong>
+                  <small className="channel-type"> Público</small>
+                </div>
+                {ch.description && (
+                  <p className="channel-description">{ch.description}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="empty-state"> No tienes grupos</p>
+        )}
+      </div>
       {/* Botones de acción lateral */}
       <div className="chat-list-buttons">
         <button className="sidebar-button" onClick={onCreateChannel}>
