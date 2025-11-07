@@ -26,10 +26,7 @@ export default function HeaderChatResponsive({ title, subtitle, onBack, showBack
             <button 
             className="back-button"
             onClick={onBack}
-            aria-label="Volver a la lista de chats"
-            >
-            ←
-            </button>
+            aria-label="Volver a la lista de chats">←</button>
         )}
         <div className="header-info">
             <h1>{title}</h1>

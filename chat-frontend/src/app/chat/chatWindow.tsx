@@ -11,9 +11,10 @@ interface Props {
   socket: any;
   channel: any;
   onEditChannel: (channel: any) => void; //Función para editar canal
+  onBackToList?: () => void; //Funcion para volver atras
 }
 // Exportar el componente principal del chat
-export default function ChatWindow({ socket, channel, onEditChannel }: Props) { //onEditChannel
+export default function ChatWindow({ socket, channel, onEditChannel, onBackToList }: Props) { //onEditChannel
   const [messages, setMessages] = useState<any[]>([]); //estado de los mensajes
   const [input, setInput] = useState(""); //estado del input de mensaje
   const [showPicker, setShowPicker] = useState(false); //control del picker de emojis
@@ -240,8 +241,18 @@ export default function ChatWindow({ socket, channel, onEditChannel }: Props) { 
 
   return (
     <div className="chat-container">
-      {/*Encabezado */}
+       {/*Encabezado - CORREGIDO CON BOTÓN DE RETROCESO */}
       <div className="chat-header">
+        {/*BOTÓN DE RETROCESO PARA MÓVIL */}
+        {onBackToList && (
+          <button 
+            className="back-to-list" 
+            onClick={onBackToList}
+            aria-label="Volver a la lista de chats"
+          >
+            ←
+          </button>
+        )}
         <div className="chat-header-info">
           <h2>#{channel.name}</h2>
           <p className="chat-description">

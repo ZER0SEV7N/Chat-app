@@ -1,49 +1,12 @@
 /* =======================================================
-   📱 RESPONSIVIDAD COMPLETA
+   📱 RESPONSIVIDAD COMPLETA - CORREGIDA
    ======================================================= */
 
-/* Botón de menú móvil */
-.mobile-menu-btn {
-  display: none;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background 0.2s ease;
-}
-
-.mobile-menu-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Botón de retroceso para móvil */
-.back-to-list {
-  display: none;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  border-radius: 8px;
-  padding: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  align-items: center;
-  justify-content: center;
-}
-
-.back-to-list:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
-
-/* MÓVIL - Menor a 768px */
-@media (max-width: 768px) {
-  .chat-layout {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+/* MÓVIL */
+@media (max-width: 900px) {
+  .responsive-chat-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
   }
 
   .chat-list-container,
@@ -52,6 +15,7 @@
     grid-row: 1;
     width: 100vw;
     height: 100vh;
+    transition: transform 0.3s ease;
   }
 
   /* Estado inicial: mostrar lista */
@@ -65,6 +29,11 @@
     z-index: 10;
   }
 
+    /* Mostrar botones de móvil */
+  .mobile-menu-btn {
+    display: flex;
+  }
+
   /* Cuando hay chat activo */
   .responsive-chat-layout.has-active-chat .chat-list-container {
     transform: translateX(-100%);
@@ -75,27 +44,82 @@
     z-index: 30;
   }
 
-  /* Mostrar botones de móvil */
-  .mobile-menu-btn {
+  /* Header del chat en móvil - CORREGIDO */
+  .mobile-chat-header {
     display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
+  /* Botón de retroceso en móvil - DEBE SER VISIBLE */
   .back-to-list {
+    display: flex !important;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .back-to-list:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }
+
+  /* Información del canal en header móvil */
+  .chat-header-info {
+    flex: 1;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .chat-header-info h2 {
+    font-size: 18px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chat-description {
+    font-size: 12px;
+    margin: 2px 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Acciones del header en móvil */
+  .chat-header-actions {
     display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
   }
 
   /* Ajustes de mensajes para móvil */
   .chat-message {
     max-width: min(85%, 400px);
     padding: 12px 16px;
+    margin-bottom: 8px;
   }
 
   .chat-message.own-message {
     max-width: min(85%, 400px);
-  }
-
-  .chat-header {
-    padding: 12px 16px;
+    margin-bottom: 8px;
   }
 
   .chat-messages {
@@ -107,56 +131,87 @@
     padding: 12px 16px;
   }
 
-  /* Header móvil */
-  .mobile-chat-header {
+  /* Ocultar botón de menú móvil en la ventana de chat */
+  .mobile-menu-btn {
+    display: none;
+  }
+
+  /* Mostrar botón de menú móvil solo en la lista */
+  .chat-list-container .mobile-menu-btn {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .back-button {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    border-radius: 8px;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-size: 18px;
-    transition: all 0.3s ease;
-  }
-
-  .back-button:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-
-  .header-info h1 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-  }
-
-  .header-info p {
-    margin: 2px 0 0;
-    font-size: 12px;
-    opacity: 0.8;
-  }
-
-  /* Ajustes del header del mensaje en móvil */
-  .chat-message-header {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .message-actions {
-    margin-left: 0;
   }
 }
 
-/* TABLET - Entre 769px y 1024px */
+/* Móviles pequeños */
+@media (max-width: 576px) {
+  .chat-header {
+    padding: 10px 12px;
+  }
+
+  .back-to-list {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+  }
+
+  .chat-header-info h2 {
+    font-size: 16px;
+  }
+
+  .chat-description {
+    font-size: 11px;
+  }
+
+  .chat-message {
+    max-width: 90%;
+    border-radius: 16px;
+    padding: 10px 14px;
+  }
+
+  .chat-message.own-message {
+    max-width: 90%;
+  }
+
+  .chat-messages {
+    padding: 12px;
+  }
+
+  .chat-input-container {
+    padding: 10px 12px;
+  }
+}
+
+/* Móviles extra pequeños (iPhone SE, etc) */
+@media (max-width: 375px) {
+  .chat-header {
+    padding: 8px 12px;
+  }
+
+  .back-to-list {
+    width: 32px;
+    height: 32px;
+  }
+
+  .chat-header-info h2 {
+    font-size: 15px;
+  }
+
+  .chat-message {
+    max-width: 92%;
+    padding: 8px 12px;
+  }
+
+  .chat-message.own-message {
+    max-width: 92%;
+  }
+
+  .chat-messages {
+    padding: 10px;
+    gap: 12px;
+  }
+}
+
+/* TABLET */
 @media (max-width: 1024px) and (min-width: 769px) {
   .responsive-chat-layout {
     grid-template-columns: 300px 1fr;
@@ -168,24 +223,5 @@
   
   .chat-message.own-message {
     max-width: min(70%, 450px);
-  }
-}
-
-/* Forzar visibilidad del input en móvil */
-@media (max-width: 768px) {
-  .chat-input-container[style*="display: none"],
-  .chat-input-container[style*="visibility: hidden"],
-  .chat-input-container[style*="opacity: 0"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  .chat-input-container input[style*="display: none"],
-  .chat-input-container input[style*="visibility: hidden"],
-  .chat-input-container input[style*="opacity: 0"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
   }
 }

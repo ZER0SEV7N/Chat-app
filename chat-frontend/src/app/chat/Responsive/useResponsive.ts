@@ -11,8 +11,8 @@ export function useResponsive() {
     useEffect(() => {
         const updateSize  = () => {
             const width = window.innerWidth;
-            setIsMobile(width < 900);
-            setIsTablet(width >= 900 && width < 1280);
+            setIsMobile(width < 758);
+            setIsTablet(width >= 759 && width < 1280);
             setIsDesktop(width >= 1280);
         };
 
