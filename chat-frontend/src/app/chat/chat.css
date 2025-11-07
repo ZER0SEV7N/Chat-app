@@ -813,21 +813,26 @@
   box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
 }
 
-/* Botón de retroceso para móvil */
-.back-to-list {
-  display: none;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  border-radius: 8px;
-  padding: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  align-items: center;
-  justify-content: center;
-}
+  /* Botón de retroceso en móvil - DEBE SER VISIBLE */
+  .back-to-list {
+    display: flex !important;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    font-size: 18px;
+    font-weight: bold;
+  }
 
-.back-to-list:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
+  .back-to-list:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }

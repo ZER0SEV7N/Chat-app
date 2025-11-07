@@ -1,37 +1,43 @@
 //src/app/chat/Responsive/headerChatResponsive.tsx
-//Modulo para el header responsivo del chat
+//Modulo para el botón de retroceso responsivo
 'use client';
 import React from 'react';
+import { ArrowLeft } from 'lucide-react'; // Ícono más profesional
 //Importar el hook de contexto de responsividad
 import { useResponsiveContext } from './contextResponsive';
 
 //Definir la interfaz de las props
 interface HeaderChatResponsiveProps {
-    title: string;
-    subtitle?: string;
     onBack: () => void;
     showBackButton?: boolean;
+    className?: string;
 }
 
-//Componente principal del header responsivo
-export default function HeaderChatResponsive({ title, subtitle, onBack, showBackButton = true }: HeaderChatResponsiveProps) {
-    const { isMobile } = useResponsiveContext();
+//Componente principal del botón de retroceso responsivo
+export default function HeaderChatResponsive({ 
+    onBack, 
+    showBackButton = true,
+    className = "" 
+}: HeaderChatResponsiveProps) {
+    const { isMobile, isTablet } = useResponsiveContext();
 
-    if(!isMobile) {
-        return null; //No mostrar el header en escritorio
+    // Mostrar en móvil Y tablet (opcional)
+    if(!isMobile && !isTablet) {
+        return null; // No mostrar en escritorio grande
     }   
+    
+    if(!showBackButton) {
+        return null; // No mostrar si está desactivado
+    }
+
     return(
-        <div className="mobile-chat-header">
-        {showBackButton && (
-            <button 
-            className="back-button"
+        <button 
+            className={`back-to-responsive ${className}`}
             onClick={onBack}
-            aria-label="Volver a la lista de chats">←</button>
-        )}
-        <div className="header-info">
-            <h1>{title}</h1>
-            {subtitle && <p>{subtitle}</p>}
-        </div>
-    </div>
-  );
+            aria-label="Volver a la lista de chats"
+        >
+            <ArrowLeft size={isMobile ? 20 : 22} />
+            {isTablet && <span className="back-text">Volver</span>}
+        </button>
+    );
 }

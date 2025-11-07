@@ -243,16 +243,6 @@ export default function ChatWindow({ socket, channel, onEditChannel, onBackToLis
     <div className="chat-container">
        {/*Encabezado - CORREGIDO CON BOTÓN DE RETROCESO */}
       <div className="chat-header">
-        {/*BOTÓN DE RETROCESO PARA MÓVIL */}
-        {onBackToList && (
-          <button 
-            className="back-to-list" 
-            onClick={onBackToList}
-            aria-label="Volver a la lista de chats"
-          >
-            ←
-          </button>
-        )}
         <div className="chat-header-info">
           <h2>#{channel.name}</h2>
           <p className="chat-description">

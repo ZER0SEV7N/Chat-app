@@ -399,18 +399,14 @@ export default function ChatContent() {
         }
         chatWindow={
           <>
-            {/* Header móvil solo cuando hay chat activo */}
-            {isMobile && currentChat && (
-              <MobileChatHeader
-                title={currentChat?.name || 'Chat'}
-                subtitle={currentChat?.isPublic ? 'Grupo público' : 'Chat privado'}
-                onBack={handleBackToList}
-              />
-            )}
+            {/* ✅ ELIMINAMOS el MobileChatHeader separado */}
+            {/* El botón ahora está INTEGRADO en el ChatWindow */}
             
-            {/*Ventana principal de chat */}
             <ChatWindow
-              {...({ socket, channel: currentChat, onEditChannel: handleEditChannel } as any)}
+              socket={socket}
+              channel={currentChat}
+              onEditChannel={handleEditChannel}
+              onBackToList={isMobile ? handleBackToList : undefined}
             />
           </>
         }

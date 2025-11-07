@@ -223,5 +223,30 @@
   
   .chat-message.own-message {
     max-width: min(70%, 450px);
+    }
+
+      /* Botón de retroceso en móvil - DEBE SER VISIBLE */
+  .back-to-list {
+    display: flex !important;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    font-size: 18px;
+    font-weight: bold;
   }
+
+  .back-to-list:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }
+
 }
