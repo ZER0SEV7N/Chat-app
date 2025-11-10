@@ -147,8 +147,7 @@ export default function ChatList({
         <h2 className="section-title">💬 Mensajes Directos</h2>
 
         {/* 🔍 Barra de búsqueda */}
-        <div className="search-container">
-          <span className="search-icon">🔍</span>
+        <div className="chat-search-bar">
           <input
             type="text"
             placeholder="Buscar usuario..."

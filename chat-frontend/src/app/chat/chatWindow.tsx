@@ -27,13 +27,16 @@ import {
   Edit3,
 } from "lucide-react";
 import socket from "../../lib/socket";
+import { Socket } from "socket.io-client";
 import "./chat.css";
 import "./chat-responsive.css";
 import "./chat-dark.css";
 
 interface Props {
+  socket: Socket | null;
   channel: any;
-  onEditChannel: (channel: any) => void; // Función del padre para editar canal
+  onEditChannel: (channel: any) => void;
+  onBackToList?: () => void;
 }
 
 export default function ChatWindow({ channel, onEditChannel }: Props) {

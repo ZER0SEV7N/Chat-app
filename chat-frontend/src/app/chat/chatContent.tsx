@@ -399,9 +399,6 @@ export default function ChatContent() {
         }
         chatWindow={
           <>
-            {/* ✅ ELIMINAMOS el MobileChatHeader separado */}
-            {/* El botón ahora está INTEGRADO en el ChatWindow */}
-            
             <ChatWindow
               socket={socket}
               channel={currentChat}

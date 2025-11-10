@@ -7,6 +7,19 @@ interface CreateChannelModalProps {
   onChannelCreated: (channel: any) => void; // Función para notificar al padre que se creó un canal
 }
 
+//Decodificar el token JWT (base64)
+function getUserIdFromToken(token: string | null) {
+  if (!token) return null;
+  try {
+    const [, payload] = token.split(".");
+    const data = JSON.parse(atob(payload));
+    // tu JwtGuard usa `req.user.sub`, por tanto el ID está en "sub"
+    return data.sub || data.idUser || data.userId || null;
+  } catch {
+    return null;
+  }
+}
+
 export default function CreateChannelModal({
   onClose,
   onChannelCreated,
@@ -14,7 +27,6 @@ export default function CreateChannelModal({
   // Estados locales para el nombre y la descripción del canal
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-
   // Estado para evitar múltiples envíos (doble clic)
   const [isCreating, setIsCreating] = useState(false);
 
@@ -23,7 +35,6 @@ export default function CreateChannelModal({
   ===============================================================*/
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); // Evita recargar la página al enviar el formulario
-
     // Si ya se está creando un canal, evita un segundo envío
     if (isCreating) return;
     setIsCreating(true);
@@ -39,20 +50,14 @@ export default function CreateChannelModal({
         setIsCreating(false);
         return;
       }
-      //Primero obtener el ID del usuario desde el backend
-      const user = await fetch(`${API_URL}/users/channels`, {
-        headers: { 
-          'Authorization': `Bearer ${token}` 
-        }
-      });
-      //SI el usuario existe
-      if(!user.ok) {
-        alert("Error al obtener datos del usuario");
+      // ✅ Extraer idUser directamente del token JWT
+      const creatorId = getUserIdFromToken(token);
+      if (!creatorId) {
+        alert("No se pudo obtener el ID del usuario del token");
         setIsCreating(false);
         return;
       }
-      //Extraer los datos del usuario
-      const userData = await user.json();
+
       //Enviar la solicitud al backend
       const res = await fetch(`${API_URL}/channels`, {
         method: "POST",
@@ -60,7 +65,7 @@ export default function CreateChannelModal({
         body: JSON.stringify({
           name,
           description,
-          creatorId: userData.idUser, // Se envía el ID del creador
+          creatorId // Se envía el ID del creador
         }),
       });
 
