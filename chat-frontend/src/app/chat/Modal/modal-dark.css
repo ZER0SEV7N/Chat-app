@@ -1,0 +1,114 @@
+/* =======================================================
+   🌙 MODAL - MODO OSCURO
+   ======================================================= */
+
+@media (prefers-color-scheme: dark) {
+  .modal-content {
+    background: #1f2937;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .modal-body {
+    background: #111827;
+  }
+  
+  .modal-body p {
+    color: #d1d5db;
+  }
+  
+  .modal-body input,
+  .modal-form input,
+  .modal-form textarea {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .modal-body input:focus,
+  .modal-form input:focus,
+  .modal-form textarea:focus {
+    border-color: #667eea;
+    background: #374151;
+  }
+  
+  .modal-body input::placeholder,
+  .modal-form input::placeholder,
+  .modal-form textarea::placeholder {
+    color: #9ca3af;
+  }
+  
+  .btn-secondary {
+    background: #374151;
+    color: #f9fafb;
+    border-color: #4b5563;
+  }
+  
+  .btn-secondary:hover:not(:disabled) {
+    background: #4b5563;
+  }
+  
+  .modal-footer {
+    background: #1f2937;
+    border-top-color: #374151;
+  }
+
+  .form-label {
+    color: #e5e7eb;
+  }
+
+  /* Edición de canal en modo oscuro */
+  .users-management-section {
+    border-top-color: #374151;
+  }
+
+  .users-section-title {
+    color: #e5e7eb;
+  }
+
+  .users-list-container {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .user-list-item {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .user-list-item:hover {
+    background: #4b5563;
+  }
+
+  .user-username {
+    color: #e5e7eb;
+  }
+
+  .no-access-message,
+  .no-users-message {
+    color: #9ca3af;
+  }
+
+  /* Scrollbar modo oscuro */
+  .users-list-container::-webkit-scrollbar-track {
+    background: #374151;
+  }
+
+  .users-list-container::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+
+  .users-list-container::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+  }
+}
+
+/* Modo oscuro forzado con clase */
+.dark-mode .modal-content {
+  background: #1f2937;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .modal-body {
+  background: #111827;
+}

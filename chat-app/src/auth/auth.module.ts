@@ -12,6 +12,7 @@ import { User } from '../entities/user.entity';
     TypeOrmModule.forFeature([User]),
     PassportModule, //para estrategias de autenticación
       JwtModule.register({
+        global: true,
         secret: 'MI_SECRETO_SUPER_SEGURO' //clave fija
         }),
     ],

@@ -1,110 +1,173 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+// ============================================================
+// 📁 src/chat/chat.service.ts
+// Servicio encargado de manejar la lógica del chat (mensajes, canales, etc.)
+// ============================================================
+
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { Message } from 'src/entities/message.entity';
 import { Channel } from 'src/entities/channels.entity';
 import { User } from 'src/entities/user.entity';
 
 @Injectable()
-//Servicio para manejar la lógica del chat
 export class ChatService {
-  //Inyectar los repositorios necesarios
+  // ============================================================
+  // Inyección de dependencias: repositorios de las entidades necesarias
+  // ============================================================
   constructor(
-    //Repositorio de mensajes
     @InjectRepository(Message)
-    private messageRepository: Repository<Message>,
-    //Repositorio de canales
+    private messageRepository: Repository<Message>, //Repositorio de mensajes
+
     @InjectRepository(Channel)
-    private channelRepository: Repository<Channel>,
-    //Repositorio de usuarios
+    private channelRepository: Repository<Channel>, //Repositorio de canales
+
     @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) { }
+    private userRepository: Repository<User>, //Repositorio de usuarios
+  ) {}
 
   // ============================================================
-  // Crear mensaje
+  // 📩 Crear un mensaje
   // ============================================================
   async createMessage(userId: number, channelId: number, text: string) {
-    //Buscar el usuario y el canal
-    const user = await this.userRepository.findOne({ where: { idUser: userId } });
-    //Si no existe el usuario, lanzar error
+    //Buscar el usuario que envía el mensaje
+    const user = await this.userRepository.findOne({
+      where: { idUser: userId },
+    });
     if (!user) throw new NotFoundException('Usuario no encontrado');
-    //Buscar el canal
-    const channel = await this.channelRepository.findOne({ where: { idChannel: channelId } });
-    //Si no existe el canal, lanzar error
+
+    //Buscar el canal donde se enviará el mensaje
+    const channel = await this.channelRepository.findOne({
+      where: { idChannel: channelId },
+    });
     if (!channel) throw new NotFoundException('Canal no encontrado');
-    //Crear y guardar el mensaje
+
+    //Crear el mensaje con la información proporcionada
     const message = this.messageRepository.create({ text, user, channel });
-    //Guardar el mensaje en la base de datos
+
+    //Guardar el mensaje en la base de datos y retornarlo
     return this.messageRepository.save(message);
   }
 
   // ============================================================
-  // Obtener mensajes de un canal
+  // 💬 Obtener todos los mensajes de un canal
   // ============================================================
   async getMessages(channelId: number) {
-    //Verificar que el canal existe
-    const channel = await this.channelRepository.findOne({ where: { idChannel: channelId } });
-    //Objetar error si no existe
+    //Verificar que el canal exista
+    const channel = await this.channelRepository.findOne({
+      where: { idChannel: channelId },
+    });
     if (!channel) throw new NotFoundException('Canal no encontrado');
-    //Buscar y retornar los mensajes del canal
+
+    //Buscar los mensajes relacionados con el canal
     return await this.messageRepository.find({
-      where: { channel: { idChannel: channelId } }, //Filtrar por canal
-      relations: ['user'], //Incluir la relación con el usuario
-      order: { createdAt: 'ASC' }, //Ordenar por fecha de creación ascendente
+      where: { channel: { idChannel: channelId } },
+      relations: ['user'], //Incluir el usuario que envió cada mensaje
+      order: { createdAt: 'ASC' }, //Mostrar los más antiguos primero
     });
   }
 
+    // ============================================================
+    // 👤 Obtener usuario por ID
+    // ============================================================
+    async getUserById(idUser: number) {
+      const user = await this.userRepository.findOne({
+        where: { idUser },
+        select: ['idUser', 'username', 'name', 'email'],
+      });
+      if (!user) throw new NotFoundException('Usuario no encontrado');
+      return user;
+    }
+
+
   // ============================================================
-  // Crear o recuperar un canal privado (DM)
+  // Crear o recuperar un canal privado (DM) - CORREGIDO
   // ============================================================
   async getOrCreatePrivateChannel(userId: number, targetUsername: string) {
-    //comprobar el usuario objetivo por su username
-    const targetUser = await this.userRepository.findOne({ where: { username: targetUsername  } });
-    //Mostrar error si no existe
-    if (!targetUser) throw new NotFoundException('Usuario no encontrado');
-    //Comprobar que el usuario actual existe
-    const currentUser = await this.userRepository.findOne({ where: { idUser: userId } });
-    //Mostrar error si no existe el usuario actual (Dudo mucho que llegue a pasar pero igualmemnte esta ahi xd)  
-    if (!currentUser) throw new NotFoundException('Usuario actual no encontrado');
-    //Buscar si ya existe un canal privado entre los dos usuarios
+    //Buscar el usuario objetivo (con quien se chatea)
+    const targetUser = await this.userRepository.findOne({
+      where: { username: targetUsername },
+    });
+    if (!targetUser) throw new NotFoundException('Usuario destino no encontrado');
+
+    //Buscar el usuario actual
+    const currentUser = await this.userRepository.findOne({
+      where: { idUser: userId },
+    });
+    if (!currentUser)
+      throw new NotFoundException('Usuario actual no encontrado');
+
+    // 🔒 CONSULTA CORREGIDA: Buscar canal que tenga EXACTAMENTE a ambos usuarios
     let channel = await this.channelRepository
       .createQueryBuilder('channel')
-      .leftJoinAndSelect('channel.members', 'member')
+      .innerJoin('channel.members', 'member1')
+      .innerJoin('channel.members', 'member2')
       .where('channel.isPublic = false')
-      .andWhere('member.idUser IN (:...ids)', { ids: [userId, targetUser.idUser] })
+      .andWhere('member1.idUser = :userId', { userId })
+      .andWhere('member2.idUser = :targetUserId', { targetUserId: targetUser.idUser })
       .getOne();
-    //Si no existe, crear el canal privado
+
+    // Si no existe, crear un nuevo canal privado (DM)
     if (!channel) {
-      //Definir el nombre del canal como "dm-usuario"
+      console.log(`🆕 Creando nuevo DM entre ${currentUser.username} y ${targetUser.username}`);
+      
       channel = this.channelRepository.create({
-        name: `dm-${targetUser.username}-${currentUser.username}`, //Nombre del canal
-        description: `Chat privado entre ${currentUser.username} y ${targetUser.username}`, //Descripción del canal
-        isPublic: false, //Canal privado
-        members: [{ idUser: userId }, { idUser: targetUser.idUser }], //Miembros del canal
+        name: `DM ${currentUser.username}-${targetUser.username}`,
+        description: `Chat privado entre ${currentUser.username} y ${targetUser.username}`,
+        isPublic: false,
+        members: [currentUser, targetUser],
+        creator: currentUser,
       });
-      await this.channelRepository.save(channel); //Guardar el canal en la base de datos
+      await this.channelRepository.save(channel);
+      
+      console.log(`✅ Nuevo DM creado: ${channel.name}`);
+    } else {
+      console.log(`✅ DM existente encontrado: ${channel.name}`);
     }
-    //Mostrar diferentes nombre del usuario dependiendo de quien lo creo
-    const displayName = 
-          //Mostrar el nombre del canal si eres el creador
-          channel.name.includes(`${currentUser.username}-${targetUser.username}`) ||
-          //Mostrar el nombre del otro usuario si eres el receptor
-          channel.name.includes(`${targetUser.username}-${currentUser.username}`)
-          //Mostrar el nombre del otro usuario
-          ? `DM ${targetUser.username}`: channel.name;
-    //Retornar el canal y el nombre a mostrar
-    return {channel, displayName};
+
+    // Definir el nombre que verá el usuario actual
+    const displayName = `DM ${targetUser.username}`;
+
+    return { channel, displayName };
   }
-  
-  //Canales de un usuario
+
+  // ============================================================
+  // Obtener todos los canales donde participa un usuario
+  // ============================================================
   async getUserChannels(userId: number) {
+    // Buscar al usuario con sus canales
     const user = await this.userRepository.findOne({
       where: { idUser: userId },
-      relations: ['channels'],
+      relations: ['channels', 'channels.members'], // Incluir miembros para verificar
     });
+
     if (!user) throw new NotFoundException('Usuario no encontrado');
 
-    return user.channels;
+    // 🔒 Filtrar canales privados para asegurar que el usuario es miembro
+    const filteredChannels = user.channels.filter(channel => {
+      if (channel.isPublic) return true;
+      
+      // Para canales privados, verificar que el usuario actual sea miembro
+      return channel.members.some(member => member.idUser === userId);
+    });
+
+    return filteredChannels;
+  }
+  //============================================================
+  //Obtener todos los usuarios (en AddUserModal)
+    async getAllUsers(currentUserId: number) {
+    const users = await this.userRepository.find({
+      where: {
+        idUser: Not(currentUserId),
+      },
+      select: ['idUser', 'username', 'name', 'email', 'createdAt'],
+      order: {
+        username: 'ASC',
+      },
+    });
+    return users;
   }
 }

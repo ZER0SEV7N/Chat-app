@@ -1,6 +1,14 @@
+//chat-frontend/src/app/chat/page.tsx
 'use client';
-import ChatResponsive from './ChatResponsive';
+import { useState, useEffect } from "react";
+import { ResponsiveProvider } from "./Responsive/contextResponsive";
+import ChatContent from "./chatContent";
 
+//Componente principal envuelto en el Provider
 export default function ChatPage() {
-  return <ChatResponsive />;
+  return (
+    <ResponsiveProvider>
+      <ChatContent />
+    </ResponsiveProvider>
+  );
 }
