@@ -26,29 +26,42 @@ export default function EditChannelModal({
   const [name, setName] = useState(channel.name || "");
   const [description, setDescription] = useState(channel.description || "");
   const [isPublic, setIsPublic] = useState(channel.isPublic);
-  const [users, setUsers] = useState<any[]>([]); //Usuarios que pertenecen al canal
+  const [members, setMembers] = useState<any[]>([]); //Usuarios que pertenecen al canal
+  const [availableUsers, setAvailableUsers] = useState<any[]>([]); //Todos los usuarios disponibles
   const [newUser, setNewUser] = useState(""); //Usuario a agregar
   const [isLoading, setIsLoading] = useState(false);
-const token = localStorage.getItem('token'); // ✅ OBTENER TOKEN
+  const [activeTab, setActiveTab] = useState<'settings' | 'members'>('settings');
+  const token = localStorage.getItem('token'); //OBTENER TOKEN
   //Cargar lista de usuarios del canal al abrir el modal
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`${API_URL}/channels/${channel.idChannel}/users`, {
+         const membersRes = await fetch(`${API_URL}/channels/${channel.idChannel}/users`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        const data = await res.json();
-
-        if (res.ok) setUsers(data);
-        else console.error("Error al cargar usuarios del canal:", data);
+        //SI la pagina devuelve los usuarios
+        if (membersRes.ok) {
+          const membersData  = await membersRes .json();
+          setMembers(membersData);
+        }
+        //Cargar todos los ususarios disponibles (excepto el actual)
+        const usersRes  = await fetch(`${API_URL}/auth/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (usersRes.ok) {
+          const usersData = await usersRes .json();
+          setAvailableUsers(usersData.filter((user: any) => 
+            user.idUser !== idUser && !members.some(member => member.idUser === user.idUser)
+          ));
+        }
       }catch(err) {
         console.error("Error al obtener los datos del usuario:", err);
       }
     };
     if(channel?.idChannel) fetchUsers();
-  }, [channel.idChannel]);
+  }, [channel.idChannel, idUser, token]);
 
   //Guardar los cambios del canal (nombre, descripción, visibilidad)
   const handleSave = async (e: React.FormEvent) => {
@@ -101,35 +114,39 @@ const token = localStorage.getItem('token'); // ✅ OBTENER TOKEN
       const data = await res.json();
 
       if (res.ok) {
-        setUsers((prev) => [...prev, data]); //Añadir el nuevo usuario a la lista local
+        setMembers((prev) => [...prev, data]); //Añadir el nuevo usuario a la lista local
+        setAvailableUsers(prev => prev.filter(user => user.idUser !== data.idUser));
         setNewUser("");
       } else {
         alert(data.message || "Error al agregar usuario al canal");
       }
     } catch (err) {
       console.error("Error al agregar usuario:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   //Expulsar (kickear) un usuario del canal
-  const handleKickUser = async (idUser: number) => {
-    const confirmKick = confirm("¿Deseas expulsar este usuario del canal?");
-    if (!confirmKick) return;
+  const handleKickUser = async (userId: number, username: string) => {
+    if (!confirm(`¿Expulsar a ${username} del canal?`)) return;
     setIsLoading(true);
     try {
       const res = await fetch(
-        `${API_URL}/channels/${channel.idChannel}/remove-user/${idUser}`,
+        `${API_URL}/channels/${channel.idChannel}/remove-user/${userId}`,
         { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (res.ok) {
-        setUsers(users.filter((u) => u.idUser !== idUser)); //Quitarlo del estado local
+        const removedUser = members.find(m => m.idUser === userId);
+        setMembers(prev => prev.filter(m => m.idUser !== userId));//Quitarlo del estado local
       } else {
         const data = await res.json();
         alert(data.message || "No se pudo expulsar usuario");
       }
     } catch (err) {
       console.error("Error al expulsar al usuario:", err);
+      alert("Error de conexión");
     } finally {
       setIsLoading(false);
     }
@@ -139,141 +156,271 @@ const token = localStorage.getItem('token'); // ✅ OBTENER TOKEN
   //(ajustado a channel.creator?.username o createdBy)
   const isCreator = channel.creator?.username === username || channel.createdBy === username;
 
+  //Obtener usuarios disponibles para agregar (no miembros actuales)
+  const filteredAvailableUsers = availableUsers.filter(user => 
+    user.username.toLowerCase().includes(newUser.toLowerCase()) ||
+    user.name.toLowerCase().includes(newUser.toLowerCase())
+  );
 
-return (
+  return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content edit-channel-modal" onClick={(e) => e.stopPropagation()}>
         
+        {/* Header */}
         <div className="modal-header">
-          <h3>Editar Canal</h3>
+          <div className="header-content">
+            <h3>Configuración del Canal</h3>
+            <p className="channel-subtitle">#{channel.name}</p>
+          </div>
           <button className="modal-close" onClick={onClose} aria-label="Cerrar">
             ×
           </button>
         </div>
 
+        {/* Navegación por pestañas */}
+        <div className="modal-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            ⚙️ Configuración
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'members' ? 'active' : ''}`}
+            onClick={() => setActiveTab('members')}
+          >
+            👥 Miembros ({members.length})
+          </button>
+        </div>
+
         <div className="modal-body">
-          <div className="modal-body-content"> 
-            {/*NUEVO CONTENEDOR CON SCROLL */}
+          <div className="modal-body-content">
             {!isCreator ? (
-              <p className="no-access-message">
-                Solamente el creador puede modificar este canal.
-              </p>
+              <div className="access-denied">
+                <div className="denied-icon">🔒</div>
+                <h4>Acceso Restringido</h4>
+                <p>Solamente el creador del canal puede modificar la configuración.</p>
+                <button className="btn-secondary" onClick={onClose}>
+                  Cerrar
+                </button>
+              </div>
             ) : (
-              <form className="modal-form" onSubmit={handleSave}>
-                
-                <div className="form-group">
-                  <label className="form-label">Nombre del Canal</label>
-                  <input
-                    type="text"
-                    placeholder="Ingresa el nombre del canal"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
+              <>
+                {/* Pestaña de Configuración */}
+                {activeTab === 'settings' && (
+                  <form className="modal-form" onSubmit={handleSave}>
+                    <div className="form-section">
+                      <h4 className="section-title">Información del Canal</h4>
+                      
+                      <div className="form-group">
+                        <label className="form-label">
+                          📝 Nombre del Canal
+                          <span className="required">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej: Desarrollo Frontend"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          className="form-input"
+                        />
+                      </div>
 
-                <div className="form-group">
-                  <label className="form-label">
-                    Descripción <span className="optional">(Opcional)</span>
-                  </label>
-                  <textarea
-                    placeholder="Describe el propósito del canal"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
+                      <div className="form-group">
+                        <label className="form-label">
+                          📄 Descripción
+                          <span className="optional">(Opcional)</span>
+                        </label>
+                        <textarea
+                          placeholder="Describe el propósito de este canal..."
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          disabled={isLoading}
+                          className="form-textarea"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
 
-                <div className="form-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={isPublic}
-                      onChange={(e) => setIsPublic(e.target.checked)}
-                      disabled={isLoading}
-                    />
-                    Canal Público
-                  </label>
-                </div>
-
-                <div className="users-management-section">
-                  <h4 className="users-section-title">Usuarios en el canal</h4>
-                  
-                  <div className="users-list-container">
-                    {users.length > 0 ? (
-                      users.map((u) => (
-                        <div key={u.idUser} className="user-list-item">
-                          <span className="user-username">{u.username}</span>
-                          {u.username !== username && (
-                            <button 
-                              className="kick-user-btn"
-                              onClick={() => handleKickUser(u.idUser)}
+                    <div className="form-section">
+                      <h4 className="section-title">Configuración de Acceso</h4>
+                      
+                      <div className="privacy-setting">
+                        <div className="privacy-option">
+                          <label className="checkbox-label large">
+                            <input
+                              type="checkbox"
+                              checked={isPublic}
+                              onChange={(e) => setIsPublic(e.target.checked)}
                               disabled={isLoading}
-                              title="Expulsar usuario"
-                            >
-                              🗑️
-                            </button>
-                          )}
+                            />
+                            <div className="checkbox-content">
+                              <span className="privacy-title">🌍 Canal Público</span>
+                              <span className="privacy-description">
+                                Cualquier usuario puede ver y unirse a este canal
+                              </span>
+                            </div>
+                          </label>
                         </div>
-                      ))
-                    ) : (
-                      <p className="no-users-message">
-                        No hay usuarios en este canal
-                      </p>
-                    )}
-                  </div>
+                        
+                        {isPublic && (
+                          <div className="privacy-notice">
+                            <div className="notice-icon">💡</div>
+                            <div className="notice-text">
+                              <strong>Los canales públicos</strong> son visibles para todos 
+                              y los usuarios pueden unirse libremente.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Agregar Usuario</label>
-                    <div className="add-user-input-group">
-                      <input
-                        type="text"
-                        placeholder="Nombre de usuario"
-                        value={newUser}
-                        onChange={(e) => setNewUser(e.target.value)}
-                        disabled={isLoading}
-                        className="add-user-input"
-                      />
+                    <div className="form-actions">
                       <button 
-                        className="btn-primary add-user-btn"
-                        onClick={handleAddUser}
-                        disabled={isLoading || !newUser.trim()}
-                        type="button"
+                        type="button" 
+                        className="btn-secondary" 
+                        onClick={onClose}
+                        disabled={isLoading}
                       >
-                        ➕ Agregar
+                        Cancelar
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="btn-primary save-button"
+                        disabled={isLoading || !name.trim()}
+                      >
+                        {isLoading ? (
+                          <>
+                            <div className="button-spinner"></div>
+                            Guardando...
+                          </>
+                        ) : (
+                          '💾 Guardar Cambios'
+                        )}
                       </button>
                     </div>
-                  </div>
-                </div>
+                  </form>
+                )}
 
-                <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn-secondary" 
-                    onClick={onClose}
-                    disabled={isLoading}
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="btn-primary"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <span className="loading-spinner"></span>
-                        Guardando...
-                      </>
-                    ) : (
-                      'Guardar Cambios'
+                {/* Pestaña de Miembros */}
+                {activeTab === 'members' && (
+                  <div className="members-tab">
+                    <div className="members-header">
+                      <h4 className="section-title">
+                        {isPublic ? "Miembros del Canal" : "Gestión de Miembros"}
+                      </h4>
+                      <div className="members-count">
+                        {members.length} {members.length === 1 ? 'miembro' : 'miembros'}
+                      </div>
+                    </div>
+
+                    {/* Lista de miembros */}
+                    <div className="members-list">
+                      {members.map((user) => (
+                        <div key={user.idUser} className="member-item">
+                          <div className="member-info">
+                            <div className="member-avatar">
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="member-details">
+                              <span className="member-name">{user.name}</span>
+                              <span className="member-username">@{user.username}</span>
+                            </div>
+                          </div>
+                          <div className="member-actions">
+                            {user.idUser === channel.creator?.idUser && (
+                              <span className="creator-tag">Creador</span>
+                            )}
+                            {user.idUser !== idUser && user.idUser !== channel.creator?.idUser && (
+                              <button
+                                className="remove-button"
+                                onClick={() => handleKickUser(user.idUser, user.username)}
+                                disabled={isLoading}
+                                title="Expulsar del canal"
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Agregar usuarios (solo en canales privados) */}
+                    {!isPublic && (
+                      <div className="add-members-section">
+                        <h5 className="subsection-title">Agregar Miembros</h5>
+                        <div className="add-member-form">
+                          <div className="search-container">
+                            <input
+                              type="text"
+                              placeholder="Buscar usuario por nombre o username..."
+                              value={newUser}
+                              onChange={(e) => setNewUser(e.target.value)}
+                              disabled={isLoading}
+                              className="search-input"
+                            />
+                            <button 
+                              className="btn-primary add-button"
+                              onClick={handleAddUser}
+                              disabled={isLoading || !newUser.trim()}
+                            >
+                              {isLoading ? "..." : "➕ Agregar"}
+                            </button>
+                          </div>
+                          
+                          {/* Sugerencias de usuarios */}
+                          {newUser && filteredAvailableUsers.length > 0 && (
+                            <div className="user-suggestions">
+                              {filteredAvailableUsers.slice(0, 5).map(user => (
+                                <div 
+                                  key={user.idUser}
+                                  className="suggestion-item"
+                                  onClick={() => {
+                                    setNewUser(user.username);
+                                    setTimeout(handleAddUser, 100);
+                                  }}
+                                >
+                                  <div className="suggestion-avatar">
+                                    {user.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="suggestion-details">
+                                    <span className="suggestion-name">{user.name}</span>
+                                    <span className="suggestion-username">@{user.username}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {availableUsers.length > 0 && (
+                          <div className="available-count">
+                            {availableUsers.length} usuarios disponibles para agregar
+                          </div>
+                        )}
+                      </div>
                     )}
-                  </button>
-                </div>
-              </form>
+
+                    {isPublic && (
+                      <div className="public-channel-info">
+                        <div className="info-icon">🌍</div>
+                        <div className="info-content">
+                          <h5>Canal Público</h5>
+                          <p>
+                            Todos los usuarios pueden unirse libremente a este canal. 
+                            La gestión de miembros es automática.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
-          </div> 
+          </div>
         </div>
       </div>
     </div>

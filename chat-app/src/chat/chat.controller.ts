@@ -52,4 +52,52 @@ export class ChatController {
     
     return this.chatService.getAllUsers(currentUserId);
   }
+
+  // 📂 Obtener canales del usuario (incluyendo DMs)
+  @Get('user-channels')
+  async getUserChannels(@Req() req: Request) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new Error('Falta el token de autorización');
+    }
+    
+    const token = authHeader.split(' ')[1];
+    const payload = this.jwtService.verify(token);
+    const userId = payload.sub;
+    
+    return this.chatService.getUserChannels(userId);
+  }
+
+  // 🔍 Obtener solo DMs del usuario
+  @Get('dms')
+  async getUserDMs(@Req() req: Request) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new Error('Falta el token de autorización');
+    }
+    
+    const token = authHeader.split(' ')[1];
+    const payload = this.jwtService.verify(token);
+    const userId = payload.sub;
+    
+    return this.chatService.getUserDMs(userId);
+  }
+
+  // 🗑️ Eliminar DM
+  @Delete('dm/:channelId')
+  async deleteDM(
+    @Param('channelId') channelId: number,
+    @Req() req: Request
+  ) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new Error('Falta el token de autorización');
+    }
+    
+    const token = authHeader.split(' ')[1];
+    const payload = this.jwtService.verify(token);
+    const userId = payload.sub;
+    
+    return this.chatService.deleteDM(channelId, userId);
+  }
 }

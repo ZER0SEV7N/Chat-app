@@ -41,16 +41,9 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
-<<<<<<< HEAD
-  const [username, setUsername] = useState("");  
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null); //nuevo estado para el ID del usuario
-
-  // 🔹 Configurar notificaciones, usuario y audio
-=======
   // ===============================================================
   // ⚙️ CONFIGURACIÓN INICIAL: Usuario, Audio y Eventos de Foco
   // ===============================================================
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
   useEffect(() => {
     // Cargar usuario desde localStorage
     const storedUsername = localStorage.getItem("username") || "";
@@ -218,22 +211,6 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
     <div className="chat-container">
       {/* ================= ENCABEZADO DEL CHAT ================= */}
       <div className="chat-header">
-<<<<<<< HEAD
-        {/* ⚙️ Botón de edición de canal
-        🔹 Solo visible si:
-          -El usuario actual es el creador
-          -NO es un DM (detectado por nombre que empieza con 'DM ')
-        */}
-        {channel.type === "channel" && channel.creator?.username === username && (
-            <button
-              type="button"
-              className="edit-channel-btn"
-              title="Editar canal"
-              onClick={() => setShowEditModal(true)}
-            >
-              <Edit3 size={18} />
-            </button>
-=======
          {/* 🎯 BOTÓN DE RETROCESO - SOLO EN MÓVIL */}
         {isMobile && onBackToList && (
           <button 
@@ -243,7 +220,6 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
           >
             <ArrowLeft size={20} />
           </button>
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
         )}
         <div className="chat-header-info">
           <h2>#{channel.name}</h2>
@@ -251,7 +227,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
         </div>
 
         {/* Usuarios conectados Unicamente para grupos*/}
-        {channel.isPublic || channel.name?.startsWith("DM ") ? null : (
+        {channel.type === 'channel' && (
           <div className="chat-online-users">
             <Users size={18} />
             {onlineUsers.length > 0 ? (
@@ -265,16 +241,15 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
         {/* Acciones del encabezado */}
         <div className="chat-header-actions">
           {/* Solo el creador puede editar el canal */}
-          {channel.creator?.username === username &&
-            !channel.name?.startsWith("DM ") && (
-              <button
-                className="edit-channel-btn"
-                title="Editar canal"
-                onClick={() => onEditChannel(channel)}
-              >
-                <Edit3 size={18} />
-              </button>
-            )}
+          {channel.creator?.username === username && channel.type === 'channel' &&(
+            <button
+              className="edit-channel-btn"
+              title="Editar canal"
+              onClick={() => onEditChannel(channel)}
+            >
+              <Edit3 size={18} />
+            </button>
+          )}
 
           <button
             type="button"

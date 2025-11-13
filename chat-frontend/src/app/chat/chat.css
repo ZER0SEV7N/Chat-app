@@ -964,3 +964,37 @@
   font-weight: 600;
 }
 
+/* Agrega estos estilos a tu chat.css */
+
+/* Indicador visual para DMs */
+.dm-item {
+  border-left: 3px solid #6366f1;
+}
+
+.dm-item .channel-name {
+  color: #6366f1;
+}
+
+/* Badge para DMs */
+.dm-badge {
+  background: #6366f1;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+/* Estados para diferentes tipos de canales */
+.channel-item.public-channel {
+  border-left: 3px solid #10b981;
+}
+
+.channel-item.private-channel {
+  border-left: 3px solid #f59e0b;
+}
+
+.channel-item.dm-channel {
+  border-left: 3px solid #6366f1;
+}

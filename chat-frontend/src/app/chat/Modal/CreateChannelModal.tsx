@@ -1,3 +1,5 @@
+//src/app/chat/Modal/CreateChannelModal.tsx
+//Modal para crear un canal de usuario
 import React, { useState } from "react";
 import "./modal.css";
 import { API_URL } from "@/lib/config";
@@ -26,37 +28,23 @@ export default function CreateChannelModal({
 }: CreateChannelModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-<<<<<<< HEAD
-  const [isPublic, setIsPublic] = useState(true); // 👈 Nuevo estado
-=======
+  const [isPublic, setIsPublic] = useState(true); // ✅ NUEVO: Estado para controlar si el canal es público o privado
   // Estado para evitar múltiples envíos (doble clic)
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreate = async (e: React.FormEvent) => {
-<<<<<<< HEAD
-    e.preventDefault();
-
-=======
     e.preventDefault(); // Evita recargar la página al enviar el formulario
     // Si ya se está creando un canal, evita un segundo envío
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
     if (isCreating) return;
     setIsCreating(true);
 
     try {
-<<<<<<< HEAD
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-      if (!user?.id) {
-=======
       // Obtener el usuario actual (asumimos que está guardado en localStorage)
       const token = localStorage.getItem("token");
 
 
       //Verificar si el usuario está autenticado
       if(!token){
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
         alert("Error: usuario no autenticado");
         return;
       }
@@ -68,10 +56,7 @@ export default function CreateChannelModal({
         return;
       }
 
-<<<<<<< HEAD
-=======
       //Enviar la solicitud al backend
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
       const res = await fetch(`${API_URL}/channels`, {
         method: "POST",
         headers: {
@@ -81,19 +66,22 @@ export default function CreateChannelModal({
         body: JSON.stringify({
           name,
           description,
-<<<<<<< HEAD
-          isPublic, // 👈 Se envía al backend
-          type: "channel",
-=======
-          creatorId // Se envía el ID del creador
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
+          creatorId, // Se envía el ID del creador
+          isPublic, // ✅ NUEVO: Se envía si el canal es público o privado
+          type: "channel" // ✅ NUEVO: Se especifica explícitamente que es un canal, no un DM
         }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        onChannelCreated(data);
+        // ✅ Asegurar que el canal tenga el tipo correcto
+        const channelWithType = {
+          ...data,
+          type: 'channel', // ✅ Forzar tipo en frontend también
+          isDM: false
+        };
+        onChannelCreated(channelWithType);
         onClose();
       } else {
         alert(data.message || "Error al crear el canal");
@@ -106,8 +94,6 @@ export default function CreateChannelModal({
     }
   };
 
-<<<<<<< HEAD
-=======
   // Manejar teclas del teclado
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -118,7 +104,6 @@ export default function CreateChannelModal({
   /*===============================================================
   Renderizado del modal
   ===============================================================*/
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div 
@@ -134,46 +119,6 @@ export default function CreateChannelModal({
           </button>
         </div>
 
-<<<<<<< HEAD
-        <form onSubmit={handleCreate}>
-          <input
-            type="text"
-            placeholder="Nombre del canal"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-
-          <textarea
-            placeholder="Descripción (opcional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-
-          {/* 👇 Selector de visibilidad del canal */}
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
-              />
-              Canal público
-            </label>
-            <small className="text-muted">
-              {isPublic
-                ? "Cualquiera podrá unirse al canal."
-                : "Solo usuarios invitados podrán acceder."}
-            </small>
-          </div>
-
-          <div className="modal-buttons">
-            <button type="submit" className="btn-primary" disabled={isCreating}>
-              {isCreating ? "Creando..." : "Crear"}
-            </button>
-
-            <button type="button" className="btn-secondary" onClick={onClose}>
-=======
         {/* Formulario para crear canal */}
         <form onSubmit={handleCreate} className="modal-form">
           <div className="form-group">
@@ -206,6 +151,68 @@ export default function CreateChannelModal({
             />
           </div>
 
+          {/* ✅ NUEVA SECCIÓN: Configuración de privacidad del canal */}
+          <div className="form-group">
+            <div className="privacy-settings">
+              <h4 className="privacy-title">Configuración de Privacidad</h4>
+              
+              <div className="privacy-options">
+                <label className="privacy-option">
+                  <input
+                    type="radio"
+                    name="privacy"
+                    value="public"
+                    checked={isPublic}
+                    onChange={() => setIsPublic(true)}
+                    disabled={isCreating}
+                  />
+                  <div className="privacy-content">
+                    <span className="privacy-label">🌍 Canal Público</span>
+                    <span className="privacy-description">
+                      Cualquier usuario puede ver y unirse a este canal
+                    </span>
+                  </div>
+                </label>
+
+                <label className="privacy-option">
+                  <input
+                    type="radio"
+                    name="privacy"
+                    value="private"
+                    checked={!isPublic}
+                    onChange={() => setIsPublic(false)}
+                    disabled={isCreating}
+                  />
+                  <div className="privacy-content">
+                    <span className="privacy-label">🔒 Canal Privado</span>
+                    <span className="privacy-description">
+                      Solo usuarios invitados pueden unirse a este canal
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Información adicional según la selección */}
+              {isPublic ? (
+                <div className="privacy-notice public">
+                  <div className="notice-icon">💡</div>
+                  <div className="notice-text">
+                    <strong>Los canales públicos</strong> son visibles para todos los usuarios 
+                    y cualquiera puede unirse libremente.
+                  </div>
+                </div>
+              ) : (
+                <div className="privacy-notice private">
+                  <div className="notice-icon">🔐</div>
+                  <div className="notice-text">
+                    <strong>Los canales privados</strong> son invisibles para otros usuarios. 
+                    Solo podrán unirse quienes tú invites manualmente.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Botones del modal */}
           <div className="modal-footer">
             <button 
@@ -214,7 +221,6 @@ export default function CreateChannelModal({
               onClick={onClose}
               disabled={isCreating}
             >
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
               Cancelar
             </button>
             
@@ -229,7 +235,7 @@ export default function CreateChannelModal({
                   Creando...
                 </>
               ) : (
-                'Crear Canal'
+                `Crear ${isPublic ? 'Canal Público' : 'Canal Privado'}` // ✅ Texto dinámico según el tipo
               )}
             </button>
           </div>

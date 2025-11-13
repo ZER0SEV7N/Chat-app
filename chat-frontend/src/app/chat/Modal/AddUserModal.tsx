@@ -197,7 +197,7 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+      <div className="modal-content add-user-modal" onClick={(e) => e.stopPropagation()}>
         
         {/* Header del modal */}
         <div className="modal-header">
@@ -209,105 +209,113 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
         
         {/* Cuerpo del modal */}
         <div className="modal-body">
-          <p>Selecciona un usuario para iniciar una conversación privada</p>
-          
-          {/* Búsqueda de usuarios */}
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label className="form-label">Buscar usuario:</label>
-            <input
-              type="text"
-              placeholder="Buscar por nombre o usuario..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '100%' }}
-            />
-          </div>
-
-          {/* Lista de usuarios */}
-          <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px' }}>
-            {usersLoading ? (
-              <p>Cargando usuarios...</p>
-            ) : filteredUsers.length > 0 ? (
-              <div className="user-list">
-                {filteredUsers.map((user) => {
-                  // Verificar si ya existe un DM con este usuario
-                  const existingDM = findExistingDM(user.username);
-                  const isCreating = creatingUser === user.username;
-                  
-                  return (
-                    <div
-                      key={user.idUser}
-                      className={`user-item ${existingDM || isCreating ? 'user-item-disabled' : ''}`}
-                      onClick={() => !existingDM && !isCreating && handleAdd(user.username)}
-                      style={{
-                        padding: '12px',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        marginBottom: '8px',
-                        cursor: existingDM || isCreating ? 'not-allowed' : 'pointer',
-                        backgroundColor: existingDM || isCreating ? '#f3f4f6' : 'white',
-                        opacity: existingDM || isCreating ? 0.6 : 1,
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong style={{ display: 'block', fontSize: '14px' }}>
-                            {user.username}
-                            {isCreating && " - Creando..."}
-                          </strong>
-                          <small style={{ color: '#6b7280' }}>
-                            {user.name}
-                          </small>
-                        </div>
-                        {/* Mostrar "Abrir Chat" si existe DM o "Chatear" para crear nuevo */}
-                        {existingDM ? (
-                          <button
-                            className="btn-secondary"
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '12px'
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onChannelSelected(existingDM);
-                              onClose();
-                            }}
-                          >
-                            Abrir Chat
-                          </button>
-                        ) : (
-                          <button
-                            className="btn-primary"
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '12px'
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAdd(user.username);
-                            }}
-                            disabled={isCreating}
-                          >
-                            {isCreating ? 'Creando...' : 'Chatear'}
-                          </button>
-                        )}
-                      </div>
-                      {/* Indicador visual para DMs existentes */}
-                      {existingDM && (
-                        <small style={{ color: '#10b981', display: 'block', marginTop: '4px' }}>
-                          ✓ Ya tienes un chat con este usuario
-                        </small>
-                      )}
-                    </div>
-                  );
-                })}
+          <div className="modal-body-content">
+            <p className="modal-description">
+              Selecciona un usuario para iniciar una conversación privada
+            </p>
+            
+            {/* Búsqueda de usuarios */}
+            <div className="search-section">
+              <div className="form-group">
+                <label className="form-label">Buscar usuario</label>
+                <div className="search-input-container">
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre o usuario..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
               </div>
-            ) : (
-              <p style={{ textAlign: 'center', color: '#6b7280' }}>
-                {searchTerm ? 'No se encontraron usuarios' : 'No hay usuarios disponibles'}
-              </p>
-            )}
+            </div>
+
+            {/* Lista de usuarios */}
+            <div className="users-list-container">
+              {usersLoading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Cargando usuarios...</p>
+                </div>
+              ) : filteredUsers.length > 0 ? (
+                <div className="users-list">
+                  {filteredUsers.map((user) => {
+                    const existingDM = findExistingDM(user.username);
+                    const isCreating = creatingUser === user.username;
+                    
+                    return (
+                      <div
+                        key={user.idUser}
+                        className={`user-item ${existingDM ? 'has-existing-chat' : ''} ${isCreating ? 'creating' : ''}`}
+                        onClick={() => !existingDM && !isCreating && handleAdd(user.username)}
+                      >
+                        <div className="user-avatar">
+                          <div className="avatar-placeholder">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        
+                        <div className="user-info">
+                          <div className="user-main">
+                            <span className="user-name">{user.name}</span>
+                            <span className="user-username">@{user.username}</span>
+                          </div>
+                          {existingDM && (
+                            <div className="existing-chat-badge">
+                              <span className="badge-icon">✓</span>
+                              Chat existente
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="user-action">
+                          {existingDM ? (
+                            <button
+                              className="btn-open-chat"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onChannelSelected(existingDM);
+                                onClose();
+                              }}
+                            >
+                              Abrir Chat
+                            </button>
+                          ) : (
+                            <button
+                              className={`btn-start-chat ${isCreating ? 'loading' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAdd(user.username);
+                              }}
+                              disabled={isCreating}
+                            >
+                              {isCreating ? (
+                                <>
+                                  <div className="button-spinner"></div>
+                                  Creando...
+                                </>
+                              ) : (
+                                'Chatear'
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-icon">👥</div>
+                  <p className="empty-message">
+                    {searchTerm ? 'No se encontraron usuarios' : 'No hay usuarios disponibles'}
+                  </p>
+                  {searchTerm && (
+                    <p className="empty-hint">Intenta con otros términos de búsqueda</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

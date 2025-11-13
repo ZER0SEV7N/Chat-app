@@ -1,6 +1,6 @@
 //Entidad Usuario
 //Importaciones necesarias:
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany } from "typeorm";
 import { Message } from "./message.entity";
 import { Channel } from "./channels.entity";
 
@@ -20,7 +20,7 @@ export class User {
     @Column() //Columna de correo electronico
     email: string;
 
-    @Column() //Columna para el telefono
+    @Column({ default: '' }) //Columna para el telefono
     phone: string;
 
     @Column({ select: false }) //Columna de contraseña

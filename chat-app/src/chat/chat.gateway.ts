@@ -97,12 +97,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // ============================================================
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
-    const room = `Canal:${idChannel}`;
-    client.join(room);
-    console.log(`👥 Usuario ${client.data.username} se unió a ${room}`);
+    try {
+      const channel = await this.channelsService.getChannelById(idChannel);
+        
+        // Verificar que el usuario es miembro del canal
+        const isMember = channel.members.some(member => member.idUser === client.data.idUser);
+        if (!isMember && channel.type !== 'dm') {
+            client.emit('error', { message: 'No eres miembro de este canal' });
+            return;
+        }
 
-    const history = await this.chatService.getMessages(idChannel);
-    client.emit('history', history);
+        const room = `Canal:${idChannel}`;
+        client.join(room);
+        console.log(`👥 Usuario ${client.data.username} se unió a ${room}`);
+
+        const history = await this.chatService.getMessages(idChannel);
+        client.emit('history', history);
+    } catch (error) {
+        console.error('Error uniéndose al canal:', error.message);
+        client.emit('error', { message: 'Error al unirse al canal' });
+    }
   }
 
   @SubscribeMessage('leaveRoom')
@@ -251,13 +265,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         (member) => member.idUser !== payload.userId,
       );
       if (otherMember) {
-        this.server.emit('newChannelAvailable', {
+        this.server.emit('newDMChannel', {
           channel: channel.channel,
+          displayName: channel.displayName,
           forUserId: otherMember.idUser,
         });
+        console.log(`💬 Nuevo DM creado entre ${payload.userId} y ${otherMember?.idUser}`);
       }
-
-      console.log(`💬 Nuevo DM creado entre ${payload.userId} y ${otherMember?.idUser}`);
       return channel;
     } catch (error) {
       console.error('Error creando canal:', error.message);
@@ -265,18 +279,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // ============================================================
-  // Obtener canales del usuario
-  // ============================================================
+  //============================================================
+  //Obtener canales del usuario
+  //============================================================
   @SubscribeMessage('getUserChannels')
   async handleGetUserChannels(@MessageBody() userId: number, @ConnectedSocket() client: Socket) {
     const channels = await this.chatService.getUserChannels(userId);
     client.emit('userChannels', channels);
   }
 
-  // ============================================================
-  // 🔔 NOTIFICACIÓN DE USUARIO CONECTADO (para el frontend)
-  // ============================================================
+  @SubscribeMessage('deleteChannel')
+  async handleDeleteChannel( @MessageBody() payload: { channelId: number}, @ConnectedSocket() client: Socket){
+    try{
+      const result = await this.channelsService.removeChannel(
+        payload.channelId,
+        client.data.idUser
+      );
+      //Notificar a todos los miembros del canal que fue eliminado
+      this.server.emit('channelDeleted',{
+          channelId: payload.channelId,
+          deletedBy: client.data.idUser
+        });
+        console.log(`🗑️ Canal ${payload.channelId} eliminado por ${client.data.username}`);
+        return result;
+    } catch (error) {
+      console.error('Error eliminando canal:', error.message);
+      client.emit('error', { message: error.message || 'Error al eliminar el canal' });
+    }
+  }
+
+  //============================================================
+  //🔔 NOTIFICACIÓN DE USUARIO CONECTADO (para el frontend)
+  //============================================================
   @SubscribeMessage('userConnected')
   async handleUserConnected(@MessageBody() username: string, @ConnectedSocket() client: Socket) {
     console.log(`🔔 Usuario ${username} notificado como conectado`);

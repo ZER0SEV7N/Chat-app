@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-//src/channels/channels.controller
-//Importaciones necesarias
-import { Controller, Get, Post, Delete, Param, Body, Patch, UseGuards, Req } from '@nestjs/common';
-import { ChannelsService } from './channels.service';
-import { JwtGuard } from '../auth/jwt.guard';
-=======
 // src/channels/channels.controller.ts
 import { 
   Controller, 
@@ -15,13 +8,14 @@ import {
   Body, 
   Patch, 
   Req,
-  UnauthorizedException 
+  UnauthorizedException, 
+  UseGuards
 } from '@nestjs/common';
 import { ChannelsService } from './channels.service';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { JwtGuard } from 'src/auth/jwt.guard';
 
->>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
 @Controller('channels')
 export class ChannelsController {
   constructor(
@@ -51,17 +45,34 @@ export class ChannelsController {
   @UseGuards(JwtGuard)
   @Post()
   async createChannel(
-    @Req() req,
-    @Body() body: { name: string; description?: string; creatorId: number; isPublic?: boolean; type?: string  },
+      @Req() req,
+      @Body() body: { name: string; description?: string; creatorId: number; isPublic?: boolean; type?: string  },
   ) {
-    const userId = req.user?.idUser;
-    return this.channelsService.createChannel(
-      body.name,
-      userId,  
-      body.description,
-      body.isPublic ?? true,
-      (body.type as 'channel' | 'dm') ?? 'channel',
-    );
+      const userId = req.user?.idUser;
+      
+      console.log('🎯 Solicitud de creación de canal:', {
+          name: body.name,
+          isPublic: body.isPublic,
+          requestedType: body.type,
+          userId
+      });
+
+      const result = await this.channelsService.createChannel(
+          body.name,
+          userId,  
+          body.description,
+          body.isPublic ?? true,
+          (body.type as 'channel' | 'dm') ?? 'channel',
+      );
+
+      console.log('✅ Respuesta del servicio:', {
+          id: result.idChannel,
+          name: result.name,
+          type: result.type,
+          isPublic: result.isPublic
+      });
+
+      return result;
   }
 
   /*============================================================
@@ -126,9 +137,19 @@ export class ChannelsController {
   /*============================================================
   Obtener los usuarios de un canal
   ============================================================*/
-  @Get(':id/users')
-  async getChannelUsers(@Param('id')id: number){
-    return this.channelsService.getChannelUsers(id);
+  @Get(':id/manage-users')
+  async getUsersForChannelManagement(@Param('id')id: number, @Req() req: Request,){
+    // Obtener usuario del token
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        throw new UnauthorizedException('Falta el token de autorización');
+    }
+    
+    const token = authHeader.split(' ')[1];
+    const payload = this.jwtService.verify(token);
+    const userId = payload.sub;
+
+    return this.channelsService.getUsersForChannel(id, userId);
   }
 
   /*=============================================================

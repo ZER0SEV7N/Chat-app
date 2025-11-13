@@ -45,6 +45,11 @@ export default function RegisterPage(){
             setError("Por favor ingresa un correo válido");
             return;
         }
+        if(form.phone.length < 8){
+            setError("Por favor ingrese un numero valido")
+            return;
+        }
+
         //validar que la contraseña sea mayor a 6 caracteres
         if (form.password.length < 6) {
             setError("La contraseña debe tener al menos 6 caracteres");
@@ -142,6 +147,7 @@ export default function RegisterPage(){
                                 className="form-input"
                                 placeholder="Nombre de usuario"
                                 value={form.username}
+                                maxLength={30}
                                 onChange={handleChange}
                                 disabled={loading}
                                 required
@@ -184,6 +190,7 @@ export default function RegisterPage(){
                                 className="form-input"
                                 placeholder="Tu número de teléfono"
                                 value={form.phone}
+                                maxLength={9}
                                 onChange={handleChange}
                                 disabled={loading}
                                 required
@@ -269,6 +276,7 @@ export default function RegisterPage(){
                         type="submit"
                         className={`auth-button btn-primary ${loading ? 'loading' : ''}`}
                         disabled={loading}
+                        
                     >
                         {loading ? (
                             <>
