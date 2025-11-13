@@ -13,7 +13,7 @@ export default function ChatPage() {
   const [selectedChannel, setSelectedChannel] = useState<any | null>(null); 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [username, setUsername] = useState('Usuario');
+  const [username, setUsername] = useState('username');
 
   //Pedir permiso para mostrar notificaciones
   useEffect(() => {
@@ -24,54 +24,48 @@ export default function ChatPage() {
     }
   }, []);
 
-  // 🔌 Conexión con el servidor
+   // 🔌 Conexión al servidor con Socket.IO
   useEffect(() => {
-    //Obtener el token JWT del localStorage
     const token = localStorage.getItem("token");
-    //Si no exite, se retorna al comienzo
     if (!token) {
       window.location.href = '/';
       return;
     }
-    //Obtener el username del localStorage y establecerlo como name de usuario
+
     const user = localStorage.getItem("username");
     if (user) setUsername(user);
-    //Establecer conexion con el socket
+
     const newSocket = io(API_URL, {
       auth: { token },
     });
-    //Si se obtuvo el token y el socket
+
     newSocket.on("connect", () => {
       console.log("✅ Conectado al servidor de chat");
     });
+
     newSocket.on("unauthorized", () => {
-      alert("Sesión expirada. Redirigiendo al login.");
+      alert("⚠️ Sesión expirada. Redirigiendo al login.");
       handleLogout();
     });
 
-    // 🧠 Escuchar mensajes y mostrar notificación + sonido si el mensaje no es tuyo
     newSocket.on("message", (msg: any) => {
       console.log("📩 Mensaje recibido:", msg);
 
       const currentUser = localStorage.getItem("username");
-
-      // 🔒 Solo mostrar notificación si el mensaje NO lo envió el usuario actual
       if (msg.senderName !== currentUser) {
-        // Mostrar notificación
         if (Notification.permission === "granted") {
           new Notification(`💬 ${msg.senderName}`, {
             body: msg.content,
             icon: "/chat-icon.png",
           });
         }
-
-        // 🔊 Reproducir sonido
         const audio = new Audio("/message.mp3");
         audio.volume = 0.7;
         audio.play().catch((err) => console.warn("Error reproduciendo sonido:", err));
       }
     });
-    //Escucgar cuando el backend elmine un canal (DM)
+
+    //Escuchar cuando el backend elmine un canal (DM)
     newSocket.on("channelRemoved", ({ idChannel  }) => {
       console.log("Canal Eliminado", idChannel );
       setChannels((prev) => prev.filter((ch) => ch.idChannel !== idChannel ));
@@ -80,7 +74,6 @@ export default function ChatPage() {
         prev && prev.idchannel === idChannel  ? null : prev
       );
     });
-
 
     setSocket(newSocket);
 
@@ -97,27 +90,53 @@ export default function ChatPage() {
     window.location.href = '/';
   };
 
-  // 📡 Cargar canales
+  // 📡 Cargar canales del usuario y públicos
   useEffect(() => {
     const fetchChannels = async () => {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        console.warn("❌ No hay token en localStorage, redirigiendo...");
+        handleLogout();
+        return;
+      }
+
       try {
+        console.log("🔍 Cargando canales con token:", token);
+
+        // ✅ Canales del usuario autenticado
         const resUser = await fetch(`${API_URL}/users/channels`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        if (resUser.status === 401) {
+          console.warn("⚠️ Token inválido o expirado (user channels)");
+          handleLogout();
+          return;
+        }
+
         const userChannels = resUser.ok ? await resUser.json() : [];
 
-        const resPublic = await fetch(`${API_URL}/channels/public`);
+        // ✅ Canales públicos (también protegidos)
+        const resPublic = await fetch(`${API_URL}/channels/public`, {
+          headers: { Authorization: `Bearer ${token}` }, // 🔥 añadido
+        });
+
+        if (resPublic.status === 401) {
+          console.warn("⚠️ Token inválido o expirado (public channels)");
+          handleLogout();
+          return;
+        }
+
         const publicChannels = resPublic.ok ? await resPublic.json() : [];
 
         const allChannels = [...publicChannels, ...userChannels];
         setChannels(allChannels);
       } catch (err) {
-        console.error('Error al obtener canales:', err);
+        console.error('💥 Error al obtener canales:', err);
       }  
     }; 
-  fetchChannels();
+
+    fetchChannels();
   }, []);
   //Actualizar el título de la página según el canal seleccionado
   useEffect(() => {

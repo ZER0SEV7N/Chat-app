@@ -1,7 +1,8 @@
 //src/channels/channels.controller
 //Importaciones necesarias
-import { Controller, Get, Post, Delete, Param, Body, Patch, Req } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Patch, UseGuards, Req } from '@nestjs/common';
 import { ChannelsService } from './channels.service';
+import { JwtGuard } from '../auth/jwt.guard';
 @Controller('channels')
 export class ChannelsController {
   constructor(private readonly channelsService: ChannelsService) {}
@@ -24,15 +25,19 @@ export class ChannelsController {
   /*============================================================
   Crear un canal
   ============================================================*/
+  @UseGuards(JwtGuard)
   @Post()
   async createChannel(
-    @Body() body: { name: string; description?: string; creatorId: number; isPublic?: boolean },
+    @Req() req,
+    @Body() body: { name: string; description?: string; creatorId: number; isPublic?: boolean; type?: string  },
   ) {
+    const userId = req.user?.idUser;
     return this.channelsService.createChannel(
       body.name,
-      body.creatorId,  
+      userId,  
       body.description,
       body.isPublic ?? true,
+      (body.type as 'channel' | 'dm') ?? 'channel',
     );
   }
 

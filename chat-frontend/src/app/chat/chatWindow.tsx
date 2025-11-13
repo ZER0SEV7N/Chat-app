@@ -22,7 +22,7 @@ export default function ChatWindow({ socket, channel }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [username, setUsername] = useState("");  
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // ✅ nuevo estado para el ID del usuario
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null); //nuevo estado para el ID del usuario
 
   // 🔹 Configurar notificaciones, usuario y audio
   useEffect(() => {
@@ -187,11 +187,10 @@ export default function ChatWindow({ socket, channel }: Props) {
       <div className="chat-header">
         {/* ⚙️ Botón de edición de canal
         🔹 Solo visible si:
-          - El usuario actual es el creador
-          - NO es un DM (detectado por nombre que empieza con 'DM ')
+          -El usuario actual es el creador
+          -NO es un DM (detectado por nombre que empieza con 'DM ')
         */}
-        {channel.creator?.username === username &&
-          !(typeof channel.name === "string" && channel.name.startsWith("DM ")) && (
+        {channel.type === "channel" && channel.creator?.username === username && (
             <button
               type="button"
               className="edit-channel-btn"

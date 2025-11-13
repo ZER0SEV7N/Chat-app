@@ -46,7 +46,7 @@ export default function LoginPage() {
       }
       //Guardar el token y redirigir al chat si el login es exitoso
       localStorage.setItem("token", data.access_token);
-      localStorage.setItem("username", data.user.username);
+      localStorage.setItem("user", JSON.stringify(data.user));
       window.location.href = "/chat"; // Redirigir al chat
     //Capturar otros errores
     } catch (err) {

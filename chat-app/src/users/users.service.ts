@@ -40,6 +40,6 @@ export class UsersService {
         });
         if (!user) throw new Error('Usuario no encontrado');
         return user.channels;
-}
+    }
 
 }

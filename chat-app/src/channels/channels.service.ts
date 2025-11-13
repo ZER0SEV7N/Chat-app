@@ -18,8 +18,10 @@ export class ChannelsService {
     /*============================================================
     Crear un canal público
     ============================================================*/
-    async createChannel(name: string, creatorId: number, description?: string, isPublic = true) {
+    async createChannel(name: string, creatorId: number, description?: string, isPublic = true, 
+        type: 'channel' | 'dm' = 'channel') {
         const creator = await this.userRepository.findOne({ where: { idUser: creatorId } });
+        
         if (!creator) throw new NotFoundException('Usuario no encontrado');
 
         // ✅ Verificar si ya existe un canal público con el mismo nombre
@@ -30,6 +32,7 @@ export class ChannelsService {
             name,
             description: description || '',
             isPublic,
+            type,
             creator,
             members: [creator],
         });

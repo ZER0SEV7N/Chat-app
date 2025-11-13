@@ -18,16 +18,24 @@ export class MessageService {
     private readonly channelRepository: Repository<Channel>,
   ) { }
 
-  // Crear mensaje
   async create(text: string, idUser: number, idChannel: number) {
-    const user = await this.userRepository.findOne({ where: { idUser } });
+    const user = await this.userRepository.findOne({ 
+      where: { idUser }, 
+      select: ['idUser', 'username', 'name'] // 🔑 importante
+    });
     if (!user) throw new NotFoundException('Usuario no encontrado');
 
     const channel = await this.channelRepository.findOne({ where: { idChannel } });
     if (!channel) throw new NotFoundException('Canal no encontrado');
 
     const message = this.messageRepository.create({ text, user, channel });
-    return await this.messageRepository.save(message);
+    const savedMessage = await this.messageRepository.save(message);
+
+    // 🔄 Recargar la relación user para enviarla completa al frontend
+    return await this.messageRepository.findOne({
+      where: { idMessage: savedMessage.idMessage },
+      relations: ['user'],
+    });
   }
 
   // Obtener todos los mensajes de un canal

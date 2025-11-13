@@ -18,9 +18,13 @@ export class Channel {
     @Column({ default: true }) //Columna para indicar si el canal es publico o privado
     isPublic: boolean;
 
+  @Column({type: "varchar", default: "channel"}) 
+  type: "channel" | "dm";
+
+
     @CreateDateColumn() //Columna de fecha de creacion
     createdAt: Date;
-
+    
     //Relaciones
     @OneToMany(() => Message, message => message.channel)
     messages: Message[];
