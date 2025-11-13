@@ -11,12 +11,12 @@ export class AuthService {
   ) {}
 
   //Registrar usuario
-    async register(name: string, username: string, email: string, password: string) {
+    async register(name: string, username: string, email: string, phone: string, password: string) {
       const existingUser = await this.usersService.findByUsername(username);
       if (existingUser) {
         throw new ConflictException('El nombre de usuario ya está en uso');
       }
-      return this.usersService.createUser(name, username, email, password);
+      return this.usersService.createUser(name, username, email, phone, password);
     }
 
   //Login
@@ -38,6 +38,7 @@ export class AuthService {
         id: user.idUser,
         username: user.username,
         email: user.email,
+        phone: user.phone
       },
     };
   }

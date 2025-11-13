@@ -31,18 +31,14 @@ export default function ChatContent() {
   const [showAddUserModal, setShowAddUserModal] = useState(false); //Estado para mostrar modal de agregar usuario
   const [showEditModal, setShowEditModal] = useState(false); //Modal de edición de canal
   const [channelToEdit, setChannelToEdit] = useState<any>(null); //Canal seleccionado para editar
-  
+  //Estado para contar mensajes no leídos por canal
+  const [globalUnreadCounts, setGlobalUnreadCounts] = useState<{ [key: number]: number }>({});
+  //Estado para el nombre de usuario actual
   const [username, setUsername] = useState('Usuario'); //Nombre de usuario actual
 
   // ============================================================
   // 🔄 FUNCIONES PARA MANEJAR NAVEGACIÓN MÓVIL
   // ============================================================
-
-  //Manejar selección de canal en responsive
-  const handleSelectChannel = (channel: any) => {
-    console.log('🎯 Seleccionando canal:', channel?.name);
-    setCurrentChat(channel);
-  };
 
   //Volver a la lista de chats en móvil
   const handleBackToList = () => {
@@ -166,33 +162,55 @@ export default function ChatContent() {
     //Si se obtuvo el token y el socket
     newSocket.on("connect", () => {
       console.log("Conectado al servidor de chat");
+      //UNIRSE A TODAS LAS SALAS DE LOS CANALES DEL USUARIO
+      fetchChannels().then(() => {
+        channels.forEach(channel => {
+          if (channel.idChannel) {
+            newSocket.emit("joinRoom", channel.idChannel);
+            console.log(`🔗 Unido automáticamente a sala: Canal:${channel.idChannel}`);
+          }
+        });
+      });
     });
-    
+    //Manejar error de autorización (token inválido o expirado)
     newSocket.on("unauthorized", () => {
       alert("Sesión expirada. Redirigiendo al login.");
       handleLogout();
     });
 
-    //Escuchar mensajes y mostrar notificación + sonido si el mensaje no es tuyo
-    newSocket.on("message", (msg: any) => {
-      console.log("📩 Mensaje recibido:", msg);
-
+    //ESCUCHAR NUEVOS MENSAJES PARA NOTIFICACIONES GLOBALES
+    newSocket.on("newMessageNotification", (data) => {
+      console.log("🔔 Notificación global de mensaje:", data);
+      
+      const { idChannel, sender } = data;
       const currentUser = localStorage.getItem("username");
+      
+      //Solo incrementar si el mensaje no es del usuario actual
+      if (sender !== currentUser) {
+        setGlobalUnreadCounts(prev => ({
+          ...prev,
+          [idChannel]: (prev[idChannel] || 0) + 1
+        }));
+        // Log del contador actualizado
+        console.log(`📈 Contador incrementado para canal ${idChannel}:`, 
+        (globalUnreadCounts[idChannel] || 0) + 1);
+        
+        
 
-      //Solo mostrar notificación si el mensaje NO lo envió el usuario actual
-      if (msg.senderName !== currentUser) {
-        // Mostrar notificación
-        if (Notification.permission === "granted") {
-          new Notification(`💬 ${msg.senderName}`, {
-            body: msg.content,
+        // Mostrar notificación del sistema
+        if (currentChat?.idChannel !== idChannel && Notification.permission === "granted") {
+          new Notification(`💬 Nuevo mensaje de ${sender}`, {
+            body: `Tienes un nuevo mensaje en un chat`,
             icon: "/chat-icon.png",
           });
         }
-
-        //Reproducir sonido
-        const audio = new Audio("/message.mp3");
-        audio.volume = 0.7;
-        audio.play().catch((err) => console.warn("Error reproduciendo sonido:", err));
+        
+        //Reproducir sonido solo si no estás en ese chat
+        if (currentChat?.idChannel !== idChannel) {
+          const audio = new Audio("/message.mp3");
+          audio.volume = 0.3; // Volumen más bajo para notificaciones en segundo plano
+          audio.play().catch((err) => console.warn("Error reproduciendo sonido:", err));
+        }
       }
     });
 
@@ -379,6 +397,21 @@ export default function ChatContent() {
     }
   }
 
+  // Función para resetear contador cuando se selecciona un canal
+  const handleSelectChannel = (channel: any) => {
+    console.log('🎯 Seleccionando canal:', channel?.name);
+    
+    // Resetear contador de mensajes no leídos para este canal
+    if (channel?.idChannel) {
+      setGlobalUnreadCounts(prev => ({
+        ...prev,
+        [channel.idChannel]: 0
+      }));
+    }
+    
+    setCurrentChat(channel);
+  };
+
   //============================================================
   //RENDERIZADO PRINCIPAL CON LAYOUT RESPONSIVE
   //============================================================
@@ -395,6 +428,7 @@ export default function ChatContent() {
             onLogout={handleLogout}
             onDeleteChannel={handleDeleteChannel} 
             username={username}
+            unreadCounts={globalUnreadCounts} // ← Pasar los contadores
           />
         }
         chatWindow={

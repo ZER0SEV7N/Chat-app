@@ -89,7 +89,7 @@
 }
 
 /* =======================================================
-   📂 SECCIONES DE CANALES
+   📂 SECCIONES DE CANALES COLAPSABLES
    ======================================================= */
 .channels-section {
   padding: 0;
@@ -97,17 +97,57 @@
   flex-shrink: 0;
 }
 
-.section-title {
-  margin: 0 0 12px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2d3748;
-  padding: 16px 20px 8px;
-  flex-shrink: 0;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+/* Header de sección colapsable */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
+.section-header:hover {
+  background-color: #f5f5f5;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.section-icon {
+  font-size: 1.1rem;
+}
+
+.section-count {
+  background-color: #e0e0e0;
+  color: #666;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.collapse-icon {
+  color: #666;
+  font-size: 0.9rem;
+  transition: transform 0.2s ease;
+}
+
+/* =======================================================
+   📜 LISTA DE CANALES CON SCROLL
+   ======================================================= */
 .channel-list {
   list-style: none;
   padding: 0;
@@ -115,6 +155,26 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  max-height: 300px;
+}
+
+/* Personalizar scrollbar */
+.channel-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.channel-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.channel-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.channel-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 /* =======================================================
@@ -165,11 +225,36 @@
   width: 100%;
 }
 
+/* Contenedor principal del usuario en DM */
+.dm-user-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .channel-name {
   font-weight: 600;
   color: #2d3748;
   font-size: 14px;
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Indicador de estado en DMs */
+.status-indicator {
+  font-size: 0.7rem;
+  vertical-align: middle;
+}
+
+.status-indicator.online {
+  /* El emoji verde ya indica el estado */
+}
+
+.status-indicator.offline {
+  /* El emoji negro/gris ya indica el estado */
 }
 
 .channel-type {
@@ -184,6 +269,13 @@
   font-size: 12px;
   margin: 4px 0 0;
   line-height: 1.4;
+}
+
+/* Acciones en DMs */
+.dm-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* =======================================================
@@ -814,31 +906,31 @@
   box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
 }
 
-  /* Botón de retroceso en móvil - DEBE SER VISIBLE */
-  .back-to-list {
-    display: flex !important;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    border-radius: 8px;
-    padding: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-    font-size: 18px;
-    font-weight: bold;
-  }
+/* Botón de retroceso en móvil - DEBE SER VISIBLE */
+.back-to-list {
+  display: flex !important;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: bold;
+}
 
-  .back-to-list:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
-  }
+.back-to-list:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
 
-  .menu-popup {
+.menu-popup {
   position: absolute;
   top: 20px;
   right: 0;
@@ -851,7 +943,30 @@
   animation: fadeIn 0.15s ease;
 }
 
-  .online-users{
-    font-family: Arial, Helvetica, sans-serif;
-    color: #38a169;
-  }
+.online-users{
+  font-family: Arial, Helvetica, sans-serif;
+  color: #38a169;
+}
+
+.unread-count {
+  background: #ff4444;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-bubble.unread-count {
+  background: #4f46e5;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}

@@ -112,7 +112,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // ============================================================
-  // 💬 Enviar mensaje
+  // 💬 Enviar mensaje - CORREGIDO PARA NOTIFICACIONES GLOBALES
   // ============================================================
   @SubscribeMessage('sendMessage')
   async handleMessage(@MessageBody() payload: CreateChatDto, @ConnectedSocket() client: Socket) {
@@ -143,8 +143,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         idUser: message.user?.idUser,
         username: message.user?.username,
       },
-      // marca para distinguir remitente en el frontend si se quiere
-      self: true,
     };
 
     // 🔹 Enviar al remitente (su propia burbuja)
@@ -153,13 +151,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 🔹 Enviar a los demás usuarios del canal (no al remitente)
     client.to(room).emit('newMessage', { ...outgoing, self: false });
 
-    // 🔹 Notificar SOLO a los otros usuarios (no al remitente)
-    client.to(room).emit('newMessageNotification', {
+    // 🔹 NOTIFICACIÓN GLOBAL CORREGIDA: Enviar a TODOS los usuarios del canal (excepto remitente)
+    // Esto incluye a usuarios que no están actualmente en el chat
+    const notificationPayload = {
       idChannel: payload.idChannel,
       sender: message.user?.username,
-    });
+      text: message.text, // Opcional: para mostrar preview en notificaciones
+      timestamp: new Date().toISOString()
+    };
+
+    // Emitir a todos los sockets en la sala excepto al remitente
+    client.to(room).emit('newMessageNotification', notificationPayload);
 
     console.log(`💬 Mensaje enviado por ${message.user?.username} en canal ${payload.idChannel}`);
+    console.log(`🔔 Notificación enviada a la sala: ${room}`);
   }
 
   // ============================================================
@@ -267,5 +272,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleGetUserChannels(@MessageBody() userId: number, @ConnectedSocket() client: Socket) {
     const channels = await this.chatService.getUserChannels(userId);
     client.emit('userChannels', channels);
+  }
+
+  // ============================================================
+  // 🔔 NOTIFICACIÓN DE USUARIO CONECTADO (para el frontend)
+  // ============================================================
+  @SubscribeMessage('userConnected')
+  async handleUserConnected(@MessageBody() username: string, @ConnectedSocket() client: Socket) {
+    console.log(`🔔 Usuario ${username} notificado como conectado`);
+    // El usuario ya fue agregado en handleConnection, solo log para debugging
   }
 }

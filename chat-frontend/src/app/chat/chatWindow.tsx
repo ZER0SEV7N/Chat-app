@@ -1,37 +1,19 @@
 // ===============================================================
 // 📁 src/app/chat/ChatWindow.tsx
 // ===============================================================
-// Componente principal de la ventana de chat de canales o grupos.
-//
-// 🔹 Funcionalidades:
-//  - Conexión a canales mediante WebSockets
-//  - Envío, edición y eliminación de mensajes
-//  - Reproducción de sonido y notificaciones
-//  - Agrupación de mensajes por día (tipo WhatsApp)
-//  - Búsqueda de mensajes por texto
-//  - Muestra usuarios conectados al canal actual
-//  - Contador de mensajes no leídos (cuando la ventana está inactiva)
-//  - Selector de emojis integrado
-// ===============================================================
 
 import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
-import {
-  Search,
-  MoreVertical,
-  Edit2,
-  Trash2,
-  Check,
-  X,
-  Users,
-  Edit3,
-} from "lucide-react";
+import { Search, MoreVertical, Edit2, Trash2, Check, X, Users, Edit3, } from "lucide-react";
 import socket from "../../lib/socket";
 import { Socket } from "socket.io-client";
 import "./chat.css";
 import "./chat-responsive.css";
 import "./chat-dark.css";
 
+// ===============================================================
+// 🧱 PROPIEDADES DEL COMPONENTE
+// ===============================================================
 interface Props {
   socket: Socket | null;
   channel: any;
@@ -52,9 +34,7 @@ export default function ChatWindow({ channel, onEditChannel }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null); // ID del mensaje en edición
   const [editText, setEditText] = useState(""); // Texto del mensaje editado
   const [menuOpen, setMenuOpen] = useState<string | null>(null); // Menú contextual abierto (⋮)
-  const [username, setUsername] = useState(""); // Nombre del usuario actual
-  const [unreadCount, setUnreadCount] = useState(0); // Contador de mensajes no leídos
-  const [isFocused, setIsFocused] = useState(true); // Indica si la pestaña está activa
+  const [username, setUsername] = useState<string>(""); // Nombre del usuario actual - TIPO CORREGIDO
 
   // Referencias para audio y scroll automático
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -72,22 +52,10 @@ export default function ChatWindow({ channel, onEditChannel }: Props) {
     audioRef.current = new Audio("/sounds/message.mp3");
     audioRef.current.volume = 0.7;
 
-    // Manejar foco de la ventana (para contador de no leídos)
-    const handleFocus = () => setIsFocused(true);
-    const handleBlur = () => setIsFocused(false);
-
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("blur", handleBlur);
-
     // Pedir permiso de notificaciones del navegador
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("blur", handleBlur);
-    };
   }, []);
 
   // ===============================================================
@@ -130,11 +98,8 @@ export default function ChatWindow({ channel, onEditChannel }: Props) {
           });
           notif.onclick = () => notif.close();
         }
-      } else if (!isFocused) {
-        // Si la ventana está inactiva, aumentar contador de no leídos
-        setUnreadCount((prev) => prev + 1);
       }
-    };
+    }; // ← FALTABA ESTA LLAVE DE CIERRE
 
     const handleDeleted = (idMessage: string) =>
       setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
@@ -162,7 +127,7 @@ export default function ChatWindow({ channel, onEditChannel }: Props) {
       socket.off("messageEdited", handleEdited);
       socket.off("onlineUsers", handleOnlineUsers);
     };
-  }, [channel, isFocused, username]);
+  }, [channel, username]); // ← DEPENDENCIAS CORRECTAS
 
   // ===============================================================
   // 📨 ENVÍO DE MENSAJE
@@ -246,12 +211,7 @@ export default function ChatWindow({ channel, onEditChannel }: Props) {
       {/* ================= ENCABEZADO DEL CHAT ================= */}
       <div className="chat-header">
         <div className="chat-header-info">
-          <h2>
-            #{channel.name}{" "}
-            {unreadCount > 0 && (
-              <span className="unread-bubble">{unreadCount}</span>
-            )}
-          </h2>
+          <h2>#{channel.name}</h2>
           <p>{channel.description || "Sin descripción disponible"}</p>
         </div>
 
