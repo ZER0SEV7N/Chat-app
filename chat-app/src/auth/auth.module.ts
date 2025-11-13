@@ -11,6 +11,7 @@ import { User } from '../entities/user.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
+<<<<<<< HEAD
     PassportModule,
     JwtModule.register({
       global: true,
@@ -25,3 +26,17 @@ import { User } from '../entities/user.entity';
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
+=======
+    PassportModule, //para estrategias de autenticación
+      JwtModule.register({
+        global: true,
+        secret: 'MI_SECRETO_SUPER_SEGURO' //clave fija
+        }),
+    ],
+    controllers: [AuthController],
+    providers: [AuthService, UsersService],
+    exports: [AuthService, JwtModule] //por si lo necesitas en otros módulos
+  })
+export class AuthModule {}
+
+>>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18

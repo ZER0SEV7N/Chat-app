@@ -1,11 +1,33 @@
+<<<<<<< HEAD
 //src/channels/channels.controller
 //Importaciones necesarias
 import { Controller, Get, Post, Delete, Param, Body, Patch, UseGuards, Req } from '@nestjs/common';
 import { ChannelsService } from './channels.service';
 import { JwtGuard } from '../auth/jwt.guard';
+=======
+// src/channels/channels.controller.ts
+import { 
+  Controller, 
+  Get, 
+  Post, 
+  Delete, 
+  Param, 
+  Body, 
+  Patch, 
+  Req,
+  UnauthorizedException 
+} from '@nestjs/common';
+import { ChannelsService } from './channels.service';
+import { JwtService } from '@nestjs/jwt';
+import type { Request } from 'express';
+
+>>>>>>> 91a73c119acb938cc36e705ec392a2e9a2f88f18
 @Controller('channels')
 export class ChannelsController {
-  constructor(private readonly channelsService: ChannelsService) {}
+  constructor(
+    private readonly channelsService: ChannelsService,
+    private readonly jwtService: JwtService, // ✅ Inyectar JwtService
+  ) {}
 
   /*============================================================
   Obtener todos los canales públicos
@@ -22,6 +44,7 @@ export class ChannelsController {
   async getPublicChannels() {
     return this.channelsService.getAllPublicChannels();
   }
+
   /*============================================================
   Crear un canal
   ============================================================*/
@@ -48,15 +71,30 @@ export class ChannelsController {
   async getChannelById(@Param('id') id: number) {
     return this.channelsService.getChannelById(id);
   }
+
   /*============================================================
   Eliminar un canal por su ID
   ============================================================*/
- @Delete(':id')
+  @Delete(':id')
   async deleteChannel(
     @Param('id') id: number, 
-    @Body() body: { idUser: number }, // Por ahora se pasa en el body
+    @Req() req: Request,
   ) {
-    return this.channelsService.removeChannel(id, body.idUser);
+    //Obtener el usuario del token JWT
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new UnauthorizedException('Falta el token de autorización');
+    }
+    
+    const token = authHeader.split(' ')[1];
+    const payload = this.jwtService.verify(token);
+    const userId = payload.sub; // ID del usuario autenticado
+
+    if (!userId) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    return this.channelsService.removeChannel(id, userId);
   }
   
   /*============================================================
@@ -65,10 +103,26 @@ export class ChannelsController {
   @Patch(':id')
   async updateChannel(
     @Param('id') idChannel: number,
-    @Body() body: { name?: string; description?: string; isPublic?: boolean; idUser: number },
+    @Body() body: { name?: string; description?: string; isPublic?: boolean },
+    @Req() req: Request, //
   ) {
-    return this.channelsService.updateChannel(idChannel, body, body.idUser);
+    //Obtener el usuario del token JWT
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new UnauthorizedException('Falta el token de autorización');
+    }
+    
+    const token = authHeader.split(' ')[1];
+    const payload = this.jwtService.verify(token);
+    const userId = payload.sub;
+
+    if (!userId) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    return this.channelsService.updateChannel(idChannel, body, userId);
   }
+
   /*============================================================
   Obtener los usuarios de un canal
   ============================================================*/
@@ -87,6 +141,7 @@ export class ChannelsController {
   ) {
     return this.channelsService.addUserToChannel(id, body.username);
   }
+
   /*=============================================================
   Expulsar (eliminar) un usuario del canal
   ==============================================================*/

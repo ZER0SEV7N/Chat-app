@@ -10,7 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'; //Modulo de TypeORM para la con
     imports: [TypeOrmModule.forRoot({
         type: 'postgres', //Tipo de base de datos
         host: 'localhost', //Host de la base de datos
-        port: 5432, //Puerto de  la base de datos
+        port: 5432, //Puerto de la base de datos
         username: 'chatuser', //Usuario de la base de datos
         password: 'chatpassword', //Contraseña de la base de datos
         database: 'chatdb', //Nombre de la base de datos

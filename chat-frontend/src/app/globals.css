@@ -1,159 +1,401 @@
-/* ==========================================================
-   🌐 ESTILO GENERAL DE LOGIN Y REGISTER
-   ========================================================== */
-
-body {
-  font-family: "Segoe UI", Roboto, Arial, sans-serif;
-  background: linear-gradient(135deg, #eef2f7 0%, #e3ebff 100%);
+/* =======================================================
+   🎯 ESTILOS GENERALES PARA AUTH PAGES
+   ======================================================= */
+.auth-container {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
-  margin: 0;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-/* Animación de entrada */
-@keyframes fadeIn {
+.auth-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  animation: slideUp 0.6s ease;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-logo {
+  font-size: 32px;
+  margin-bottom: 16px;
+  color: #4f46e5;
+}
+
+.auth-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+/* =======================================================
+   📝 FORMULARIOS DE AUTH
+   ======================================================= */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.form-input {
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+/* =======================================================
+   🔘 BOTONES DE AUTH
+   ======================================================= */
+.auth-button {
+  padding: 14px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #4f46e5;
+  border: 2px solid #4f46e5;
+}
+
+.btn-secondary:hover {
+  background: #4f46e5;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* =======================================================
+   🔗 ENLACES Y TEXTO ADICIONAL
+   ======================================================= */
+.auth-links {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.auth-text {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.auth-link {
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.auth-link:hover {
+  color: #3730a3;
+  text-decoration: underline;
+}
+
+/* =======================================================
+   👁️ ICONOS Y MEJORAS VISUALES
+   ======================================================= */
+.input-with-icon {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 18px;
+}
+
+.input-with-icon .form-input {
+  padding-left: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 18px;
+  transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+  color: #4f46e5;
+}
+
+/* =======================================================
+   ⚠️ MENSAJES DE ERROR Y VALIDACIÓN
+   ======================================================= */
+.error-message {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success-message {
+  background: #f0fdf4;
+  color: #16a34a;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* =======================================================
+   📱 RESPONSIVIDAD
+   ======================================================= */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 16px;
+  }
+  
+  .auth-card {
+    padding: 32px 24px;
+    border-radius: 16px;
+  }
+  
+  .auth-title {
+    font-size: 24px;
+  }
+  
+  .auth-subtitle {
+    font-size: 14px;
+  }
+  
+  .form-input {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+  
+  .auth-button {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 24px 20px;
+    border-radius: 12px;
+  }
+  
+  .auth-title {
+    font-size: 22px;
+  }
+  
+  .auth-logo {
+    font-size: 28px;
+  }
+  
+  .auth-form {
+    gap: 16px;
+  }
+}
+
+/* =======================================================
+   ✨ ANIMACIONES
+   ======================================================= */
+@keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(30px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
-/* ==========================================================
-   📦 CONTENEDOR PRINCIPAL
-   ========================================================== */
-.login-container {
-  background-color: #ffffff;
-  padding: 40px 35px;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* =======================================================
+   🎨 ESTILOS ESPECÍFICOS PARA REGISTER
+   ======================================================= */
+.register-features {
+  background: #f8fafc;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  width: 360px;
-  text-align: center;
-  animation: fadeIn 0.5s ease-in-out;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 20px;
+  margin-bottom: 24px;
 }
 
-.login-container:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-}
-
-/* ==========================================================
-   🏷️ TÍTULO
-   ========================================================== */
-.login-title {
-  margin-bottom: 25px;
-  color: #222;
-  font-weight: 700;
-  font-size: 1.5rem;
-}
-
-/* ==========================================================
-   📋 CAMPOS DE ENTRADA
-   ========================================================== */
-.input-group {
-  margin-bottom: 18px;
-  text-align: left;
-}
-
-.input-group label {
-  display: block;
-  margin-bottom: 6px;
+.features-title {
+  font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: #374151;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.features-list li {
+  padding: 6px 0;
+  color: #6b7280;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.input-group input[type="text"],
-.input-group input[type="email"],
-.input-group input[type="password"] {
-  width: 100%;
-  padding: 11px 12px;
-  border: 1px solid #ccd1d9;
-  border-radius: 8px;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  font-size: 14px;
-  background-color: #fafafa;
+.features-list li::before {
+  content: "✓";
+  color: #10b981;
+  font-weight: bold;
 }
 
-/* Efecto focus */
-.input-group input:focus {
-  border-color: #0b66ff;
-  box-shadow: 0 0 6px rgba(11, 102, 255, 0.3);
-  outline: none;
-  background-color: #ffffff;
+/* =======================================================
+   🔄 LOADING STATES
+   ======================================================= */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
-/* ==========================================================
-   🔘 BOTONES PRINCIPALES
-   ========================================================== */
-.login-btn,
-.register-btn {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-  transition: background-color 0.3s ease, transform 0.2s ease,
-    box-shadow 0.2s ease;
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 8px;
 }
 
-/* Botón primario (login) */
-.login-btn {
-  background-color: #0b66ff;
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(11, 102, 255, 0.25);
-}
-.login-btn:hover {
-  background-color: #084dcc;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(11, 102, 255, 0.3);
-}
-
-/* Botón secundario (register) */
-.register-btn {
-  background-color: #f1f1f5;
-  color: #333;
-}
-.register-btn:hover {
-  background-color: #e2e2ea;
-  transform: translateY(-1px);
-}
-
-/* ==========================================================
-   📎 PIE DEL FORMULARIO
-   ========================================================== */
-.register-footer {
-  margin-top: 20px;
-  font-size: 13px;
-  color: #666;
-  text-align: center;
-}
-
-/* ==========================================================
-   📱 RESPONSIVE
-   ========================================================== */
-@media (max-width: 400px) {
-  .login-container {
-    width: 90%;
-    padding: 30px 25px;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-.error-message {
-  background-color: #fdecea;
-  color: #b00020;
-  padding: 10px;
-  border-radius: 6px;
-  margin-bottom: 15px;
-  font-size: 14px;
-  text-align: center;
+/* =======================================================
+   🎭 ESTADOS DE FOCO Y ACCESIBILIDAD
+   ======================================================= */
+.form-input:focus-visible,
+.auth-button:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+  .auth-card {
+    background: #ffffff;
+    border: 2px solid #000000;
+  }
+  
+  .form-input {
+    border: 2px solid #000000;
+  }
+  
+  .btn-primary {
+    background: #000000;
+    color: #ffffff;
+  }
 }

@@ -104,21 +104,44 @@ export class ChannelsService {
     Solo el creador o administrador puede hacerlo
     ============================================================*/
     async removeChannel(idChannel: number, idUser: number) {
+    console.log("🔍 DEBUG - removeChannel called:", { idChannel, idUser });
+    
+    try {
         // Buscar canal con relaciones
         const channel = await this.channelrepository.findOne({
         where: { idChannel },
         relations: ['creator', 'members'],
         });
-        if (!channel) throw new NotFoundException(`Canal con ID ${idChannel} no encontrado`);
+        
+        if (!channel) {
+        throw new NotFoundException(`Canal con ID ${idChannel} no encontrado`);
+        }
 
-        // Verificar que el usuario sea el creador
+        // ✅ NUEVA LÓGICA: Verificar permisos según el tipo de canal
+        if (channel.isPublic) {
+        // Para canales públicos: solo el creador puede eliminar
         if (channel.creator.idUser !== idUser) {
-        throw new ForbiddenException('Solo el creador puede eliminar este canal');
+            throw new ForbiddenException('Solo el creador puede eliminar este grupo');
+        }
+        } else {
+        // Para DM: verificar que el usuario es miembro del DM
+        const isMember = channel.members.some(member => member.idUser === idUser);
+        if (!isMember) {
+            throw new ForbiddenException('No eres miembro de este chat privado');
+        }
         }
 
         // Eliminar el canal
-        await this.channelrepository.remove(channel);
+        await this.channelrepository.delete(idChannel);
+        
+        console.log("🔍 DEBUG - Channel deleted successfully");
+        
         return { message: `Canal "${channel.name}" eliminado correctamente` };
+        
+    } catch (error) {
+        console.error("🔴 ERROR in removeChannel:", error);
+        throw error;
+    }
     }
     // ============================================================
     // Salir de un canal (tanto público como privado)

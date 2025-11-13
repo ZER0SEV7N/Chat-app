@@ -1,0 +1,85 @@
+/* =======================================================
+   📱 SOLUCIÓN SIMPLIFICADA - QUITAR CONFLICTOS
+   ======================================================= */
+
+/* MÓVIL - Versión Simple */
+@media (max-width: 768px) {
+  .responsive-chat-layout {
+    display: block !important;
+    position: relative;
+  }
+
+  /* Ocultar lista cuando hay chat activo */
+  .responsive-chat-layout.has-active-chat .chat-list-container {
+    display: none !important;
+  }
+  
+  /* Mostrar chat cuando hay chat activo */
+  .responsive-chat-layout.has-active-chat .chat-window-container {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    background: white !important;
+  }
+  
+  /* Ocultar chat cuando NO hay chat activo */
+  .responsive-chat-layout:not(.has-active-chat) .chat-window-container {
+    display: none !important;
+  }
+  
+  /* Mostrar lista cuando NO hay chat activo */
+  .responsive-chat-layout:not(.has-active-chat) .chat-list-container {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    background: white !important;
+  }
+
+  /* Asegurar estructura del chat */
+  .chat-container {
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .chat-messages {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+    margin-top: 60px !important; /* Header height */
+    margin-bottom: 80px !important; /* Input height */
+  }
+
+  .chat-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1001 !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  }
+
+  .chat-input-container {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1001 !important;
+    background: white !important;
+  }
+}
+
+/* Ocultar botón retroceso en desktop */
+@media (min-width: 769px) {
+  .back-to-list {
+    display: none !important;
+  }
+}

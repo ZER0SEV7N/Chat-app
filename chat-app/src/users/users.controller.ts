@@ -1,11 +1,13 @@
+//src/users/users.controller.ts
+//Controlador para la gestion de usuarios
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { JwtGuard } from '../auth/jwt.guard'; // 👈 el guard que creamos antes
+import { JwtGuard } from '../auth/jwt.guard'; 
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
+  //Obtener los canales del usuario autenticado
   @UseGuards(JwtGuard)
   @Get('channels')
   async getUserChannels(@Req() req) {
