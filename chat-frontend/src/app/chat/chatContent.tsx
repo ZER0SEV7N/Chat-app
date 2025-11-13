@@ -4,7 +4,6 @@
 import { useState, useEffect } from "react";
 import { useResponsiveContext } from "./Responsive/contextResponsive";
 import ResponsiveChatLayout from "./Responsive/chatLayoutResponsive";
-import MobileChatHeader from "./Responsive/MobileheaderChat";
 import ChatList from './chatList'; //Lista lateral de canales
 import ChatWindow from './chatWindow'; //Ventana principal del chat
 import CreateChannelModal from './Modal/CreateChannelModal'; //Modal de creación de canal
@@ -437,7 +436,7 @@ export default function ChatContent() {
               socket={socket}
               channel={currentChat}
               onEditChannel={handleEditChannel}
-              onBackToList={isMobile ? handleBackToList : undefined}
+              onBackToList={handleBackToList} 
             />
           </>
         }

@@ -249,13 +249,6 @@
   vertical-align: middle;
 }
 
-.status-indicator.online {
-  /* El emoji verde ya indica el estado */
-}
-
-.status-indicator.offline {
-  /* El emoji negro/gris ya indica el estado */
-}
 
 .channel-type {
   color: #718096;
@@ -970,3 +963,4 @@
   font-size: 0.75rem;
   font-weight: 600;
 }
+

@@ -1,5 +1,9 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+//chat-frontend/src/app/chat/layout.tsx
+// Layout del chat
+// Importaciones necesarias:
+import type { Metadata } from "next"; // Importar Metadata desde next
+import { Geist, Geist_Mono } from "next/font/google"; // Importar fuentes de Google
+import Providers from "./provider";
 import "./chat.css";
 
 const geistSans = Geist({
@@ -14,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Chat App",
-  description: "Pagina del chat, se encarga de mostrar los mensajes y enviar nuevos",
+  description: "Pagina del chat, donde puedes chatear con otros usuarios en tiempo real.",
 
 };
 
@@ -26,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <Providers> {/* ← Envolver con el provider */}
+          {children}
+        </Providers>
       </body>
     </html>
   );

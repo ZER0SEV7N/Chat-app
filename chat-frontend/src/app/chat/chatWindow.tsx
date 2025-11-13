@@ -1,12 +1,12 @@
-// ===============================================================
-// 📁 src/app/chat/ChatWindow.tsx
-// ===============================================================
-
+//src/app/chat/ChatWindow.tsx
+//Componente de la ventana de chat
+//Importaciones necesarias:
 import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react";
-import { Search, MoreVertical, Edit2, Trash2, Check, X, Users, Edit3, } from "lucide-react";
+import { Search, MoreVertical, Edit2, Trash2, Check, X, Users, Edit3, ArrowLeft, } from "lucide-react";
 import socket from "../../lib/socket";
 import { Socket } from "socket.io-client";
+import { useResponsiveContext } from "./Responsive/contextResponsive";
 import "./chat.css";
 import "./chat-responsive.css";
 import "./chat-dark.css";
@@ -21,10 +21,11 @@ interface Props {
   onBackToList?: () => void;
 }
 
-export default function ChatWindow({ channel, onEditChannel }: Props) {
+export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Props) {
   // ===============================================================
   // 🧠 ESTADOS PRINCIPALES
   // ===============================================================
+  const { isMobile } = useResponsiveContext(); // Contexto para diseño responsivo
   const [messages, setMessages] = useState<any[]>([]); // Lista de mensajes
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]); // Usuarios conectados
   const [input, setInput] = useState(""); // Texto del input de envío
@@ -210,20 +211,32 @@ export default function ChatWindow({ channel, onEditChannel }: Props) {
     <div className="chat-container">
       {/* ================= ENCABEZADO DEL CHAT ================= */}
       <div className="chat-header">
+         {/* 🎯 BOTÓN DE RETROCESO - SOLO EN MÓVIL */}
+        {isMobile && onBackToList && (
+          <button 
+            className="back-to-list"
+            onClick={onBackToList}
+            title="Volver a la lista de chats"
+          >
+            <ArrowLeft size={20} />
+          </button>
+        )}
         <div className="chat-header-info">
           <h2>#{channel.name}</h2>
           <p>{channel.description || "Sin descripción disponible"}</p>
         </div>
 
-        {/* Usuarios conectados */}
-        <div className="chat-online-users">
-          <Users size={18} />
-          {onlineUsers.length > 0 ? (
-            <span>{onlineUsers.map((u) => u.username).join(", ")}</span>
-          ) : (
-            <span className="no-users">No hay usuarios conectados</span>
-          )}
-        </div>
+        {/* Usuarios conectados Unicamente para grupos*/}
+        {channel.isPublic || channel.name?.startsWith("DM ") ? null : (
+          <div className="chat-online-users">
+            <Users size={18} />
+            {onlineUsers.length > 0 ? (
+              <span>{onlineUsers.map((u) => u.username).join(", ")}</span>
+            ) : (
+              <span className="no-users">No hay usuarios conectados</span>
+            )}
+          </div>
+        )}
 
         {/* Acciones del encabezado */}
         <div className="chat-header-actions">

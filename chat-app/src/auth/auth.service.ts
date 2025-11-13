@@ -1,3 +1,6 @@
+//src/auth/auth.service.ts
+//Servicio para la autenticacion
+//Importaciones necesarias:
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';

@@ -16,7 +16,7 @@ export default function ChatLayoutResponsive({ chatList, chatWindow, emptyState 
     const { isMobile, currentChat } = useResponsiveContext();
 
     //Estado para vista movil (Mostrar lista o ventana de chat)
-    const shouldShowList = !isMobile || !currentChat;
+    const shouldShowList = !isMobile || currentChat;
     const shouldShowChat = !isMobile || currentChat;
 
     return(

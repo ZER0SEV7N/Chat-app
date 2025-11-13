@@ -14,9 +14,9 @@ export class AuthController {
   @Post('register')
   @UsePipes(new ValidationPipe({ whitelist: true })) // <-- Activa la validación automática
   async register(@Body() registerDto: RegisterDTO) {
-    const { name, username, email, password } = registerDto;
+    const { name, username, email, phone, password } = registerDto;
     console.log("📥 Body recibido en NestJS:", registerDto); // ✅ Aquí sí imprime correctamente
-    return this.authService.register(name, username, email, password);
+    return this.authService.register(name, username, email, phone, password);
   }
 
   // 👉 Endpoint para login

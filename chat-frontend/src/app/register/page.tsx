@@ -12,6 +12,7 @@ export default function RegisterPage(){
         name: "",
         username: "",
         email: "",
+        phone: "",
         password: "",
         confirmPassword: ""
     });
@@ -35,7 +36,7 @@ export default function RegisterPage(){
         e.preventDefault();
 
         //Validar el Front antes de enviar
-        if (!form.name || !form.username || !form.email || !form.password || !form.confirmPassword) {
+        if (!form.name || !form.username || !form.email || !form.phone || !form.password || !form.confirmPassword) {
             setError("Por favor completa todos los campos");
             return;
         }
@@ -169,6 +170,27 @@ export default function RegisterPage(){
                         </div>
                     </div>
 
+                    {/*Campo de teléfono*/}
+                    <div className="form-group">
+                        <label className="form-label" htmlFor="phone">
+                            Teléfono
+                        </label>
+                        <div className="input-with-icon">
+                            <span className="input-icon">📞</span>
+                            <input
+                                id="phone"
+                                name="phone"
+                                type="text"
+                                className="form-input"
+                                placeholder="Tu número de teléfono"
+                                value={form.phone}
+                                onChange={handleChange}
+                                disabled={loading}
+                                required
+                            />
+                        </div>
+                    </div>
+                
                     {/* Campo de contraseña */}
                     <div className="form-group">
                         <label className="form-label" htmlFor="password">
