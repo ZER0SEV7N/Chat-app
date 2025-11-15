@@ -62,7 +62,7 @@ export class ChannelsController {
           userId,  
           body.description,
           body.isPublic ?? true,
-          (body.type as 'channel' | 'dm') ?? 'channel',
+          'channel',
       );
 
       console.log('✅ Respuesta del servicio:', {

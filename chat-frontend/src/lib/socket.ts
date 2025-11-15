@@ -1,12 +1,12 @@
 import { io, Socket } from "socket.io-client";
-
+import { API_URL } from "./config";
 let socket: Socket;
 
 // Verifica que esté en el navegador antes de inicializar
 if (typeof window !== "undefined") {
     const token = localStorage.getItem("token") || "";
 
-    socket = io("http://localhost:3000", {
+    socket = io(API_URL, {
         auth: { token },
     });
 } else {

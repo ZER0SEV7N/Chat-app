@@ -75,7 +75,6 @@ export class ChatController {
     if (!authHeader) {
       throw new Error('Falta el token de autorización');
     }
-    
     const token = authHeader.split(' ')[1];
     const payload = this.jwtService.verify(token);
     const userId = payload.sub;

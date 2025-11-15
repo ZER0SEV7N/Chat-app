@@ -77,9 +77,25 @@
   }
 }
 
+  /* Asegurar que los mensajes propios SIEMPRE vayan a la derecha */
+  .chat-message.own-message {
+    align-self: flex-end !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    text-align: right !important;
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+  }
+
+  /* Mantener mensajes ajenos a la izquierda */
+  .chat-message {
+    max-width: min(75%, 500px);
+  }
+
 /* Ocultar botón retroceso en desktop */
 @media (min-width: 769px) {
   .back-to-list {
     display: none !important;
   }
 }
+

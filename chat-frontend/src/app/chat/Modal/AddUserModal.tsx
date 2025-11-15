@@ -42,7 +42,7 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
     
     return channels.find(ch => {
       // Solo buscar en canales no públicos (DMs)
-      if (!ch || ch.isPublic) return false;
+      if (!ch || ch.type !== 'dm') return false;
       
       console.log('🔍 Verificando canal:', ch.name, 'para usuario actual:', currentUser, 'y target:', targetUsername);
       

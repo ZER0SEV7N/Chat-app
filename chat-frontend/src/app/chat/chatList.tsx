@@ -56,8 +56,9 @@ export default function ChatList({
   };
 
   // ✅ USAR LAS LISTAS SEPARADAS EN LUGAR DE FILTRAR
-  const groups = [...publicChannels, ...privateChannels];
-  const directMessages = dmChannels;
+  const groups = channels.filter(ch => ch.type === "channel");
+
+  const directMessages = channels.filter(ch => ch.type === "dm");
 
   // ✅ FUNCIÓN MEJORADA: Formatear nombre para DMs con manejo de errores
   const formatDMName = (channel: any) => {

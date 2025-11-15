@@ -1,18 +1,25 @@
-//chat-frontend/src/app/chat/ChatContent.tsx
-//Contiene toda la lógica del chat con responsive integrado
+// chat-frontend/src/app/chat/ChatContent.tsx
+// Versión corregida y anotada (con tus comentarios ampliados)
+// - Backend auto-une a canales públicos (A)
+// - Frontend solo hará JOIN manual para: canales privados (isPublic === false && type === 'channel') y DMs (type === 'dm')
+// - Evitamos crear/reconectar sockets múltiples, evitamos loops por dependencia `channels` en el efecto de socket
+// - Usamos un ref (joinedRoomsRef) para recordar qué rooms ya se unieron y no volver a emitir join
+
 'use client';
-import { useState, useEffect } from "react";
-import { useResponsiveContext } from "./Responsive/contextResponsive";
-import ResponsiveChatLayout from "./Responsive/chatLayoutResponsive";
+import { useState, useEffect, useRef } from 'react';
+import { useResponsiveContext } from './Responsive/contextResponsive';
+import ResponsiveChatLayout from './Responsive/chatLayoutResponsive';
 import ChatList from './chatList';
 import ChatWindow from './chatWindow';
 import CreateChannelModal from './Modal/CreateChannelModal';
 import AddUserModal from './Modal/AddUserModal';
 import EditChannelModal from './Modal/EditChannelModal';
-import { io, Socket } from "socket.io-client";
-import { API_URL } from "@/lib/config";
+import { io, Socket } from 'socket.io-client';
+import { API_URL } from '@/lib/config';
 
-// Interfaces para tipado mejorado
+// ======================
+// Tipado local
+// ======================
 interface Channel {
   idChannel: number;
   name: string;
@@ -27,12 +34,19 @@ interface Channel {
 }
 
 export default function ChatContent() {
+  // Responsive/context
   const { isMobile, currentChat, setCurrentChat } = useResponsiveContext();
+
+  // Socket (creado UNA vez)
   const [socket, setSocket] = useState<Socket | null>(null);
+
+  // Estado de canales (separados para claridad)
   const [channels, setChannels] = useState<Channel[]>([]);
   const [publicChannels, setPublicChannels] = useState<Channel[]>([]);
   const [privateChannels, setPrivateChannels] = useState<Channel[]>([]);
   const [dmChannels, setDmChannels] = useState<Channel[]>([]);
+
+  // UI
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -40,13 +54,16 @@ export default function ChatContent() {
   const [globalUnreadCounts, setGlobalUnreadCounts] = useState<{ [key: number]: number }>({});
   const [username, setUsername] = useState('Usuario');
 
-  // ============================================================
-  // 🔄 FUNCIONES MEJORADAS PARA CANALES Y DMs
-  // ============================================================
+  // === REF para tracks de rooms ya unidas para evitar re-emitir joinRoom ===
+  const joinedRoomsRef = useRef<Set<number>>(new Set());
 
-  const handleBackToList = () => {
-    setCurrentChat(null);
-  };
+  // === Manejo de reconexiones: cuando socket se reconecta re-join a las rooms en joinedRoomsRef ===
+  // Esto se registra en el efecto de socket.
+
+  // ============================================================
+  // FUNCIONES AUXILIARES
+  // ============================================================
+  const handleBackToList = () => setCurrentChat(null);
 
   const handleEditChannel = (channel: Channel) => {
     console.log('🎯 Abriendo modal de edición para:', channel?.name);
@@ -56,313 +73,298 @@ export default function ChatContent() {
 
   const handleChannelUpdated = (updatedChannel: Channel) => {
     console.log('✅ Canal actualizado:', updatedChannel);
-    
-    setChannels(prev => prev.map(ch => 
-      ch.idChannel === updatedChannel.idChannel ? updatedChannel : ch
-    ));
-    
-    // Actualizar también en las listas específicas
+
+    // Actualizar arrays (channels y listas por tipo)
+    setChannels(prev => prev.map(ch => ch.idChannel === updatedChannel.idChannel ? updatedChannel : ch));
+
     if (updatedChannel.type === 'dm') {
-      setDmChannels(prev => prev.map(ch => 
-        ch.idChannel === updatedChannel.idChannel ? updatedChannel : ch
-      ));
+      setDmChannels(prev => prev.map(ch => ch.idChannel === updatedChannel.idChannel ? updatedChannel : ch));
     } else if (updatedChannel.isPublic) {
-      setPublicChannels(prev => prev.map(ch => 
-        ch.idChannel === updatedChannel.idChannel ? updatedChannel : ch
-      ));
+      setPublicChannels(prev => prev.map(ch => ch.idChannel === updatedChannel.idChannel ? updatedChannel : ch));
     } else {
-      setPrivateChannels(prev => prev.map(ch => 
-        ch.idChannel === updatedChannel.idChannel ? updatedChannel : ch
-      ));
+      setPrivateChannels(prev => prev.map(ch => ch.idChannel === updatedChannel.idChannel ? updatedChannel : ch));
     }
-    
+
     if (currentChat && currentChat.idChannel === updatedChannel.idChannel) {
       setCurrentChat(updatedChannel);
     }
-    
+
     setShowEditModal(false);
     setChannelToEdit(null);
   };
 
   // ============================================================
-  // 📡 FUNCIONES DE DATOS Y SOCKETS MEJORADAS
+  // CARGAR CANALES (una vez al montar)
   // ============================================================
-
-  // ✅ FUNCIÓN MEJORADA: Cargar canales separados por tipo
   const fetchChannels = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    
+
     try {
-      // Usar el nuevo endpoint que separa por tipo
       const response = await fetch(`${API_URL}/chat/user-channels`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📦 Canales cargados:', data);
-        
-        // Separar por tipo usando el campo 'type'
-        setPublicChannels(data.publicChannels || []);
-        setPrivateChannels(data.privateChannels || []);
-        
-        // Los DMs ya vienen formateados con displayName
-        const formattedDMs = (data.dmChannels || []).map((dm: any) => ({
-          ...dm,
-          isDM: true,
-          type: 'dm'
-        }));
-        setDmChannels(formattedDMs);
-        
-        // Combinar todos los canales
-        const allChannels = [
-          ...(data.publicChannels || []),
-          ...(data.privateChannels || []),
-          ...formattedDMs
-        ];
-        setChannels(allChannels);
+
+      if (!response.ok) {
+        console.error('Error cargando canales:', response.statusText);
+        return;
       }
+
+      const data = await response.json();
+      console.log('📦 Canales cargados:', data);
+
+      // Normalizar nombres de propiedades (backend usa PublicChannels/ privateChannels / dmChannels)
+      const pubs = data.PublicChannels || data.publicChannels || [];
+      const privs = data.privateChannels || [];
+      const dms = (data.dmChannels || []).map((dm: any) => ({ ...dm, type: 'dm', isDM: true }));
+
+      setPublicChannels(pubs);
+      setPrivateChannels(privs);
+      setDmChannels(dms);
+
+      // Combinar para state general "channels" (mantener orden: públicos primero)
+      setChannels([...pubs, ...privs, ...dms]);
     } catch (err) {
       console.error('Error al obtener los canales:', err);
-    }  
+    }
   };
 
-  // Pedir permiso para notificaciones
   useEffect(() => {
-    if (typeof window !== 'undefined' && "Notification" in window) {
-      if (Notification.permission === "default") {
-        Notification.requestPermission();
-      }
-    }
+    fetchChannels(); // Solo al montar
   }, []);
 
-  // ✅ CONEXIÓN SOCKET MEJORADA
+  // ============================================================
+  // SOCKET: crear solo UNA VEZ (al montar) y configurar listeners
+  // - No incluir "channels" como dependencia aquí para evitar recrear socket
+  // ============================================================
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (!token) {
       window.location.href = '/';
       return;
     }
-    
-    const user = localStorage.getItem("username");
+
+    const user = localStorage.getItem('username');
     if (user) setUsername(user);
-    
-    const newSocket = io(API_URL, {
-      auth: { token },
-    });
-    
-    newSocket.on("connect", () => {
-      console.log("Conectado al servidor de chat");
-      // Unirse automáticamente a todos los canales del usuario
-      channels.forEach(channel => {
-        if (channel.idChannel) {
-          newSocket.emit("joinRoom", channel.idChannel);
+
+    // Crear socket (solo una vez)
+    const s = io(API_URL, { auth: { token } });
+    setSocket(s);
+
+    // Al conectar (también pasa en reconexiones), rejoin a las rooms que ya tenemos en joinedRoomsRef
+    s.on('connect', () => {
+      console.log('Socket conectado', s.id);
+      // Re-join a las rooms que registramos anteriormente (útil en reconexiones automáticas)
+      joinedRoomsRef.current.forEach(id => {
+        try {
+          s.emit('joinRoom', id);
+          console.log('🔁 Re-joining room:', id);
+        } catch (e) {
+          console.warn('Error re-joining room', id, e);
         }
       });
     });
 
-    newSocket.on("unauthorized", () => {
-      alert("Sesión expirada. Redirigiendo al login.");
+    // Manejo de reconexión fallida o no autorizado
+    s.on('unauthorized', () => {
+      alert('Sesión expirada. Redirigiendo al login.');
       handleLogout();
     });
 
-    // ✅ ESCUCHAR NUEVOS DMs ESPECÍFICAMENTE
-    newSocket.on("newDMChannel", (data) => {
-      console.log("💬 Nuevo DM recibido:", data);
-      
+    // --- Eventos que usas en tu frontend ---
+    s.on('newDMChannel', (data) => {
+      console.log('💬 newDMChannel', data);
+
       const currentUserId = localStorage.getItem('idUser');
       if (data.forUserId && currentUserId && data.forUserId.toString() === currentUserId) {
-        const newDM = {
+        const newDM: Channel = {
           ...data.channel,
+          idChannel: data.channel.idChannel,
+          name: data.channel.name,
+          isPublic: data.channel.isPublic,
+          type: 'dm',
           displayName: data.displayName,
-          isDM: true,
-          type: 'dm'
+          isDM: true
         };
-        
+
+        // Agregar solo si no existe
         setDmChannels(prev => {
           const exists = prev.some(dm => dm.idChannel === newDM.idChannel);
           if (exists) return prev;
           return [newDM, ...prev];
         });
-        
+
         setChannels(prev => {
           const exists = prev.some(ch => ch.idChannel === newDM.idChannel);
           if (exists) return prev;
           return [newDM, ...prev];
         });
-        
+
         // Mostrar notificación
         showNotification(`Nuevo chat con ${data.displayName?.replace('DM con ', '')}`);
       }
     });
 
-    // ✅ ESCUCHAR CANALES ELIMINADOS
-    newSocket.on("channelDeleted", (data) => {
-      console.log("🗑️ Canal eliminado:", data.channelId);
-      
+    s.on('channelDeleted', (data) => {
+      console.log('🗑️ channelDeleted', data.channelId);
       setChannels(prev => prev.filter(ch => ch.idChannel !== data.channelId));
       setDmChannels(prev => prev.filter(ch => ch.idChannel !== data.channelId));
       setPublicChannels(prev => prev.filter(ch => ch.idChannel !== data.channelId));
       setPrivateChannels(prev => prev.filter(ch => ch.idChannel !== data.channelId));
-      
-      if (currentChat?.idChannel === data.channelId) {
-        setCurrentChat(null);
-      }
+
+      // Si estabas en ese chat, salir
+      if (currentChat?.idChannel === data.channelId) setCurrentChat(null);
+
+      // Quitar de joinedRoomsRef si existe
+      joinedRoomsRef.current.delete(data.channelId);
     });
 
-    // ✅ ESCUCHAR NUEVOS MENSAJES PARA NOTIFICACIONES
-    newSocket.on("newMessageNotification", (data) => {
-      console.log("🔔 Notificación global de mensaje:", data);
-      
+    s.on('newMessageNotification', (data) => {
       const { idChannel, sender } = data;
-      const currentUser = localStorage.getItem("username");
-      
+      const currentUser = localStorage.getItem('username');
+
       if (sender !== currentUser) {
-        setGlobalUnreadCounts(prev => ({
-          ...prev,
-          [idChannel]: (prev[idChannel] || 0) + 1
-        }));
-        
-        // Mostrar notificación del sistema
-        if (currentChat?.idChannel !== idChannel && Notification.permission === "granted") {
-          new Notification(`💬 Nuevo mensaje de ${sender}`, {
-            body: `Tienes un nuevo mensaje en un chat`,
-            icon: "/chat-icon.png",
-          });
+        setGlobalUnreadCounts(prev => ({ ...prev, [idChannel]: (prev[idChannel] || 0) + 1 }));
+
+        if (currentChat?.idChannel !== idChannel && Notification.permission === 'granted') {
+          new Notification(`💬 Nuevo mensaje de ${sender}`, { body: 'Tienes un nuevo mensaje en un chat', icon: '/chat-icon.png' });
         }
-        
+
         if (currentChat?.idChannel !== idChannel) {
-          const audio = new Audio("/message.mp3");
+          const audio = new Audio('/message.mp3');
           audio.volume = 0.3;
-          audio.play().catch((err) => console.warn("Error reproduciendo sonido:", err));
+          audio.play().catch(() => {});
         }
       }
     });
 
-    setSocket(newSocket);
+    // Online users
+    s.on('onlineUsers', (users) => {
+      // reemite a los listeners en ChatList a través del socket importado
+      // (ChatList escucha este evento desde la misma instancia socket)
+      console.log('onlineUsers', users);
+    });
 
+    // Cleanup: desconectar socket al desmontar
     return () => {
-      newSocket.disconnect();
-      console.log("🔌 Socket desconectado");
+      try { s.disconnect(); } catch (e) { console.warn('Error disconnect socket', e); }
+      setSocket(null);
+      console.log('🔌 Socket desconectado (cleanup)');
     };
-  }, [currentChat, isMobile, channels]);
 
-  // Cargar canales al inicio
+  }, []); // ← SOLO UNA VEZ
+
+  // ============================================================
+  // JOIN a rooms que requieren join manual: DMs y privados
+  // - Se ejecuta cuando cambian las listas (fetchChannels o creación de canales)
+  // - Usa joinedRoomsRef para evitar joins repetidos
+  // ============================================================
   useEffect(() => {
-    fetchChannels();
+    if (!socket || !socket.connected) return;
+
+    // Construir lista de canales que deben recibir join desde frontend
+    // Regla: SI backend auto-une a públicos (A), entonces unimos: privados (isPublic===false && type==='channel') y DMs (type==='dm')
+    const shouldJoin = channels.filter(ch => (
+      (ch.type === 'channel' && ch.isPublic === false) || ch.type === 'dm'
+    ));
+
+    shouldJoin.forEach(ch => {
+      if (!joinedRoomsRef.current.has(ch.idChannel)) {
+        socket.emit('joinRoom', ch.idChannel);
+        joinedRoomsRef.current.add(ch.idChannel);
+        console.log('🔔 Join manual emitido (frontend) ->', ch.idChannel, ch.name);
+      }
+    });
+  }, [channels, socket]);
+
+  // ============================================================
+  // Efectos auxiliares: pedir permisos notificación
+  // ============================================================
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }, []);
 
-  // Actualizar título de la página
-  useEffect(() => {
-    if (currentChat?.name) {
-      document.title = `${currentChat.name} - Chat App`;
-    } else {
-      document.title = "Chat App";
-    }
-  }, [currentChat]);
-
   // ============================================================
-  // 🔐 FUNCIONES DE AUTENTICACIÓN
+  // AUTENTICACIÓN / LOGOUT
   // ============================================================
-
   const handleLogout = () => {
     localStorage.removeItem('token');
-    socket?.disconnect();
+    try { socket?.disconnect(); } catch (e) { /* noop */ }
     window.location.href = '/';
   };
 
   // ============================================================
-  // 💬 MANEJADORES DE CANALES MEJORADOS
+  // CREACIÓN/SELECCIÓN/ELIMINACIÓN DE CANALES (front)
   // ============================================================
-
   const handleChannelCreated = (channelData: any) => {
     console.log('🔄 handleChannelCreated recibió:', channelData);
 
     if (!channelData || (!channelData.idChannel && !channelData.channelId && !channelData.id)) {
-      console.error('❌ Error: Canal inválido recibido', channelData);
+      console.error('❌ Canal inválido recibido', channelData);
       alert('Error: No se pudo crear el canal. Intenta nuevamente.');
       return;
     }
 
-    // Normalizar la estructura del canal
-    const normalizedChannel: Channel = {
+    // Normalizar
+    const normalized: Channel = {
       ...channelData,
       idChannel: channelData.idChannel || channelData.channelId || channelData.id,
-      name: channelData.name || `DM con ${channelData.targetUsername || 'usuario'}`,
-      isPublic: false,
-      type: 'dm', // ✅ Especificar que es un DM
-      isDM: true,
-      displayName: channelData.displayName || `DM con ${channelData.targetUsername || 'usuario'}`
+      name: channelData.name || channelData.displayName || `Canal ${channelData.idChannel || ''}`,
+      isPublic: channelData.isPublic ?? false,
+      type: channelData.type ?? 'channel',
+      displayName: channelData.displayName,
+      isDM: channelData.type === 'dm'
     };
 
     // Cerrar modales
     setShowAddUserModal(false);
     setShowCreateModal(false);
 
-    // Agregar a las listas correspondientes
-    setDmChannels(prev => {
-      const exists = prev.some(ch => ch.idChannel === normalizedChannel.idChannel);
-      if (exists) return prev;
-      return [normalizedChannel, ...prev];
-    });
+    // Agregar a estados
+    if (normalized.type === 'dm') setDmChannels(prev => [normalized, ...prev]);
+    if (normalized.type === 'channel' && normalized.isPublic) setPublicChannels(prev => [normalized, ...prev]);
+    if (normalized.type === 'channel' && !normalized.isPublic) setPrivateChannels(prev => [normalized, ...prev]);
 
     setChannels(prev => {
-      const exists = prev.some(ch => ch.idChannel === normalizedChannel.idChannel);
+      const exists = prev.some(ch => ch.idChannel === normalized.idChannel);
       if (exists) return prev;
-      return [normalizedChannel, ...prev];
+      return [normalized, ...prev];
     });
 
-    // Seleccionar el canal
-    setTimeout(() => {
-      console.log('🎯 Seleccionando DM:', normalizedChannel.displayName);
-      setCurrentChat(normalizedChannel);
-    }, 100);
+    // Si es DM o privado, el frontend debe unirse manualmente (backend no lo hizo)
+    if (normalized.type === 'dm' || (normalized.type === 'channel' && !normalized.isPublic)) {
+      if (socket && socket.connected && !joinedRoomsRef.current.has(normalized.idChannel)) {
+        socket.emit('joinRoom', normalized.idChannel);
+        joinedRoomsRef.current.add(normalized.idChannel);
+      }
+    }
+
+    // Seleccionar el canal creado
+    setTimeout(() => setCurrentChat(normalized), 100);
   };
 
-  // ✅ FUNCIÓN MEJORADA: Eliminar canales usando sockets
   const handleDeleteChannel = async (idChannel: number) => {
-    if (!socket) {
-      alert("Error: No hay conexión con el servidor");
-      return;
-    }
-    
+    if (!socket) { alert('Error: No hay conexión con el servidor'); return; }
     try {
-      // Emitir evento de socket para eliminar el canal
-      socket.emit("deleteChannel", { channelId: idChannel });
-      console.log("Solicitando eliminación del canal:", idChannel);
-    } catch (err) {
-      console.error("Error al eliminar el canal:", err);
-      alert("Error al eliminar el canal");
-    }
-  }
+      socket.emit('deleteChannel', { channelId: idChannel });
+    } catch (err) { console.error(err); alert('Error al eliminar el canal'); }
+  };
 
-  // ✅ FUNCIÓN MEJORADA: Seleccionar canal y resetear contador
   const handleSelectChannel = (channel: Channel) => {
     console.log('🎯 Seleccionando canal:', channel?.name);
-    
-    // Resetear contador de mensajes no leídos
-    if (channel?.idChannel) {
-      setGlobalUnreadCounts(prev => ({
-        ...prev,
-        [channel.idChannel]: 0
-      }));
-    }
-    
+    if (channel?.idChannel) setGlobalUnreadCounts(prev => ({ ...prev, [channel.idChannel]: 0 }));
     setCurrentChat(channel);
   };
 
-  // Función auxiliar para mostrar notificaciones
   const showNotification = (message: string) => {
-    if (Notification.permission === "granted") {
-      new Notification(message);
-    }
+    if (Notification.permission === 'granted') new Notification(message);
   };
 
   // ============================================================
-  // 🎨 RENDERIZADO PRINCIPAL
+  // RENDER
   // ============================================================
-
   return (
     <>
       <ResponsiveChatLayout
@@ -376,7 +378,6 @@ export default function ChatContent() {
             onDeleteChannel={handleDeleteChannel}
             username={username}
             unreadCounts={globalUnreadCounts}
-            // ✅ Pasar las listas separadas para mejor organización
             publicChannels={publicChannels}
             privateChannels={privateChannels}
             dmChannels={dmChannels}
@@ -390,44 +391,17 @@ export default function ChatContent() {
             onBackToList={handleBackToList}
           />
         }
-        emptyState={
+        emptyState={(
           <div className="chat-empty">
-            <div className="chat-empty-message">
-              Selecciona un chat para comenzar a conversar 😊
-            </div>
+            <div className="chat-empty-message">Selecciona un chat para comenzar a conversar 😊</div>
           </div>
-        }
+        )}
       />
 
-      {/* MODALES */}
-      {showCreateModal && (
-        <CreateChannelModal
-          onClose={() => setShowCreateModal(false)}
-          onChannelCreated={handleChannelCreated}
-        />
-      )}
-
-      {showAddUserModal && (
-        <AddUserModal
-          onClose={() => setShowAddUserModal(false)}
-          onChannelCreated={handleChannelCreated}
-          onChannelSelected={handleSelectChannel}
-          channels={channels}
-        />
-      )}
-
+      {showCreateModal && <CreateChannelModal onClose={() => setShowCreateModal(false)} onChannelCreated={handleChannelCreated} />}
+      {showAddUserModal && <AddUserModal onClose={() => setShowAddUserModal(false)} onChannelCreated={handleChannelCreated} onChannelSelected={handleSelectChannel} channels={channels} />}
       {showEditModal && channelToEdit && (
-        <EditChannelModal
-          channel={channelToEdit}
-          onClose={() => {
-            console.log('🚪 Cerrando modal de edición');
-            setShowEditModal(false);
-            setChannelToEdit(null);
-          }}
-          onChannelUpdate={handleChannelUpdated}
-          username={username}
-          idUser={Number(localStorage.getItem('idUser'))}
-        />
+        <EditChannelModal channel={channelToEdit} onClose={() => { setShowEditModal(false); setChannelToEdit(null); }} onChannelUpdate={handleChannelUpdated} username={username} idUser={Number(localStorage.getItem('idUser'))} />
       )}
     </>
   );

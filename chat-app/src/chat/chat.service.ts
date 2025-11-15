@@ -12,7 +12,6 @@ import { Repository, Not } from 'typeorm';
 import { Message } from 'src/entities/message.entity';
 import { Channel } from 'src/entities/channels.entity';
 import { User } from 'src/entities/user.entity';
-import { channel } from 'diagnostics_channel';
 
 @Injectable()
 export class ChatService {
@@ -118,12 +117,18 @@ export class ChatService {
 
     // 🆕 CREAR NUEVO DM
     console.log(`🆕 Creando nuevo DM entre ${currentUser.username} y ${targetUser.username}`);
-    
+
+    // Ordenar alfabéticamente para que ambos usuarios tengan el mismo nombre de canal
+    const orderedUsernames = [currentUser.username, targetUser.username].sort();
+
+    // Nombre formateado tipo "#DM Moises25-ZER0SEV7N"
+    const formattedName = `#DM ${orderedUsernames[0]}-${orderedUsernames[1]}`;
+
     const dmChannel = this.channelRepository.create({
-      name: `dm_${currentUser.idUser}_${targetUser.idUser}`, // Nombre interno único
+      name: formattedName,
       description: `Chat privado entre ${currentUser.username} y ${targetUser.username}`,
       isPublic: false,
-      type: 'dm', // ✅ ESPECIFICAR QUE ES UN DM
+      type: 'dm',
       members: [currentUser, targetUser],
       creator: currentUser,
     });
@@ -133,7 +138,7 @@ export class ChatService {
 
     const displayName = this.getDMDisplayName(savedChannel, currentUser, targetUser);
     return { channel: savedChannel, displayName };
-  }
+    }
 
   /*============================================================
   Obtener nombre display para DM

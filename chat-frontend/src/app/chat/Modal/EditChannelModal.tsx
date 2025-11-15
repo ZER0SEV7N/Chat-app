@@ -276,6 +276,61 @@ export default function EditChannelModal({
                         )}
                       </div>
                     </div>
+                    <div className="danger-zone">
+
+                      {/* Título de sección */}
+                      <h4 className="danger-title">Zona de peligro</h4>
+
+                      {/* Descripción */}
+                      <p className="danger-description">
+                        Esta acción eliminará el canal permanentemente para todos los miembros.
+                        No se puede deshacer.
+                      </p>
+
+                      {/* Botón principal de eliminar canal */}
+                      <button
+                        type="button"
+                        className="btn-danger delete-button"
+                        disabled={isLoading}
+                        onClick={async () => {
+
+                          // Confirmación al usuario para evitar eliminaciones accidentales
+                          if (!confirm(`¿Eliminar el canal "${channel.name}" permanentemente?`)) return;
+
+                          setIsLoading(true);
+
+                          try {
+                            // Llamada al backend para eliminar el canal
+                            const res = await fetch(`${API_URL}/channels/${channel.idChannel}`, {
+                              method: "DELETE",
+                              headers: { Authorization: `Bearer ${token}` }
+                            });
+
+                            // Si eliminación correcta
+                            if (res.ok) {
+                              onClose(); // Cerrar modal
+
+                              // Avisar al padre para remover el canal de la lista visual
+                              onChannelUpdate({
+                                deleted: true,
+                                idChannel: channel.idChannel
+                              });
+
+                            } else {
+                              const data = await res.json();
+                              alert(data.message || "No se pudo eliminar el canal");
+                            }
+                          } catch (err) {
+                            console.error("Error al eliminar canal:", err);
+                            alert("Error de conexión al intentar eliminar el canal.");
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                      >
+                        🗑️ Eliminar canal
+                      </button>
+                    </div>
 
                     <div className="form-actions">
                       <button 
