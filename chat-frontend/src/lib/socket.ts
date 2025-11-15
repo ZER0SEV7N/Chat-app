@@ -1,16 +1,17 @@
+// chat-frontend/src/lib/socket.ts
 import { io, Socket } from "socket.io-client";
 
 let socket: Socket;
 
-// Verifica que esté en el navegador antes de inicializar
 if (typeof window !== "undefined") {
     const token = localStorage.getItem("token") || "";
 
-    socket = io("http://localhost:3000", {
+    socket = io("http://192.168.1.4:3000", {
         auth: { token },
+        transports: ["websocket", "polling"],
+        reconnection: true,
     });
 } else {
-    // Si no está en el navegador, crea un socket falso para evitar errores
     socket = {
         on: () => { },
         off: () => { },

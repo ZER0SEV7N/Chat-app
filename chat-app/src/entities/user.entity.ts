@@ -20,8 +20,9 @@ export class User {
     @Column() //Columna de correo electronico
     email: string;
 
-    @Column() //Columna para el telefono
+    @Column({ type: 'varchar', nullable: true })
     phone: string;
+
 
     @Column({ select: false }) //Columna de contraseña
     password: string;
@@ -36,7 +37,7 @@ export class User {
 
     @ManyToMany(() => Channel, (channel) => channel.members)
     channels: Channel[];
-        
+
     //Canales creados por el usuario
     @OneToMany(() => Channel, (channel) => channel.creator)
     createdChannels: Channel[];
