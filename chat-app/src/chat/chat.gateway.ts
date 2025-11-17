@@ -231,10 +231,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       await this.messageService.removeMessage(Number(idMessage));
       const room = `Canal:${message.channel.idChannel}`;
-      this.server.to(room).emit('messageDeleted', {
-        idMessage: Number(idMessage),
-        deletedBy: client.data.idUser,
-      });
+      // 🔥 CORRECCIÓN: Enviar solo el ID del mensaje como string
+      this.server.to(room).emit('messageDeleted', idMessage);
       console.log(`🗑️ Mensaje eliminado (ID: ${idMessage})`);
     } catch (err) {
       console.error('Error eliminando mensaje:', err.message);
@@ -243,10 +241,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // ============================================================
-  // ⚙️ CANALES (crear / eliminar / listar)
+  // 👥 CANALES DM (crear / eliminar / listar)
   // ============================================================
-  @SubscribeMessage('createChannel')
-  async handleCreateChannel(
+  @SubscribeMessage('createChannelDM')
+  async handleDMCreateChannel(
     @MessageBody() payload: { userId: number; targetUsername: string },
     @ConnectedSocket() client: Socket,
   ) {
@@ -259,7 +257,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const channelWithMembers = await this.channelsService.getChannelById(
         channel.channel.idChannel,
       );
-      client.emit('channelCreated', channel);
+      client.emit('channelCreated', channelWithMembers);
 
       const otherMember = channelWithMembers.members.find(
         (member) => member.idUser !== payload.userId,
@@ -316,4 +314,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`🔔 Usuario ${username} notificado como conectado`);
     // El usuario ya fue agregado en handleConnection, solo log para debugging
   }
+
+  // ============================================================
+  // ⚙️ CANALES (crear / eliminar / listar) 
+  // ============================================================
+  @SubscribeMessage('createChannel')
+  async handleCreatePublicChannel(
+    @MessageBody() payload: { name: string; description?: string; isPublic: boolean, autoAddAllUsers:boolean },
+    @ConnectedSocket() client: Socket,
+  ){
+    try{
+      //Obtener el ID del creador
+      const creatorId = client.data.idUser;
+      if (!creatorId) {
+      client.emit('error', { message: 'Usuario no autenticado' });
+      return;
+    }
+      const channel = await this.channelsService.createChannel(
+        payload.name,
+        creatorId,
+        payload.description ?? '',
+        payload.isPublic,
+        'channel',
+        payload.autoAddAllUsers ?? false
+      );
+      this.server.emit('channelCreated', channel)
+      return channel; 
+    } catch (err) {
+      console.error('Error creando un canal publico: ', err.message);
+      client.emit('error', { message: err.message });
+    }
+  }
+
+
+
 }

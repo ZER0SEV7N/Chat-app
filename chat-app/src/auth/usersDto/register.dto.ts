@@ -1,5 +1,5 @@
 //Importar la clases necesarias
-import { IsEmail, IsNotEmpty, IsPhoneNumber, MinLength, MaxLength} from 'class-validator'
+import { IsEmail, IsNotEmpty, IsPhoneNumber, MinLength, MaxLength, minLength} from 'class-validator'
 
 export class RegisterDTO {
     @IsNotEmpty ({message: 'El nombre es obligatorio'})

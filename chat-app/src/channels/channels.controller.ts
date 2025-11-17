@@ -46,15 +46,15 @@ export class ChannelsController {
   @Post()
   async createChannel(
       @Req() req,
-      @Body() body: { name: string; description?: string; creatorId: number; isPublic?: boolean; type?: string  },
+      @Body() body: { name: string; description?: string;  isPublic?: boolean; type?: string , autoAddAllUsers?: boolean; },
   ) {
       const userId = req.user?.idUser;
-      
+      if (!userId) throw new UnauthorizedException('Usuario no autenticado');
       console.log('🎯 Solicitud de creación de canal:', {
           name: body.name,
           isPublic: body.isPublic,
           requestedType: body.type,
-          userId
+          userId,
       });
 
       const result = await this.channelsService.createChannel(
@@ -63,6 +63,7 @@ export class ChannelsController {
           body.description,
           body.isPublic ?? true,
           'channel',
+          body.autoAddAllUsers ?? false //Por defecto false
       );
 
       console.log('✅ Respuesta del servicio:', {
@@ -159,6 +160,7 @@ export class ChannelsController {
   async addUserToChannel(
     @Param('id') id: number,
     @Body() body: { username: string },
+    @Req() req
   ) {
     return this.channelsService.addUserToChannel(id, body.username);
   }

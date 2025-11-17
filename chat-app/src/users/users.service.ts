@@ -51,5 +51,9 @@ export class UsersService {
         if (!user) throw new Error('Usuario no encontrado');
         return user.channels;
     }
-
+    async findAll(): Promise<Partial<User>[]> {
+        return this.userRepository.find({
+            select: ['idUser', 'username', 'name', 'email'],
+        });
+    }
 }

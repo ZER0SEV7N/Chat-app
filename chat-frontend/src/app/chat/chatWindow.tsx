@@ -11,9 +11,9 @@ import "./chat.css";
 import "./chat-responsive.css";
 import "./chat-dark.css";
 
-// ===============================================================
-// 🧱 PROPIEDADES DEL COMPONENTE
-// ===============================================================
+//===============================================================
+//PROPIEDADES DEL COMPONENTE
+//===============================================================
 interface Props {
   socket: Socket | null;
   channel: any;
@@ -22,64 +22,64 @@ interface Props {
 }
 
 export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Props) {
-  // ===============================================================
-  // 🧠 ESTADOS PRINCIPALES
-  // ===============================================================
-  const { isMobile } = useResponsiveContext(); // Contexto para diseño responsivo
-  const [messages, setMessages] = useState<any[]>([]); // Lista de mensajes
-  const [onlineUsers, setOnlineUsers] = useState<any[]>([]); // Usuarios conectados
-  const [input, setInput] = useState(""); // Texto del input de envío
-  const [showPicker, setShowPicker] = useState(false); // Mostrar/ocultar selector de emojis
-  const [showSearch, setShowSearch] = useState(false); // Mostrar/ocultar barra de búsqueda
-  const [searchTerm, setSearchTerm] = useState(""); // Texto de búsqueda
-  const [editingId, setEditingId] = useState<string | null>(null); // ID del mensaje en edición
-  const [editText, setEditText] = useState(""); // Texto del mensaje editado
-  const [menuOpen, setMenuOpen] = useState<string | null>(null); // Menú contextual abierto (⋮)
-  const [username, setUsername] = useState<string>(""); // Nombre del usuario actual - TIPO CORREGIDO
+  //===============================================================
+  //ESTADOS PRINCIPALES
+  //===============================================================
+  const { isMobile } = useResponsiveContext(); //Contexto para diseño responsivo
+  const [messages, setMessages] = useState<any[]>([]); //Lista de mensajes
+  const [onlineUsers, setOnlineUsers] = useState<any[]>([]); //Usuarios conectados
+  const [input, setInput] = useState(""); //Texto del input de envío
+  const [showPicker, setShowPicker] = useState(false); //Mostrar/ocultar selector de emojis
+  const [showSearch, setShowSearch] = useState(false); //Mostrar/ocultar barra de búsqueda
+  const [searchTerm, setSearchTerm] = useState(""); //Texto de búsqueda
+  const [editingId, setEditingId] = useState<string | null>(null); //ID del mensaje en edición
+  const [editText, setEditText] = useState(""); //Texto del mensaje editado
+  const [menuOpen, setMenuOpen] = useState<string | null>(null); //Menú contextual abierto (⋮)
+  const [username, setUsername] = useState<string>(""); //Nombre del usuario actual - TIPO CORREGIDO
 
-  // Referencias para audio y scroll automático
+  //Referencias para audio y scroll automático
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
-  // ===============================================================
-  // ⚙️ CONFIGURACIÓN INICIAL: Usuario, Audio y Eventos de Foco
-  // ===============================================================
+  //===============================================================
+  //CONFIGURACIÓN INICIAL: Usuario, Audio y Eventos de Foco
+  //===============================================================
   useEffect(() => {
-    // Cargar usuario desde localStorage
+    //Cargar usuario desde localStorage
     const storedUsername = localStorage.getItem("username") || "";
     setUsername(storedUsername);
 
-    // Configurar sonido de notificación
+    //Configurar sonido de notificación
     audioRef.current = new Audio("/sounds/message.mp3");
     audioRef.current.volume = 0.7;
 
-    // Pedir permiso de notificaciones del navegador
+    //Pedir permiso de notificaciones del navegador
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
   }, []);
 
-  // ===============================================================
-  // 🔽 AUTO-SCROLL: Desplaza automáticamente al último mensaje
-  // ===============================================================
+  //===============================================================
+  //AUTO-SCROLL: Desplaza automáticamente al último mensaje
+  //===============================================================
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ===============================================================
-  // 🔌 CONEXIÓN SOCKET.IO: Manejo de eventos en tiempo real
-  // ===============================================================
+  //===============================================================
+  //CONEXIÓN SOCKET.IO: Manejo de eventos en tiempo real
+  //===============================================================
   useEffect(() => {
     if (!socket?.connected || !channel) return;
 
-    // Unirse a la sala actual del canal
+    //Unirse a la sala actual del canal
     socket.emit("joinRoom", channel.idChannel);
 
-    // --- EVENTOS DEL SERVIDOR ---
+    //--- EVENTOS DEL SERVIDOR ---
     const handleHistory = (history: any[]) => setMessages(history);
 
     const handleNewMessage = (msg: any) => {
-      // Ignorar mensajes que no pertenecen al canal actual
+      //Ignorar mensajes que no pertenecen al canal actual
       if (msg.channel.idChannel !== channel.idChannel) return;
 
       // Evitar duplicados de mensajes
@@ -100,10 +100,10 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
           notif.onclick = () => notif.close();
         }
       }
-    }; // ← FALTABA ESTA LLAVE DE CIERRE
-
-    const handleDeleted = (idMessage: string) =>
-      setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
+    }; 
+    const handleDeleted = (idMessage: string) => {
+    setMessages((prev) => prev.filter((m) => m.idMessage !== idMessage));
+    };
 
     const handleEdited = (msg: any) =>
       setMessages((prev) =>
@@ -128,7 +128,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
       socket.off("messageEdited", handleEdited);
       socket.off("onlineUsers", handleOnlineUsers);
     };
-  }, [channel, username]); // ← DEPENDENCIAS CORRECTAS
+  }, [channel, username, socket]); // ← DEPENDENCIAS CORRECTAS
 
   // ===============================================================
   // 📨 ENVÍO DE MENSAJE
