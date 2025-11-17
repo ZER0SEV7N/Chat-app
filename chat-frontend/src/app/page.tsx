@@ -51,11 +51,30 @@ export default function LoginPage() {
         setError(data.message || "Credenciales inválidas ❌");
         return;
       }
-      
       //Guardar el token y redirigir al chat si el login es exitoso
       localStorage.setItem("token", data.access_token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      window.location.href = "/chat"; // Redirigir al chat
+      
+      // Guardar datos del usuario individualmente
+      if (data.user) {
+        localStorage.setItem("username", data.user.username || formData.username);
+        localStorage.setItem("idUser", data.user.id?.toString() || "");
+        
+        // También mantener el objeto user completo por compatibilidad
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        // Fallback: si el backend no envía user object
+        localStorage.setItem("username", formData.username);
+        localStorage.setItem("idUser", data.userId?.toString() || "");
+      }
+      
+      console.log('✅ Datos guardados en localStorage:', {
+        username: localStorage.getItem('username'),
+        idUser: localStorage.getItem('idUser'),
+        token: localStorage.getItem('token') ? '✅' : '❌'
+      });
+      
+      // Redirigir al chat
+      window.location.href = "/chat";
       
     //Capturar otros errores
     } catch (err) {
