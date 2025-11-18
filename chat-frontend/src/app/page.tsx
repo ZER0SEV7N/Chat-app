@@ -1,14 +1,10 @@
 //chat-frontend/src/app/page.tsx
-//Página de login
-//Importar hooks necesarios
-"use client"; // Indica que este es un componente del lado del cliente
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/lib/config";
 
-//Componente de la página de login
 export default function LoginPage() {
-  //Hooks de estado y router
   const router = useRouter();
   const [formData, setFormData] = useState({
     username: "",
@@ -18,46 +14,59 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  //Función para redirigir a la página de registro
   const goToRegister = () => {
-    router.push("/register"); //redirige a la página de registro
+    router.push("/register");
   };
 
-  //Función para manejar el envío del formulario de login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    //Validar el Front antes de enviar
+    
     if (!formData.username || !formData.password) {
       setError("Por favor completa todos los campos");
       return;
     }
 
-    setLoading(true); // Iniciar estado de carga
+    setLoading(true);
     try {
-      //Realizar la petición al endpoint de login
       const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST", // Método POST
-        headers: { "Content-Type": "application/json" }, // Encabezados
-        body: JSON.stringify(formData), // Cuerpo de la solicitud como JSON
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
       
-      //Procesar la respuesta
       const data = await res.json();
       
-      // Manejar la respuesta del servidor
       if (!res.ok) {
-        // Mostrar mensaje de error si las credenciales son inválidas
         setError(data.message || "Credenciales inválidas ❌");
         return;
       }
       
-      //Guardar el token y redirigir al chat si el login es exitoso
+      // ✅ CORRECCIÓN: Guardar TODOS los datos necesarios
       localStorage.setItem("token", data.access_token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      window.location.href = "/chat"; // Redirigir al chat
       
-    //Capturar otros errores
+      // Guardar datos del usuario individualmente
+      if (data.user) {
+        localStorage.setItem("username", data.user.username || formData.username);
+        localStorage.setItem("idUser", data.user.id?.toString() || "");
+        
+        // También mantener el objeto user completo por compatibilidad
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        // Fallback: si el backend no envía user object
+        localStorage.setItem("username", formData.username);
+        localStorage.setItem("idUser", data.userId?.toString() || "");
+      }
+      
+      console.log('✅ Datos guardados en localStorage:', {
+        username: localStorage.getItem('username'),
+        idUser: localStorage.getItem('idUser'),
+        token: localStorage.getItem('token') ? '✅' : '❌'
+      });
+      
+      // Redirigir al chat
+      window.location.href = "/chat";
+      
     } catch (err) {
       console.error(err);
       setError("No se pudo conectar con el servidor");
@@ -66,7 +75,6 @@ export default function LoginPage() {
     }
   };
 
-  // Función para manejar cambios en los inputs
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -78,14 +86,12 @@ export default function LoginPage() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        {/* Header del login */}
         <div className="auth-header">
           <div className="auth-logo">💬</div>
           <h1 className="auth-title">Iniciar sesión</h1>
           <p className="auth-subtitle">Ingresa a tu cuenta para continuar chateando</p>
         </div>
 
-        {/* Mensaje de error */}
         {error && (
           <div className="error-message">
             <span>⚠️</span>
@@ -93,9 +99,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Formulario de login */}
         <form onSubmit={handleLogin} className="auth-form">
-          {/* Campo de usuario */}
           <div className="form-group">
             <label className="form-label" htmlFor="username">
               Usuario:
@@ -116,7 +120,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Campo de contraseña */}
           <div className="form-group">
             <label className="form-label" htmlFor="password">
               Contraseña:
@@ -134,7 +137,6 @@ export default function LoginPage() {
                 disabled={loading}
                 required
               />
-              {/* Botón para mostrar/ocultar contraseña */}
               <button
                 type="button"
                 className="password-toggle"
@@ -146,7 +148,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Botón de envío */}
           <button
             type="submit"
             className={`auth-button btn-primary ${loading ? 'loading' : ''}`}
@@ -163,7 +164,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Enlace a registro */}
         <div className="auth-links">
           <p className="auth-text">
             <button 

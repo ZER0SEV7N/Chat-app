@@ -28,9 +28,6 @@ export default function ChatList({
   onDeleteChannel,
   username,
   unreadCounts = {}, 
-  publicChannels = [],
-  privateChannels = [],
-  dmChannels = []
 }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<{ idUser: number; username: string }[]>([]);

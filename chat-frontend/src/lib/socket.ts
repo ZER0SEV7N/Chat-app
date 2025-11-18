@@ -8,6 +8,8 @@ if (typeof window !== "undefined") {
 
     socket = io(API_URL, {
         auth: { token },
+        transports: ["websocket", "polling"],
+        reconnection: true,
     });
 } else {
     // Si no está en el navegador, crea un socket falso para evitar errores

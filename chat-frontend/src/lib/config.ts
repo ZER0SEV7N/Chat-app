@@ -8,22 +8,29 @@ export const getBaseURL = () => {
     if(process.env.NEXT_PUBLIC_API_URL){ 
         baseUrl = process.env.NEXT_PUBLIC_API_URL;
         source = "🌍Variable de entorno NEXT_PUBLIC_API_URL";
-    }
 
-    //Si se utiliza en un navegador, se toma del hostname actual
-    else if (typeof window !== "undefined"){
-        baseUrl = `http://${window.location.hostname}:3000`;
-        source = `💻IP local detectada: ${window.location.hostname}`;
-    }else {
+    }else if (typeof window !== "undefined") {
+      const ip = localStorage.getItem("server_ip");
+      if (ip) {
+          baseUrl = `http://${ip}:3000`;
+          source = `📡IP desde localStorage: ${ip}`;
+      } else {
         //Fallback para entornos donde window no existe (SSR o build)
+        baseUrl = `http://${window.location.hostname}:3000`;
+        source = `💻IP local detectada desde PC: ${window.location.hostname}`;
+      }
+    }
+    //🪵 Mostrar log solo en modo desarrollo
+    else {
         baseUrl = "http://localhost:3000";
         source = "🧩Fallback por defecto (localhost)";
-    }
-      // 🪵 Mostrar log solo en modo desarrollo
-  if (process.env.NODE_ENV === "development") {
-    console.log(`[API CONFIG] Usando base URL: ${baseUrl}`);
-    console.log(`[API CONFIG] Fuente detectada: ${source}`);
-  }
-  return baseUrl;
-};
-export const API_URL = getBaseURL();
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        console.log(`[API CONFIG] Usando base URL: ${baseUrl}`);
+        console.log(`[API CONFIG] Fuente detectada: ${source}`);
+      }
+      return baseUrl;
+    };
+
+    export const API_URL = getBaseURL();

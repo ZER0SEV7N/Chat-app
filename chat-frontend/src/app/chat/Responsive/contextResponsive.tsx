@@ -4,7 +4,7 @@
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 import { useResponsive } from './useResponsive';
 
-// Definir la interfaz del contexto
+//Definir la interfaz del contexto
 interface ResponsiveContextType {
   isMobile: boolean;
   isDesktop: boolean;
@@ -13,14 +13,14 @@ interface ResponsiveContextType {
   setCurrentChat: React.Dispatch<React.SetStateAction<any>>;
 }
 
-// Crear el contexto
+//Crear el contexto
 const ResponsiveContext = createContext({} as ResponsiveContextType);
 
-// Proveedor del contexto
+//Proveedor del contexto
 export function ResponsiveProvider({ children }: { children: ReactNode }) {
   const { isMobile, isDesktop, isTablet } = useResponsive();
   const [currentChat, setCurrentChat] = useState<any>(null);
-
+  //Definir el valor del contexto
   const value: ResponsiveContextType = {
     isMobile,
     isDesktop,
@@ -28,7 +28,7 @@ export function ResponsiveProvider({ children }: { children: ReactNode }) {
     currentChat,
     setCurrentChat,
   };
-
+  //Retornar el proveedor con el valor
   return (
     <ResponsiveContext.Provider value={value}>
       {children}
