@@ -14,4 +14,12 @@ export class UsersController {
     const idUser = req.user.sub; // el ID del usuario autenticado
     return this.usersService.getUserChannels(idUser);
   }
+
+    // 👉 Todos los usuarios (sin contraseña)
+  @UseGuards(JwtGuard)
+  @Get()
+  async findAll() {
+    return this.usersService.findAll();
+  }
+
 }

@@ -34,34 +34,46 @@ export default function EditChannelModal({
   const token = localStorage.getItem('token'); //OBTENER TOKEN
   //Cargar lista de usuarios del canal al abrir el modal
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-         const membersRes = await fetch(`${API_URL}/channels/${channel.idChannel}/users`, {
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      
+      // ✅ CORREGIDO: Usar el endpoint que devuelve la estructura correcta
+        const manageUsersRes = await fetch(`${API_URL}/channels/${channel.idChannel}/manage-users`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        //SI la pagina devuelve los usuarios
-        if (membersRes.ok) {
-          const membersData  = await membersRes .json();
-          setMembers(membersData);
+
+        if (manageUsersRes.ok) {
+          const manageData = await manageUsersRes.json();
+          console.log('🔍 DEBUG - Datos de gestión de usuarios:', manageData);
+          
+          // ✅ CORREGIDO: La estructura es { channel, currentMembers, availableUsers, isPublic }
+          const currentMembers = manageData.currentMembers || [];
+          const availableUsers = manageData.availableUsers || [];
+          
+          setMembers(currentMembers);
+          setAvailableUsers(availableUsers);
+          
+          console.log('✅ Usuarios cargados:', {
+            miembros: currentMembers.length,
+            disponibles: availableUsers.length
+          });
+        } else {
+          console.error('Error al cargar usuarios del canal');
         }
-        //Cargar todos los ususarios disponibles (excepto el actual)
-        const usersRes  = await fetch(`${API_URL}/auth/users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (usersRes.ok) {
-          const usersData = await usersRes .json();
-          setAvailableUsers(usersData.filter((user: any) => 
-            user.idUser !== idUser && !members.some(member => member.idUser === user.idUser)
-          ));
-        }
-      }catch(err) {
+      } catch (err) {
         console.error("Error al obtener los datos del usuario:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
-    if(channel?.idChannel) fetchUsers();
-  }, [channel.idChannel, idUser, token]);
+
+    if (channel?.idChannel) {
+      fetchUsers();
+    }
+  }, [channel.idChannel, token]); 
 
   //Guardar los cambios del canal (nombre, descripción, visibilidad)
   const handleSave = async (e: React.FormEvent) => {
@@ -103,6 +115,13 @@ export default function EditChannelModal({
   //Agregar un usuario al canal
   const handleAddUser = async () => {
     if (!newUser.trim()) return;
+
+    //Verificar que el usuario existe en la lista de disponibles
+    const userToAdd = availableUsers.find(u => u.username === newUser);
+    if (!userToAdd) {
+      alert("Usuario no encontrado o ya pertenece al canal");
+      return;
+    }
     setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/channels/${channel.idChannel}/add-user`, {
@@ -114,9 +133,10 @@ export default function EditChannelModal({
       const data = await res.json();
 
       if (res.ok) {
-        setMembers((prev) => [...prev, data]); //Añadir el nuevo usuario a la lista local
-        setAvailableUsers(prev => prev.filter(user => user.idUser !== data.idUser));
+        setMembers(prev => [...prev, data]); // Agregar usuario a lista local
+        setAvailableUsers(prev => prev.filter(u => u.idUser !== data.idUser)); // Remover de disponibles
         setNewUser("");
+        alert(`${data.username} agregado correctamente`);
       } else {
         alert(data.message || "Error al agregar usuario al canal");
       }

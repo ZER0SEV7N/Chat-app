@@ -9,19 +9,6 @@ interface CreateChannelModalProps {
   onChannelCreated: (channel: any) => void;
 }
 
-//Decodificar el token JWT (base64)
-function getUserIdFromToken(token: string | null) {
-  if (!token) return null;
-  try {
-    const [, payload] = token.split(".");
-    const data = JSON.parse(atob(payload));
-    // tu JwtGuard usa `req.user.sub`, por tanto el ID está en "sub"
-    return data.sub || data.idUser || data.userId || null;
-  } catch {
-    return null;
-  }
-}
-
 export default function CreateChannelModal({
   onClose,
   onChannelCreated,
@@ -42,45 +29,43 @@ export default function CreateChannelModal({
       // Obtener el usuario actual (asumimos que está guardado en localStorage)
       const token = localStorage.getItem("token");
 
-
       //Verificar si el usuario está autenticado
       if(!token){
         alert("Error: usuario no autenticado");
         return;
       }
-      // ✅ Extraer idUser directamente del token JWT
-      const creatorId = getUserIdFromToken(token);
-      if (!creatorId) {
-        alert("No se pudo obtener el ID del usuario del token");
-        setIsCreating(false);
-        return;
-      }
-
       //Enviar la solicitud al backend
       const res = await fetch(`${API_URL}/channels`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           name,
           description,
-          creatorId, // Se envía el ID del creador
           isPublic, // ✅ NUEVO: Se envía si el canal es público o privado
-          type: "channel" // ✅ NUEVO: Se especifica explícitamente que es un canal, no un DM
+          type: "channel", // ✅ NUEVO: Se especifica explícitamente que es un canal, no un DM
+          autoAddAllUsers: isPublic
         }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        // ✅ Asegurar que el canal tenga el tipo correcto
+        //Asegurar que el canal tenga el tipo correcto
         const channelWithType = {
           ...data,
-          type: 'channel', // ✅ Forzar tipo en frontend también
+          type: 'channel', //Forzar el tipo en frontend también
           isDM: false
         };
+      //MOSTRAR CONFIRMACIÓN MEJORADA
+      if (isPublic) {
+        alert(`✅ Canal público "${name}" creado exitosamente.\n\n👥 Todos los usuarios tienen acceso automático.`);
+      } else {
+        alert(`✅ Canal privado "${name}" creado exitosamente.\n\n🔒 Solo usuarios invitados podrán unirse.`);
+      }
+
         onChannelCreated(channelWithType);
         onClose();
       } else {

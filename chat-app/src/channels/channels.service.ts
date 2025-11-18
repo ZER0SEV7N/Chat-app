@@ -16,11 +16,21 @@ export class ChannelsService {
     ) {}
 
     /*============================================================
-    Crear un canal público
+    Crear un canal
     ============================================================*/
-    async createChannel(name: string, creatorId: number, description?: string, isPublic = true, type: 'channel' | 'dm' = 'channel') {
-        const creator = await this.userRepository.findOne({ where: { idUser: creatorId } });
-        if (!creator) throw new NotFoundException('Usuario no encontrado');
+    async createChannel(name: string, creatorId: number, description?: string, isPublic = true, type: 'channel' | 'dm' = 'channel', autoAddAllUsers = false) {
+        const creator = await this.userRepository.findOne({ where: { idUser: creatorId }, select: ['idUser', 'username', 'email'] });
+        // ✅ DEBUG DETALLADO
+        console.log('🔍 DEBUG - Buscando usuario creador:', { creatorId });
+        if (!creator) {
+            console.error('❌ Usuario no encontrado con ID:', creatorId);
+            throw new NotFoundException('Usuario no encontrado');
+        }
+
+        console.log('✅ Usuario creador encontrado:', {
+            id: creator.idUser,
+            username: creator.username
+        });
 
         // ✅ VERIFICACIÓN MEJORADA: Rechazar explícitamente DMs
         if (type === 'dm') {
@@ -33,11 +43,12 @@ export class ChannelsService {
         console.log('📝 Creando canal:', {
             name,
             isPublic,
-            type: channelType, // ✅ Siempre será 'channel'
-            creatorId
+            type: channelType, //Siempre será 'channel'
+            creatorId: creator.idUser,
+            creatorUsername: creator.username
         });
 
-        // Verificar solo para canales públicos con mismo nombre
+        //Verificar solo para canales públicos con mismo nombre
         if (isPublic) {
             const existing = await this.channelrepository.findOne({ 
                 where: { name, isPublic, type: channelType } 
@@ -48,14 +59,19 @@ export class ChannelsService {
         // ✅ CREAR CON TIPO FIJO
         const channel = this.channelrepository.create({
             name,
+            creator,
             description: description || '',
             isPublic,
             type: channelType, // ✅ SIEMPRE 'channel'
-            creator,
             members: [creator],
         });
 
         const savedChannel = await this.channelrepository.save(channel);
+        // ✅ AGREGAR TODOS LOS USUARIOS SOLO SI SE SOLICITA EXPLÍCITAMENTE
+        if (autoAddAllUsers && isPublic) {
+            await this.addAllUsersToPublicChannel(savedChannel.idChannel);
+            console.log('👥 Todos los usuarios agregados automáticamente al canal público');
+        }
         
         console.log('✅ Canal creado exitosamente:', {
             id: savedChannel.idChannel,
@@ -277,7 +293,7 @@ export class ChannelsService {
             relations: ['members'],
         });
         if (!channel) throw new NotFoundException('Canal no encontrado');
-
+        
         const user = await this.userRepository.findOne({ where: { username } });
         if (!user) throw new NotFoundException('Usuario no encontrado');
 
