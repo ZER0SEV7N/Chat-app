@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import './modal.css';
+import "./modal-dark.css";
+import "./modal-responsive.css";
 import { API_URL } from '@/lib/config';
 
 // Interfaz de propiedades que recibe el modal

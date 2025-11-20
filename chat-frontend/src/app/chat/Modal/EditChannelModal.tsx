@@ -3,6 +3,8 @@ Módulo para editar canales desde el frontend
 ───────────────────────────────────────────────*/
 import React, { useEffect, useState } from "react";
 import "./modal.css"; // Estilos del modal
+import "./modal-dark.css";
+import "./modal-responsive.css";
 import { API_URL } from "@/lib/config"; // URL base del backend
 
 //Interfaz de propiedades que recibe el modal

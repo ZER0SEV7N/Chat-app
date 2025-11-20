@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import "./modal.css";
+import "./modal-dark.css";
+import "./modal-responsive.css";
 import { useSocket } from "@/lib/socketContext"; // ✅ IMPORTAR SOCKET CONTEXT
 
 //Definir las propiedades del modal

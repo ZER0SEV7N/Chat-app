@@ -6,9 +6,7 @@ import { UsersModule } from './users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
-import { ChannelsController } from './channels/channels.controller';
 import { ChannelsModule } from './channels/channels.module';
-
 
 @Module({
   imports: [
@@ -20,9 +18,9 @@ import { ChannelsModule } from './channels/channels.module';
     DatabaseModule, //Utilizar el modulo de la base de datos
     ChatModule, //utilizar el modulo del chat
     AuthModule, //utilizar el modulo de autenficicacion
-    ChannelsModule, //Usar el modulo de canales
+    ChannelsModule, //Usar el modulo de canales (ya incluye ChannelsController)
   ],
-  controllers: [AppController, ChannelsController],
+  controllers: [AppController], 
   providers: [AppService],
 })
 export class AppModule {}
