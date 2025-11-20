@@ -1,104 +1,87 @@
-import { SetStateAction, useEffect, useState } from "react";
+"use client";
+import { useState, useEffect } from "react";
 import EmojiPicker from "emoji-picker-react";
-//Definir las props que recibirá el componente
-interface Props {
-    socket: any;
-    channel: any;
-}
-//Exportar la función chatWindow
-export default function chatWindow({ socket, channel }: Props){
-    const [messages, setMessages] = useState<any[]>([]);
-    const [input, setInput] = useState('');
-    const [showPicker, setShowPicker] = useState(false);
-    //Efecto para manejar la conexión del socket y los mensajes
-    useEffect(() => {
-        //Unirse a la sala del canal
-        //Si el socket y el canal existen
-        if (socket && channel) {
-          //Emitir evento para unirse a la sala del canal
-            socket.emit('joinRoom', channel.idChannel);
-            //Recuperar el historial de mensajes
-            const handleHistory = (history: any[]) => setMessages(history);
-            //Manejar nuevos mensajes
-            const handleNewMessage = (msg: any) => {
-            //Agregar el nuevo mensaje si pertenece al canal actual
-              if (msg.channel.idChannel === channel.idChannel) {
-                  setMessages((prev) => [...prev, msg]);
-             }
-            };
-            //Escuchar eventos del socket
-            socket.on('history', handleHistory);
-            socket.on('newMessage', handleNewMessage);
-            //Función de limpieza para salir de la sala y remover listeners
-            return () => {
-            socket.emit('leaveRoom', channel.idChannel);
-            socket.off('history', handleHistory);
-            socket.off('newMessage', handleNewMessage);
-            };
-        }
-        //Limpiar mensajes al cambiar de canal
-        setMessages([]);
-    //Volver a ejecutar el efecto si cambian socket o canal
-    }, [socket, channel]);
 
-    //Función para enviar mensajes
-    const sendMessage = () => {
-    //Si el socket existe y el input no está vacío
-    if (socket && input.trim() !== '') {
-      socket.emit('sendMessage', {
-        idChannel: channel.idChannel,
-        text: input,
-      });
-      setInput('');
-    }
+
+interface Props {
+  socket: any;
+  channel: any;
+}
+
+export default function ChatWindow({ socket, channel }: Props) {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
+
+  const currentUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+
+  useEffect(() => {
+    if (!socket || !channel) return;
+
+    const handleHistory = (history: any[]) => {
+      const formatted = history.map((msg) => ({
+        senderId: msg.user?.id || "",
+        senderName: msg.user?.username || "Anon",
+        content: msg.text,
+        channelId: msg.channelId || msg.channel?.idChannel,
+        createdAt: msg.createdAt,
+      }));
+      setMessages(formatted);
+    };
+
+    const handleNewMessage = (msg: any) => {
+      if (msg.channelId !== channel.idChannel) return; // solo este canal
+      setMessages((prev) => [...prev, msg]);
+    };
+
+    socket.emit("joinRoom", channel.idChannel);
+    socket.on("history", handleHistory);
+    socket.on("newMessage", handleNewMessage);
+
+    return () => {
+      socket.emit("leaveRoom", channel.idChannel);
+      socket.off("history", handleHistory);
+      socket.off("newMessage", handleNewMessage);
+      setMessages([]);
+    };
+  }, [socket, channel]);
+
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    socket.emit("sendMessage", { idChannel: channel.idChannel, text: input });
+    setInput("");
   };
 
-  //Constante para el selector de emojis
   const handleEmojiClick = (emojiData: any) => {
     setInput((prev) => prev + emojiData.emoji);
     setShowPicker(false);
   };
 
-  if (!channel)
-    return <div className="chat-window-empty">Selecciona un canal para comenzar</div>;
+  if (!channel) return <div className="chat-window-empty">Selecciona un canal</div>;
 
   return (
-    <div className="chat-window">
+    <div className="chat-window flex flex-col h-full">
       <h3>#{channel.name}</h3>
 
-      {/* 💬 Mensajes */}
-      <div className="chat-messages">
+      <div className="chat-messages flex-1 overflow-y-auto p-2">
         {messages.map((msg, i) => (
-          <div key={i} className="chat-msg">
-            <strong>{msg.user?.username || "Anon"}:</strong> {msg.text}
+          <div key={i} className={`chat-msg ${msg.senderId === currentUserId ? "own" : ""}`}>
+            <strong>{msg.senderName}:</strong> {msg.content}
           </div>
         ))}
       </div>
 
-      {/* 💬 Input con emojis */}
-      <div className="chat-input">
-        <button
-          type="button"
-          className="emoji-btn"
-          onClick={() => setShowPicker(!showPicker)}
-        >
-          😀
-        </button>
-
-        {showPicker && (
-          <div className="emoji-picker-container">
-            <EmojiPicker onEmojiClick={handleEmojiClick} />
-          </div>
-        )}
-
+      <div className="chat-input flex items-center p-2">
+        <button type="button" onClick={() => setShowPicker(!showPicker)}>😀</button>
+        {showPicker && <EmojiPicker onEmojiClick={handleEmojiClick} />}
         <input
           type="text"
-          placeholder="Escribe un mensaje..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+          placeholder="Escribe un mensaje..."
+          className="flex-1 mx-2"
         />
-
         <button onClick={sendMessage}>Enviar</button>
       </div>
     </div>

@@ -171,6 +171,7 @@
       <div className="chat-layout flex h-screen">
         <ChatList
           channels={channels}
+          selectedChannelId={selectedChannel?.idChannel || null}
           onSelectChannel={handleSelectChannel}
           onCreateChannel={() => setShowCreateModal(true)}
           onAddUser={() => setShowAddUserModal(true)}

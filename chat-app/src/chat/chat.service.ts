@@ -16,16 +16,24 @@ export class ChatService {
     private userRepository: Repository<User>,
   ) {}
   //Crear mensaje
-  async createMessage(userId: number, channelId: number, text: string) {
-    const user = await this.userRepository.findOne({ where: { idUser: userId } });
-    if (!user) throw new NotFoundException('Usuario no encontrado');
+  // 💬 createMessage actualizado
+async createMessage(userId: number, channelId: number, text: string) {
+  const user = await this.userRepository.findOne({ where: { idUser: userId } });
+  if (!user) throw new NotFoundException('Usuario no encontrado');
 
-    const channel = await this.channelRepository.findOne({ where: { idChannel: channelId } });
-    if (!channel) throw new NotFoundException('Canal no encontrado');
+  const channel = await this.channelRepository.findOne({ where: { idChannel: channelId } });
+  if (!channel) throw new NotFoundException('Canal no encontrado');
 
-    const message = this.messageRepository.create({ text, user, channel });
-    return this.messageRepository.save(message);
-  }
+  // Guardar el mensaje
+  const message = this.messageRepository.create({ text, user, channel });
+  const saved = await this.messageRepository.save(message);
+
+  // 🔁 Recargar el mensaje con relaciones completas (user y channel)
+  return await this.messageRepository.findOne({
+    where: { idMessage: saved.idMessage },
+    relations: ['user', 'channel'],
+  });
+}
   //Obtener mensajes de un canal
   async getMessages(channelId: number) {
     const channel = await this.channelRepository.findOne({ where: { idChannel: channelId } });

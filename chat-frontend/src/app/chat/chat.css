@@ -86,4 +86,10 @@
     font-weight: bold;
     line-height: 1; /* Asegura el centrado vertical */
 }
+.channel-item.selected {
+  background-color: #3b3f46; /* fondo más oscuro */
+  color: white;
+  border-left: 4px solid #00bfff; /* borde azul a la izquierda */
+}
+
 

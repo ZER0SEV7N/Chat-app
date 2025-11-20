@@ -23,9 +23,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly messageService: MessageService,
   ) {}
 
-  // =====================================================
-  // 🔐 MANEJO DE CONEXIÓN Y AUTENTICACIÓN
-  // =====================================================
+  // ============================================================
+  // CONEXIÓN Y AUTENTICACIÓN
+  // ============================================================
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
@@ -45,28 +45,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`🔌 Cliente desconectado: ${client.id}`);
   }
 
-  // =====================================================
-  // 📡 UNIRSE A CANALES
-  // =====================================================
+  // ============================================================
+  // UNIR / SALIR DE CANALES
+  // ============================================================
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
-    client.join(`Canal: ${idChannel}`);
+    client.join(`Canal:${idChannel}`);
     console.log(`👤 Usuario ${client.data.idUser} se unió al canal ${idChannel}`);
 
-    // Enviar historial de mensajes al cliente
     const history = await this.chatService.getMessages(idChannel);
     client.emit('history', history);
   }
 
   @SubscribeMessage('leaveRoom')
   async handleLeaveRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
-    client.leave(`Canal: ${idChannel}`);
+    client.leave(`Canal:${idChannel}`);
     console.log(`👋 Usuario ${client.data.idUser} salió del canal ${idChannel}`);
   }
 
-  // =====================================================
-  // 💬 ENVIAR MENSAJE (con senderId)
-  // =====================================================
+  // ============================================================
+  // ENVIAR MENSAJE
+  // ============================================================
   @SubscribeMessage('sendMessage')
   async handleMessage(
     @MessageBody() payload: { idChannel: number; text: string },
@@ -74,23 +73,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const idUser = client.data.idUser;
 
-    // 1️⃣ Guardar el mensaje en la base de datos
+    // Guardar mensaje en DB
     const message = await this.chatService.createMessage(idUser, payload.idChannel, payload.text);
+
+    // ✅ Comprobamos que el mensaje realmente se haya creado
+    if (!message) {
+      console.error('❌ Error: No se pudo crear el mensaje.');
+      return;
+    }
+
     console.log(`📨 Mensaje guardado en DB con ID: ${message.idMessage}`);
 
-    // 2️⃣ Emitir el mensaje con metadatos extra (senderId)
-    this.server.to(`Canal: ${payload.idChannel}`).emit('newMessage', {
+    // ✅ Emitir mensaje a todos los clientes en el canal con usuario incluido
+    this.server.to(`Canal:${payload.idChannel}`).emit('newMessage', {
       channelId: payload.idChannel,
-      senderId: idUser, // 👈 para distinguir al emisor
-      senderName: message.user?.username || 'Desconocido',
-      content: payload.text,
+      senderId: idUser,
+      senderName: message.user?.username || 'Desconocido', // <-- debería venir correctamente ahora
+      content: message.text,
       createdAt: message.createdAt,
     });
   }
 
-  // =====================================================
-  // ⚙️ CREAR / ELIMINAR / LISTAR CANALES
-  // =====================================================
+  // ============================================================
+  // CREAR CANAL PRIVADO (DM)
+  // ============================================================
   @SubscribeMessage('createChannel')
   async handleCreateChannel(
     @MessageBody() payload: { userId: number; targetUsername: string },
@@ -103,12 +109,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('channelCreated', channel);
   }
 
+  // ============================================================
+  // OBTENER CANALES DEL USUARIO
+  // ============================================================
   @SubscribeMessage('getUserChannels')
   async handleGetUserChannels(@MessageBody() userId: number, @ConnectedSocket() client: Socket) {
     const channels = await this.chatService.getUserChannels(userId);
     client.emit('userChannels', channels);
   }
 
+  // ============================================================
+  // ELIMINAR CANAL
+  // ============================================================
   @SubscribeMessage('deleteChannel')
   async handleDeleteChannel(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
     await this.chatService.removeChannel(idChannel);
