@@ -80,3 +80,45 @@
     max-height: 150px;
   }
 }
+
+@media (max-width: 768px) {
+  .channel-manager-tabs {
+    padding: 0 16px;
+  }
+  
+  .channel-manager-tab {
+    padding: 14px 12px;
+    font-size: 13px;
+  }
+  
+  .join-tab-content {
+    padding: 0 16px;
+  }
+  
+  .channel-card {
+    padding: 16px;
+  }
+  
+  .channel-name {
+    font-size: 16px;
+  }
+  
+  .channel-card-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .join-btn {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .privacy-options {
+    gap: 8px;
+  }
+  
+  .privacy-option {
+    padding: 12px;
+  }
+}

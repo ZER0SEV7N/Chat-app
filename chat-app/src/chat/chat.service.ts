@@ -114,7 +114,7 @@ export class ChatService {
       const displayName = this.getDMDisplayName(existingDM, currentUser, targetUser);
       return { channel: existingDM, displayName };
     }
-
+    
     // 🆕 CREAR NUEVO DM
     console.log(`🆕 Creando nuevo DM entre ${currentUser.username} y ${targetUser.username}`);
 
@@ -122,7 +122,7 @@ export class ChatService {
     const orderedUsernames = [currentUser.username, targetUser.username].sort();
 
     // Nombre formateado tipo "#DM Moises25-ZER0SEV7N"
-    const formattedName = `#DM ${orderedUsernames[0]}-${orderedUsernames[1]}`;
+    const formattedName = `DM ${orderedUsernames[0]}-${orderedUsernames[1]}`;
 
     const dmChannel = this.channelRepository.create({
       name: formattedName,

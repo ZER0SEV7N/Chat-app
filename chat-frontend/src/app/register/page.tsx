@@ -1,6 +1,9 @@
+//src/app/register/page.tsx
+//Página de registro de usuarios
 'use client';
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // Para App Router
+import toast from "react-hot-toast";
 import { API_URL } from "@/lib/config";
 
 //Componente de la página de registro
@@ -75,12 +78,12 @@ export default function RegisterPage(){
             const data = await res.json();
             // Manejar la respuesta del servidor
             if (res.ok){
-                alert(`🎉 Registro exitoso: ${data.username}, ahora por favor inicia sesión.`);
+                toast.success(`🎉 Registro exitoso: ${data.username}, ahora por favor inicia sesión.`);
                 //Retornar a la página de inicio de sesión
                 router.push("/");
             //En caso de error
             } else {
-                setError(`Error en el registro: ${data.message}`);
+                toast.error(`Error en el registro: ${data.message}`);
             }
             //Capturar errores de conexión
         } catch (err) {

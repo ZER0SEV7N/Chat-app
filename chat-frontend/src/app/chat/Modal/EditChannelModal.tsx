@@ -423,74 +423,59 @@ export default function EditChannelModal({
                       ))}
                     </div>
 
-                    {/* Agregar usuarios (solo en canales privados) */}
-                    {!isPublic && (
-                      <div className="add-members-section">
-                        <h5 className="subsection-title">Agregar Miembros</h5>
-                        <div className="add-member-form">
-                          <div className="search-container">
-                            <input
-                              type="text"
-                              placeholder="Buscar usuario por nombre o username..."
-                              value={newUser}
-                              onChange={(e) => setNewUser(e.target.value)}
-                              disabled={isLoading}
-                              className="search-input"
-                            />
-                            <button 
-                              className="btn-primary add-button"
-                              onClick={handleAddUser}
-                              disabled={isLoading || !newUser.trim()}
-                            >
-                              {isLoading ? "..." : "➕ Agregar"}
-                            </button>
-                          </div>
-                          
-                          {/* Sugerencias de usuarios */}
-                          {newUser && filteredAvailableUsers.length > 0 && (
-                            <div className="user-suggestions">
-                              {filteredAvailableUsers.slice(0, 5).map(user => (
-                                <div 
-                                  key={user.idUser}
-                                  className="suggestion-item"
-                                  onClick={() => {
-                                    setNewUser(user.username);
-                                    setTimeout(handleAddUser, 100);
-                                  }}
-                                >
-                                  <div className="suggestion-avatar">
-                                    {user.name.charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="suggestion-details">
-                                    <span className="suggestion-name">{user.name}</span>
-                                    <span className="suggestion-username">@{user.username}</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                  {/* Agregar usuarios (solo en canales privados) */}
+                    <div className="add-members-section">
+                      <h5 className="subsection-title">Agregar Miembros</h5>
+                      <div className="add-member-form">
+                        <div className="search-container">
+                          <input
+                            type="text"
+                            placeholder="Buscar usuario por nombre o username..."
+                            value={newUser}
+                            onChange={(e) => setNewUser(e.target.value)}
+                            disabled={isLoading}
+                            className="search-input"
+                          />
+                          <button 
+                            className="btn-primary add-button"
+                            onClick={handleAddUser}
+                            disabled={isLoading || !newUser.trim()}
+                          >
+                            {isLoading ? "..." : "➕ Agregar"}
+                          </button>
                         </div>
                         
-                        {availableUsers.length > 0 && (
-                          <div className="available-count">
-                            {availableUsers.length} usuarios disponibles para agregar
+                        {/* Sugerencias de usuarios */}
+                        {newUser && filteredAvailableUsers.length > 0 && (
+                          <div className="user-suggestions">
+                            {filteredAvailableUsers.slice(0, 5).map(user => (
+                              <div 
+                                key={user.idUser}
+                                className="suggestion-item"
+                                onClick={() => {
+                                  setNewUser(user.username);
+                                  setTimeout(handleAddUser, 100);
+                                }}
+                              >
+                                <div className="suggestion-avatar">
+                                  {user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="suggestion-details">
+                                  <span className="suggestion-name">{user.name}</span>
+                                  <span className="suggestion-username">@{user.username}</span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                    )}
-
-                    {isPublic && (
-                      <div className="public-channel-info">
-                        <div className="info-icon">🌍</div>
-                        <div className="info-content">
-                          <h5>Canal Público</h5>
-                          <p>
-                            Todos los usuarios pueden unirse libremente a este canal. 
-                            La gestión de miembros es automática.
-                          </p>
+                      
+                      {availableUsers.length > 0 && (
+                        <div className="available-count">
+                          {availableUsers.length} usuarios disponibles para agregar
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
               </>

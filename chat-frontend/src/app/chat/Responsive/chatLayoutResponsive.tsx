@@ -14,9 +14,8 @@ interface ChatLayoutResponsiveProps {
 
 //Componente principal del layout responsivo
 export default function ChatLayoutResponsive({ chatList, chatWindow, emptyState }: ChatLayoutResponsiveProps) {
-    const { isMobile, currentChat } = useResponsiveContext();
+    const { isMobile, currentChat, goToList  } = useResponsiveContext();
 
-    // LÓGICA CORREGIDA:
     // - En móvil: mostrar lista SI NO hay chat activo, mostrar chat SI HAY chat activo
     // - En desktop: mostrar siempre ambos
     const shouldShowList = !isMobile || !currentChat;
@@ -31,7 +30,11 @@ export default function ChatLayoutResponsive({ chatList, chatWindow, emptyState 
 
             {/* Área de chat - visible en desktop siempre, en móvil solo cuando hay chat activo */}
             <div className={`chat-window-container ${shouldShowChat ? 'visible' : 'hidden'}`}>
-                {currentChat ? chatWindow : (emptyState || (
+                {currentChat ? ( React.isValidElement(chatWindow)
+                    ? React.cloneElement(chatWindow as React.ReactElement<any>, {
+                    onBackToList: goToList,
+                    key: currentChat.idChannel 
+                }): chatWindow) : (emptyState || (
                     <div className="default-empty-state">
                         <div className="empty-message">
                             Selecciona un chat para comenzar a conversar 😊

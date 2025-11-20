@@ -1,16 +1,11 @@
 // src/channels/channels.controller.ts
+//Importaciones necesarias
 import { 
-  Controller, 
-  Get, 
-  Post, 
-  Delete, 
-  Param, 
-  Body, 
-  Patch, 
-  Req,
-  UnauthorizedException, 
-  UseGuards
-} from '@nestjs/common';
+  Controller, Get, 
+  Post, Delete, 
+  Param, Body, 
+  Patch, Req,
+  UnauthorizedException, UseGuards} from '@nestjs/common';
 import { ChannelsService } from './channels.service';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
@@ -24,19 +19,38 @@ export class ChannelsController {
   ) {}
 
   /*============================================================
-  Obtener todos los canales públicos
+  Obtener todos los canales públicos CON INFORMACIÓN DE MEMBRESÍA
   ============================================================*/
-  @Get()
-  async getAllPublicChannels(){
-      return this.channelsService.getAllPublicChannels();
+  @UseGuards(JwtGuard)
+  @Get('public')
+  async getPublicChannels(@Req() req) {
+    const userId = req.user?.idUser;
+    if (!userId) throw new UnauthorizedException('Usuario no autenticado');
+    
+    return this.channelsService.getPublicChannelsWithMembership(userId);
+  }
+  /*============================================================
+  Unirse a un canal público
+  ============================================================*/
+  @UseGuards(JwtGuard)
+  @Post(':id/join')
+  async joinChannel(@Param('id') id: number, @Req() req) {
+    const userID = req.user?.idUser;
+    if (!userID) throw new UnauthorizedException('Usuario no autenticado');
+    
+    return this.channelsService.joinPublicChannel(id, userID);
   }
 
   /*============================================================
-  Endpoint público (sin autenticación)
+  Obtener canales del usuario actual (para sidebar)
   ============================================================*/
-  @Get('public')
-  async getPublicChannels() {
-    return this.channelsService.getAllPublicChannels();
+  @UseGuards(JwtGuard)
+  @Get('user/channels')
+  async getUserChannels(@Req() req) {
+    const userId = req.user?.idUser;
+    if (!userId) throw new UnauthorizedException('Usuario no autenticado');
+
+    return this.channelsService.getUserChannels(userId);
   }
 
   /*============================================================
@@ -46,7 +60,7 @@ export class ChannelsController {
   @Post()
   async createChannel(
       @Req() req,
-      @Body() body: { name: string; description?: string;  isPublic?: boolean; type?: string , autoAddAllUsers?: boolean; },
+      @Body() body: { name: string; description?: string;  isPublic?: boolean; type?: string },
   ) {
       const userId = req.user?.idUser;
       if (!userId) throw new UnauthorizedException('Usuario no autenticado');
@@ -63,7 +77,6 @@ export class ChannelsController {
           body.description,
           body.isPublic ?? true,
           'channel',
-          body.autoAddAllUsers ?? false //Por defecto false
       );
 
       console.log('✅ Respuesta del servicio:', {
@@ -174,5 +187,17 @@ export class ChannelsController {
     @Param('userId') userId: number,
   ) {
     return this.channelsService.removeUserFromChannel(id, userId);
+  }
+
+  /*=============================================================
+  Salir de un canal
+  ==============================================================*/
+  @UseGuards(JwtGuard)
+  @Post(':id/leave')
+  async leaveChannel(@Param('id') id: number, @Req() req) {
+    const userId = req.user?.idUser;
+    if (!userId) throw new UnauthorizedException('Usuario no autenticado');
+
+    return this.channelsService.leaveChannel(id, userId);
   }
 }

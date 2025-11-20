@@ -2,11 +2,13 @@
 //Componente de la ventana de chat
 //Importaciones necesarias:
 import { useEffect, useRef, useState } from "react";
-import EmojiPicker from "emoji-picker-react";
-import { Search, MoreVertical, Edit2, Trash2, Check, X, Users, Edit3, ArrowLeft, } from "lucide-react";
-import socket from "../../lib/socket";
+import EmojiPicker from "emoji-picker-react"; //Funcion para el selector de emojis
+import { Search, MoreVertical, Edit2, Trash2, Check, X, Users, Edit3, ArrowLeft, } from "lucide-react"; //Iconos de Lucide
+import socket from "../../lib/socket"; //Instancia del socket.io
+import { useBackButton } from "./Responsive/useBackButton"; //Hook para el manejo del boton de retroceso en el movil
 import { Socket } from "socket.io-client";
 import { useResponsiveContext } from "./Responsive/contextResponsive";
+//Estilos CSS
 import "./chat.css";
 import "./chat-responsive.css";
 import "./chat-dark.css";
@@ -40,6 +42,30 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
   //Referencias para audio y scroll automático
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
+
+  //Hook para manejar el boton de retroceso en Movil
+  useBackButton(() => {
+    if (isMobile && onBackToList && channel) {
+      console.log('🔙 Back button en ChatWindow - Volviendo a lista');
+      onBackToList();
+    }
+  }, isMobile && !!onBackToList && !!channel);
+
+  //Hook para cerrar el chat con escape en Desktop
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isMobile && onBackToList) {
+        onBackToList();
+      }
+    };
+    if (!isMobile) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onBackToList, isMobile]);
 
   //===============================================================
   //CONFIGURACIÓN INICIAL: Usuario, Audio y Eventos de Foco
@@ -82,13 +108,13 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
       //Ignorar mensajes que no pertenecen al canal actual
       if (msg.channel.idChannel !== channel.idChannel) return;
 
-      // Evitar duplicados de mensajes
+      //Evitar duplicados de mensajes
       setMessages((prev) => {
         const exists = prev.some((m) => m.idMessage === msg.idMessage);
         return exists ? prev : [...prev, msg];
       });
 
-      // Si el mensaje no es del usuario actual → reproducir sonido y notificación
+      //Si el mensaje no es del usuario actual → reproducir sonido y notificación
       if (msg.user?.username !== username) {
         audioRef.current?.play().catch(() => {});
         if ("Notification" in window && Notification.permission === "granted") {
@@ -109,17 +135,33 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
       setMessages((prev) =>
         prev.map((m) => (m.idMessage === msg.idMessage ? msg : m))
       );
+    //Filtrar usuarios online por los que están en este canal
+    const handleOnlineUsers = (allOnlineUsers: any[]) => {
+      console.log('👥 Todos los usuarios online:', allOnlineUsers);
+      
+      if (!channel.members) {
+        console.warn('⚠️ El canal no tiene información de miembros');
+        setOnlineUsers([]);
+        return;
+      }
 
-    const handleOnlineUsers = (users: any[]) => setOnlineUsers(users);
+      // Filtrar: solo usuarios que están en este canal Y están online
+      const channelOnlineUsers = allOnlineUsers.filter(onlineUser => 
+        channel.members.some((member: any) => member.idUser === onlineUser.idUser)
+      );
 
-    // --- ESCUCHAR EVENTOS DEL SERVIDOR ---
+      console.log('👥 Usuarios online en este canal:', channelOnlineUsers);
+      setOnlineUsers(channelOnlineUsers);
+    };
+
+    //--- ESCUCHAR EVENTOS DEL SERVIDOR ---
     socket.on("history", handleHistory);
     socket.on("newMessage", handleNewMessage);
     socket.on("messageDeleted", handleDeleted);
     socket.on("messageEdited", handleEdited);
     socket.on("onlineUsers", handleOnlineUsers);
 
-    // --- LIMPIEZA ---
+    //--- LIMPIEZA ---
     return () => {
       socket.emit("leaveRoom", channel.idChannel);
       socket.off("history", handleHistory);
@@ -128,20 +170,20 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
       socket.off("messageEdited", handleEdited);
       socket.off("onlineUsers", handleOnlineUsers);
     };
-  }, [channel, username, socket]); // ← DEPENDENCIAS CORRECTAS
+  }, [channel, username, socket]);
 
-  // ===============================================================
-  // 📨 ENVÍO DE MENSAJE
-  // ===============================================================
+  //===============================================================
+  //ENVÍO DE MENSAJE
+  //===============================================================
   const sendMessage = () => {
     if (!input.trim() || !socket?.connected) return;
     socket.emit("sendMessage", { idChannel: channel.idChannel, text: input });
     setInput("");
   };
 
-  // ===============================================================
-  // 🗑️ ELIMINAR Y ✏️ EDITAR MENSAJES
-  // ===============================================================
+  //===============================================================
+  //ELIMINAR Y EDITAR MENSAJES
+  //===============================================================
   const deleteMessage = (idMessage: string) => {
     socket.emit("deleteMessage", idMessage);
   };
@@ -153,16 +195,16 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
     setEditText("");
   };
 
-  // ===============================================================
-  // ⏰ FORMATO DE FECHA Y HORA (tipo WhatsApp)
-  // ===============================================================
+  //===============================================================
+  //FORMATO DE FECHA Y HORA (tipo WhatsApp)
+  //===============================================================
   const formatHour = (date: string) =>
     new Date(date).toLocaleTimeString("es-PE", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
     });
-
+  //Convertir fechas a formato legible
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -171,7 +213,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
 
     if (date.toDateString() === today.toDateString()) return "Hoy";
     if (date.toDateString() === yesterday.toDateString()) return "Ayer";
-
+    //Formato largo para otras fechas
     return date.toLocaleDateString("es-PE", {
       weekday: "long",
       year: "numeric",
@@ -180,7 +222,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
     });
   };
 
-  // Agrupar mensajes por día
+  //Agrupar mensajes por día
   const groupMessagesByDay = (msgs: any[]) => {
     const groups: Record<string, any[]> = {};
     msgs.forEach((m) => {
@@ -191,15 +233,15 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
     return groups;
   };
 
-  // Filtrar mensajes por búsqueda
+  //Filtrar mensajes por búsqueda
   const filteredMessages = messages.filter((m) =>
     m.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const groupedMessages = groupMessagesByDay(filteredMessages);
 
-  // ===============================================================
-  // 🧱 RENDER PRINCIPAL
-  // ===============================================================
+  //===============================================================
+  //RENDER PRINCIPAL
+  //===============================================================
   if (!channel)
     return (
       <div className="chat-empty">
@@ -225,18 +267,6 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
           <h2>#{channel.name}</h2>
           <p>{channel.description || "Sin descripción disponible"}</p>
         </div>
-
-        {/* Usuarios conectados Unicamente para grupos*/}
-        {channel.type === 'channel' && (
-          <div className="chat-online-users">
-            <Users size={18} />
-            {onlineUsers.length > 0 ? (
-              <span>{onlineUsers.map((u) => u.username).join(", ")}</span>
-            ) : (
-              <span className="no-users">No hay usuarios conectados</span>
-            )}
-          </div>
-        )}
 
         {/* Acciones del encabezado */}
         <div className="chat-header-actions">

@@ -1,45 +1,49 @@
 //chat-frontend/src/app/chat/chatList.tsx
+//Lista de canales y mensajes directos en la aplicacion de chat - Barra lateral
+"use client";
+//Importaciones importantes
 import React, { useEffect, useState } from "react";
 import './chat.css';
 import "./chat-responsive.css"; 
 import "./chat-dark.css";
+import { LogOut, Users, Trash2 } from "lucide-react"; // ✅ Agregar LogOut
 import socket from "@/lib/socket";
-
+//Definicion de las props del componente
 interface Props {
-  channels: any[];
-  onSelectChannel: (channel: any) => void;
-  onCreateChannel: () => void;
-  onAddUser: () => void;
-  onLogout: () => void;
-  onDeleteChannel: (idChannel: number) => void;
-  username: string;
-  unreadCounts?: { [key: number]: number };
-  publicChannels?: any[];
-  privateChannels?: any[];
-  dmChannels?: any[];
+  channels: any[]; //Lista de canales
+  onSelectChannel: (channel: any) => void; //Funcion al seleccionar un canal
+  onChannelManager: () => void; //Funcion para crear un nuevo canal o buscar unirse a uno
+  onAddUser: () => void; //Funcion para agregar un usuario (iniciar DM)
+  onLogout: () => void; //Funcion para cerrar sesion
+  onDeleteChannel: (idChannel: number) => void; //Funcion para eliminar un canal
+  username: string; //Nombre de usuario actual
+  unreadCounts?: { [key: number]: number }; //Conteo de mensajes no leidos por canal
+  publicChannels?: any[]; //Lista de canales publicos
+  privateChannels?: any[]; //Lista de canales privados
+  dmChannels?: any[]; //Lista de canales de mensajes directos
 }
-
+//Componente de la lista de canales y DMs
 export default function ChatList({
   channels,
   onSelectChannel,
-  onCreateChannel,
+  onChannelManager,
   onAddUser,
   onLogout,
   onDeleteChannel,
   username,
   unreadCounts = {}, 
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [onlineUsers, setOnlineUsers] = useState<{ idUser: number; username: string }[]>([]);
-  const [collapsedSections, setCollapsedSections] = useState({ dms: false, groups: false });
-
+  const [searchTerm, setSearchTerm] = useState(""); //Estado para el termino de busqueda
+  const [onlineUsers, setOnlineUsers] = useState<{ idUser: number; username: string }[]>([]); //Estado para usuarios en linea
+  const [collapsedSections, setCollapsedSections] = useState({ dms: false, groups: false }); //Estado para secciones colapsadas
+  //Efecto para manejar usuarios en linea via WebSocket
   useEffect(() => {
     if (!socket || !socket.connected) return;
-
+    //Funcion para actualizar la lista de usuarios en linea
     const handleOnlineUsers = (users: { idUser: number; username: string }[]) => {
       setOnlineUsers(users);
     };
-    
+    //Escuchar evento de usuarios en linea
     socket.on("onlineUsers", handleOnlineUsers);
     socket.emit("userConnected", username);
 
@@ -52,22 +56,22 @@ export default function ChatList({
     onSelectChannel(channel);
   };
 
-  // ✅ USAR LAS LISTAS SEPARADAS EN LUGAR DE FILTRAR
+  //USAR LAS LISTAS SEPARADAS EN LUGAR DE FILTRAR
   const groups = channels.filter(ch => ch.type === "channel");
 
   const directMessages = channels.filter(ch => ch.type === "dm");
 
-  // ✅ FUNCIÓN MEJORADA: Formatear nombre para DMs con manejo de errores
+  //FUNCIÓN MEJORADA: Formatear nombre para DMs con manejo de errores
   const formatDMName = (channel: any) => {
-    // ✅ PRIMERO: Manejar casos donde channel sea undefined
+    //PRIMERO: Manejar casos donde channel sea undefined
     if (!channel) return "Chat desconocido";
     
-    // ✅ Si ya viene con displayName desde el backend, usarlo
+    //Si ya viene con displayName desde el backend, usarlo
     if (channel.displayName) {
       return channel.displayName.replace('DM con ', '');
     }
     
-    // ✅ Fallback para DMs antiguos - verificar que name existe
+    //Fallback para DMs antiguos - verificar que name existe
     if (channel.name && typeof channel.name === "string" && channel.name.startsWith("DM ")) {
       const parts = channel.name.replace("DM ", "").split("-");
       const currentUser = username;
@@ -75,7 +79,7 @@ export default function ChatList({
       return otherUser || channel.name;
     }
     
-    // ✅ Último fallback
+    //Último fallback
     return channel.name || "Chat sin nombre";
   };
 
@@ -90,17 +94,17 @@ export default function ChatList({
     return onlineUsers.some((user) => user.username === usernameToCheck);
   }
 
-  // ✅ CORREGIDO: Pasar el objeto completo 'ch' en lugar de 'ch.name'
+  //CORREGIDO: Pasar el objeto completo 'ch' en lugar de 'ch.name'
   const handleDeleteClick = (ch: any) => {
     if (!ch.isPublic) {
-      const displayName = formatDMName(ch); // ✅ Pasar 'ch' no 'ch.name'
+      const displayName = formatDMName(ch); //Pasar 'ch' no 'ch.name'
       const confirmDelete = confirm(
         `¿Seguro que deseas eliminar este DM con ${displayName}?`
       );
       if (confirmDelete) onDeleteChannel(ch.idChannel);
     }
   };
-
+  //Generar clave unica para cada canal
   const generateUniqueKey = (ch: any, type: 'group' | 'dm', index: number) => {
     if (ch.idChannel) {
       return `${type}-${ch.idChannel}`;
@@ -108,16 +112,29 @@ export default function ChatList({
     return `${type}-${ch.name}-${ch.creatorId || 'unknown'}-${index}`;
   };
 
-  // ✅ FUNCIÓN MEJORADA: Filtrar DMs con manejo de errores
+  //FUNCIÓN Filtrar DMs con manejo de errores
   const filteredDMs = directMessages.filter((ch) => {
     try {
-      const displayName = formatDMName(ch); // ✅ Pasar 'ch' no 'ch.name'
+      const displayName = formatDMName(ch); 
       return displayName.toLowerCase().includes(searchTerm.toLowerCase());
     } catch (error) {
       console.warn('Error al formatear nombre del canal:', ch, error);
       return false;
     }
   });
+
+  //Funcion para salir de un canal
+  const handleLeaveChannel = (channel: any) => {
+    const confirmLeave = confirm(
+      `¿Seguro que deseas salir del canal ${channel.name}?`
+    );
+    if (confirmLeave){
+      //Emitir el evento para salir del canal
+      if(socket){
+        socket.emit('leaveChannel', channel.idChannel);
+      }
+    }
+  }
 
   //Renderizado del componente
   return (
@@ -179,7 +196,6 @@ export default function ChatList({
                             <span className="message-bubble unread-count">
                               {unread > 99 ? '99+' : unread}
                             </span>
-                            <small className="channel-type">Privado</small>
                             <button
                               className="delete-btn"
                               onClick={(e) => {
@@ -229,6 +245,7 @@ export default function ChatList({
               <ul className="channel-list">
                 {groups.map((ch, index) => {
                   const unread = unreadCounts[ch.idChannel] || 0;
+                  const isCreator = ch.creator?.username === username;
                   return (
                     <li
                       key={generateUniqueKey(ch, "group", index)}
@@ -242,6 +259,21 @@ export default function ChatList({
                         <span className="message-bubble unread-count">
                           {unread > 99 ? '99+' : unread}
                         </span>
+
+                        {/* ✅ BOTÓN PARA SALIR DEL CANAL */}
+                          {!isCreator && (
+                            <button
+                              className="leave-channel-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleLeaveChannel(ch);
+                              }}
+                              title={`Salir del canal ${ch.name}`}
+                            >
+                              <LogOut size={14} />
+                            </button>
+                          )}
+
                         <small className="channel-type">
                           {ch.isPublic ? 'Público' : 'Privado'}
                         </small>
@@ -261,8 +293,8 @@ export default function ChatList({
       </div>
 
       <div className="chat-list-buttons">
-        <button className="sidebar-button" onClick={onCreateChannel}>
-          ➕ Nuevo Grupo
+        <button className="sidebar-button" onClick={onChannelManager}>
+          ➕ Crear Grupo o Unirse a un Grupo
         </button>
         <button className="sidebar-button" onClick={onAddUser}>
           👥 Iniciar un DM

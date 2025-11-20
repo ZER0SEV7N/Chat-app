@@ -71,111 +71,59 @@ CHAT RESPONSIVO
   /* --- HEADER FIJO --- */
 
   .chat-header {
-
     position: fixed !important;
-
     top: 0;
-
     left: 0;
-
     right: 0;
-
     height: 60px !important;
-
     background: linear-gradient(135deg, #667eea, #764ba2);
-
     display: flex;
-
     align-items: center;
-
     padding: 0 16px;
-
     z-index: 1300;
-
     flex-shrink: 0 !important;
-
   }
 
 
 
   /* --- MENSAJES (SCROLL REAL) --- */
-
   .chat-messages {
-
     flex: 1 !important;
-
     min-height: 0 !important;
-
     overflow-y: auto !important;
-
     -webkit-overflow-scrolling: touch !important;
-
     margin-top: 60px !important;
-
     margin-bottom: 80px !important;
-
     padding: 16px;
-
     background: #fafafa;
-
   }
-
-
-
-  /* --- INPUT FIJO ABAJO --- */
-
+/* --- INPUT FIJO ABAJO --- */
   .chat-input-container {
-
     position: fixed !important;
-
     bottom: 0;
-
     left: 0;
-
     right: 0;
-
     height: 80px !important;
-
     background: white;
-
     border-top: 1px solid #ddd;
-
     display: flex;
-
     align-items: center;
-
     padding: 10px;
-
     z-index: 1300;
-
     flex-shrink: 0 !important;
-
   }
-
-
 
   /* Botón volver */
-
   .back-to-responsive {
-
     background: none;
-
     border: none;
-
     color: white;
-
     display: flex;
-
     align-items: center;
-
     gap: 6px;
-
     font-size: 18px;
-
     cursor: pointer;
-
   }
-
 }
 
 
@@ -183,11 +131,8 @@ CHAT RESPONSIVO
 /* DESKTOP */
 
 @media (min-width: 769px) {
-
   .back-to-responsive {
-
     display: none !important;
-
   }
 
 }

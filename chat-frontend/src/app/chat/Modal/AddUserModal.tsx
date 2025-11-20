@@ -1,4 +1,7 @@
+//src/app/chat/Modal/AddUserModal.tsx
+//Modal para agregar un usuario a un canal o iniciar un chat privado
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import './modal.css';
 import { API_URL } from '@/lib/config';
 
@@ -115,13 +118,13 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
     
     // Validaciones básicas
     if (!userToAdd.trim()) {
-      alert('Por favor ingresa un nombre de usuario');
+      toast.error('Por favor ingresa un nombre de usuario');
       return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) {
-      alert("Debes iniciar sesión");
+      toast.error("Debes iniciar sesión");
       return;
     }
 
@@ -159,16 +162,16 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
           onChannelCreated(data.channel);
         } else {
           console.error('❌ Estructura inesperada:', data);
-          alert('Error: Respuesta inesperada del servidor');
+          toast.error('Error: Respuesta inesperada del servidor');
         }
       } else {
         const errorText = await res.text();
         console.error('Error del servidor:', errorText);
-        alert(`Error: ${errorText}`);
+        toast.error(`Error: ${errorText}`);
       }
     } catch (error) {
       console.error('Error de conexión:', error);
-      alert('Error de conexión. Intenta nuevamente.');
+      toast.error('Error de conexión. Intenta nuevamente.');
     } finally {
       setIsLoading(false);
       setCreatingUser(null);
