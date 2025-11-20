@@ -12,5 +12,5 @@ export class CreateMessagesTable1759974744173 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "messages" DROP CONSTRAINT "FK_2db9cf2b3ca111742793f6c37ce"`);
         await queryRunner.query(`DROP TABLE "messages"`);
     }
-
+    
 }

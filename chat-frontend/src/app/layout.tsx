@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
-import ToasterProvider from "@/components/ToasterProvider"; // 👈 lo crearemos abajo
+import { SocketProvider } from "@/lib/socketContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,9 +27,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        {/* 👇 el Toaster va en un componente cliente */}
-        <ToasterProvider />
+         <SocketProvider>
+          <Toaster position="top-right" />
+          {children}
+        </SocketProvider>
       </body>
     </html>
   );

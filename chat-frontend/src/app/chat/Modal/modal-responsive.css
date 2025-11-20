@@ -1,0 +1,124 @@
+/* =======================================================
+   📱 MODAL - RESPONSIVE
+   ======================================================= */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 16px;
+    backdrop-filter: blur(4px);
+  }
+  
+  .modal-content {
+    border-radius: 16px;
+    max-width: 400px;
+  }
+  
+  .modal-header {
+    padding: 20px 24px 16px;
+  }
+  
+  .modal-header h3 {
+    font-size: 18px;
+  }
+  
+  .modal-body-content {
+    padding: 24px;
+  }
+  
+  .modal-footer {
+    padding: 20px 24px;
+    gap: 12px;
+  }
+}
+
+/* Móvil */
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 0;
+    border-radius: 14px;
+  }
+  
+  .modal-header,
+  .modal-body-content,
+  .modal-footer {
+    padding: 20px;
+  }
+  
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+  
+  .btn-primary, .btn-secondary {
+    min-width: auto;
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+  
+  .modal-body input {
+    padding: 16px 20px;
+    font-size: 16px;
+  }
+
+  /* Ajustes específicos para edición de canal en móvil */
+  .add-user-input-group {
+    flex-direction: column;
+  }
+  
+  .add-user-btn {
+    width: 100%;
+  }
+  
+  .users-list-container {
+    max-height: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .channel-manager-tabs {
+    padding: 0 16px;
+  }
+  
+  .channel-manager-tab {
+    padding: 14px 12px;
+    font-size: 13px;
+  }
+  
+  .join-tab-content {
+    padding: 0 16px;
+  }
+  
+  .channel-card {
+    padding: 16px;
+  }
+  
+  .channel-name {
+    font-size: 16px;
+  }
+  
+  .channel-card-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .join-btn {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .privacy-options {
+    gap: 8px;
+  }
+  
+  .privacy-option {
+    padding: 12px;
+  }
+}

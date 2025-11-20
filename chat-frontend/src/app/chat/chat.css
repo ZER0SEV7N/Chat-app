@@ -1,95 +1,1167 @@
+/* =======================================================
+   🌐 LAYOUT GENERAL MEJORADO
+   ======================================================= */
+.chat-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* =======================================================
+   🎯 LAYOUT PRINCIPAL
+   ======================================================= */
+.responsive-chat-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.chat-list-container,
+.chat-window-container {
+  height: 100vh;
+  transition: transform 0.3s ease;
+}
+
+.chat-list-container .chat-list,
+.chat-window-container .chat-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* =======================================================
+   🗂 LISTA DE CANALES
+   ======================================================= */
+.chat-list {
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  gap: 0;
+  z-index: 10;
+}
+
+/* =======================================================
+   👤 HEADER DE USUARIO
+   ======================================================= */
+.chat-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px; /* ✅ Reducido de 16px 20px */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  font-weight: 600;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* ✅ Sombra más suave */
+  flex-shrink: 0;
+  position: relative;
+  z-index: 15;
+  min-height: 50px; /* ✅ Altura mínima consistente */
+}
+
+.chat-username-header {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 14px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* =======================================================
+   📂 SECCIONES DE CANALES COLAPSABLES
+   ======================================================= */
+.channels-section {
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Header de sección colapsable */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px; /* ✅ Reducido de 12px 16px */
+  cursor: pointer;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+  margin: 0;
+  background: #f8fafc; /* ✅ Fondo sutil */
+  min-height: 44px; /* ✅ Altura consistente */
+}
+
+.section-header:hover {
+   background-color: #f1f5f9;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* ✅ Reducido de 8px */
+  margin: 0;
+  font-size: 0.9rem; /* ✅ Reducido de 1rem */
+  font-weight: 600;
+  color: #2d3748; /* ✅ Cambiado de rojo a gris oscuro */
+  flex: 1;
+}
+
+.section-icon {
+  font-size: 1rem;
+}
+
+.section-count {
+  background-color: #e2e8f0; /* ✅ Color más suave */
+  color: #4a5568; /* ✅ Texto más oscuro */
+  padding: 2px 6px; /* ✅ Reducido de 2px 8px */
+  border-radius: 10px; /* ✅ Bordes más redondeados */
+  font-size: 0.75rem; /* ✅ Reducido de 0.8rem */
+  font-weight: 500;
+  margin-left: 6px;
+}
+
+.collapse-icon {
+  color: #718096; /* ✅ Color más suave */
+  font-size: 0.8rem; /* ✅ Reducido de 0.9rem */
+  transition: transform 0.2s ease;
+  font-weight: bold;
+}
+
+/* =======================================================
+   📜 LISTA DE CANALES CON SCROLL
+   ======================================================= */
+.channel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; /* ✅ CRUCIAL: permite que flex funcione con scroll */
+  max-height: 300px; /* ✅ MANTENIDO pero ahora funciona con min-height: 0 */
+}
+/* Solo para la sección de grupos - scroll interno */
+.channels-section:last-of-type .channel-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 400px; /* Un poco más de altura para grupos */
+}
+
+/* Para la sección de DMs - scroll interno */
+.channels-section:first-of-type .channel-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 300px;
+}
+
+/* Personalizar scrollbar */
+.channel-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.channel-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.channel-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.channel-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* =======================================================
+   💬 ITEMS DE CANAL
+   ======================================================= */
+.channel-item {
+  padding: 10px 14px; /* ✅ Reducido de 12px 16px */
+  border-radius: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 3px; /* ✅ Reducido de 4px */
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+  flex-shrink: 0;
+  min-height: 50px; /* ✅ Altura mínima consistente */
+}
+
+.channel-item:hover {
+  background: #f8fafc;
+  transform: none;
+  padding-left: 16px;
+}
+
+.channel-item.active {
+  background: #edf2ff;
+  font-weight: 600;
+  border-left: 4px solid #4f46e5;
+}
+
+.channel-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: #4f46e5;
+}
+
+/* =======================================================
+   📋 INFORMACIÓN DE CANAL
+   ======================================================= */
+.channel-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Contenedor principal del usuario en DM */
+.dm-user-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.channel-name {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 13px; /* ✅ Reducido de 14px */
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px; /* ✅ Reducido de 8px */
+}
+
+/* Indicador de estado en DMs */
+.status-indicator {
+  font-size: 0.7rem;
+  vertical-align: middle;
+}
+
+
+.channel-type {
+  color: #718096;
+  font-size: 11px; /* ✅ Reducido de 12px */
+  font-style: italic;
+  margin-left: 6px; /* ✅ Reducido de 8px */
+}
+
+.channel-description {
+  color: #718096;
+  font-size: 11px; /* ✅ Reducido de 12px */
+  margin: 2px 0 0; /* ✅ Reducido de 4px 0 0 */
+  line-height: 1.3; /* ✅ Reducido de 1.4 */
+}
+
+/* Acciones en DMs */
+.dm-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* =======================================================
+   🗑️ BOTÓN ELIMINAR CANAL
+   ======================================================= */
+.delete-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+  padding: 4px;
+  border-radius: 4px;
+  color: #718096;
+}
+
+.delete-btn:hover {
+  transform: scale(1.1);
+  color: #e53e3e;
+  opacity: 1;
+  background: rgba(229, 62, 62, 0.1);
+}
+
+/* =======================================================
+   📱 BOTONES DE LA BARRA LATERAL
+   ======================================================= */
+.chat-list-buttons {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px; /* ✅ Reducido de 12px */
+  border-top: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.2);
+  margin-top: auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 15;
+  gap: 8px;
+}
+
+.sidebar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%; /* ✅ Cambiado de calc(100% - 40px) */
+  margin: 0; /* ✅ Eliminado margen */
+  padding: 10px 14px; /* ✅ Reducido de 12px 16px */
+  text-align: center;
+  background: #ffffff;
+  color: #4f46e5;
+  border-radius: 8px; /* ✅ Reducido de 10px */
+  border: 1px solid #e2e8f0;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* ✅ Sombra más suave */
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 14px; /* ✅ Tamaño de fuente consistente */
+  min-height: 40px; /* ✅ Altura mínima */
+}
+
+.sidebar-button:hover {
+  background: #4f46e5;
+  color: white;
+  transform: translateY(-1px); /* ✅ Efecto más sutil */
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3); /* ✅ Sombra más suave */
+}
+
+/* =======================================================
+   📝 ESTADO VACÍO
+   ======================================================= */
+.empty-state {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 20px;
+  font-size: 14px;
+  background: #f8fafc;
+  margin: 0;
+}
+
+/* =======================================================
+   💬 ÁREA PRINCIPAL DEL CHAT
+   ======================================================= */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
+}
+
+/* =======================================================
+   🎯 HEADER DEL CHAT
+   ======================================================= */
+.chat-header {
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.chat-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.chat-description {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+}
+
+/* =======================================================
+   🎯 ACCIONES DEL HEADER DEL CHAT
+   ======================================================= */
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-search-bar {
+  background: #ffffff;
+  padding: 12px 16px;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  animation: fadeIn 0.3s ease;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.chat-search-bar input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #cbd5e0;
+  border-radius: 20px;
+  background: #f8fafc;
+  color: #2d3748;
+  outline: none;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.chat-search-bar input::placeholder {
+  color: #a0aec0;
+}
+
+.chat-search-bar input:focus {
+  border-color: #4f46e5;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.search-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ffffff;
+  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.search-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.highlight {
+  background-color: rgba(255, 217, 102, 0.3);
+  border-left: 3px solid #f6ad55;
+  padding-left: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+/* =======================================================
+   💬 CONTENEDOR DE MENSAJES
+   ======================================================= */
+.chat-messages {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scroll-behavior: smooth;
+  min-height: 0;
+}
+
+/* =======================================================
+   💬 ESTADO VACÍO DEL CHAT
+   ======================================================= */
+.chat-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 400px;
+  padding: 40px 20px;
+}
+
+.chat-empty-message {
+  text-align: center;
+  color: #6b7280;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 40px 30px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  max-width: 300px;
+  line-height: 1.5;
+  transition: all 0.3s ease;
+}
+
+.chat-empty-message:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* =======================================================
+   💌 GLOBOS DE MENSAJES
+   ======================================================= */
+.chat-message {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 14px 18px;
+  max-width: min(75%, 500px);
+  min-width: 120px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  position: relative;
+  align-self: flex-start;
+  animation: messageSlideIn 0.3s ease;
+  margin-bottom: 8px;
+}
+
+.chat-message.own-message {
+  align-self: flex-end;
+  background: #4f46e5;
+  color: #ffffff;
+  border: none;
+  margin-left: auto;
+  max-width: min(75%, 500px);
+  min-width: 120px;
+  margin-bottom: 8px;
+}
+
+.chat-message:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+/* =======================================================
+   📄 CONTENIDO DEL MENSAJE
+   ======================================================= */
+.chat-message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.chat-username-messages {
+  font-weight: 700;
+  color: #4f46e5;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.chat-message.own-message .chat-username-messages {
+  color: #e0e7ff;
+}
+
+.chat-message-content {
+  color: #2d3748;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  display: block;
+  margin: 6px 0;
+}
+
+.chat-message.own-message .chat-message-content {
+  color: #ffffff;
+}
+
+.chat-time {
+  font-size: 11px;
+  color: #718096;
+  font-weight: 400;
+  opacity: 0.8;
+  flex-shrink: 0;
+  margin-top: 6px;
+  text-align: right;
+}
+
+.chat-message.own-message .chat-time {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* =======================================================
+   ✏️ ÁREA DE INPUT
+   ======================================================= */
+.chat-input-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.chat-input-container input {
+  flex-grow: 1;
+  border: 1px solid #cbd5e0;
+  border-radius: 24px;
+  padding: 12px 20px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  background: #f8fafc;
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.chat-input-container input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  background: #ffffff;
+}
+
+/* =======================================================
+   😊 SELECTOR DE EMOJIS
+   ======================================================= */
+.emoji-picker {
+  position: absolute;
+  bottom: 70px;
+  left: 24px;
+  z-index: 120;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* =======================================================
+   🎛️ BOTONES GENERALES
+   ======================================================= */
+.edit-channel-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.edit-channel-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
 .emoji-btn {
   font-size: 22px;
   background: none;
   border: none;
   cursor: pointer;
-  margin-right: 6px;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  color: #718096;
 }
 
-.emoji-picker-container {
-  position: absolute;
-  bottom: 55px;
-  left: 10px;
-  z-index: 10;
+.emoji-btn:hover {
+  transform: scale(1.1);
+  background: #edf2f7;
+  color: #4f46e5;
 }
 
-.chat-input {
+.send-btn {
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-top: 1px solid #ddd;
-  background: #f8f8f8;
+  gap: 6px;
+}
+
+.send-btn:hover {
+  transform: translateY(-2px);
+  background: #4338ca;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+/* =======================================================
+   ✨ ACCIONES DE MENSAJE
+   ======================================================= */
+.message-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  align-items: center;
+}
+
+.message-actions button {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+.message-actions button:hover {
+  background: #f7fafc;
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.edit-btn:hover {
+  color: #3182ce;
+  border-color: #3182ce;
+  background: rgba(49, 130, 206, 0.1);
+}
+
+.delete-btn:hover {
+  color: #e53e3e;
+  border-color: #e53e3e;
+  background: rgba(229, 62, 62, 0.1);
+}
+
+.confirm-btn:hover {
+  color: #38a169;
+  border-color: #38a169;
+  background: rgba(56, 161, 105, 0.1);
+}
+
+.cancel-btn:hover {
+  color: #e53e3e;
+  border-color: #e53e3e;
+  background: rgba(229, 62, 62, 0.1);
+}
+
+.chat-message.own-message .message-actions button {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-message.own-message .message-actions button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.edit-input {
+  width: 100%;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #ffffff;
+  outline: none;
+  margin-top: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.edit-input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* =======================================================
+   ✨ ANIMACIONES
+   ======================================================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =======================================================
+   📜 SCROLLBARS
+   ======================================================= */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+.channel-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.channel-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.channel-list::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 2px;
+}
+
+.channel-list::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Separador de día */
+.day-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0;
   position: relative;
 }
 
-.chat-input input {
-  flex-grow: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+.day-separator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e0e0e0;
+  z-index: 1;
 }
 
-.chat-input button {
-  padding: 8px 14px;
+.day-separator span {
+  background-color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 500;
+  z-index: 2;
+  border: 1px solid #e0e0e0;
+}
+
+.logout-btn {
+  background: #e53e3e;
+  color: white;
   border: none;
-  border-radius: 6px;
-  background-color: #007bff;
-  color: white;
+  border-radius: 6px; /* ✅ Reducido de 8px */
+  padding: 6px 12px; /* ✅ Reducido de 8px 16px */
+  font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(229, 62, 62, 0.2); /* ✅ Sombra más suave */
+  transition: all 0.2s ease;
+  font-size: 13px; /* ✅ Tamaño reducido */
+  min-height: 32px; /* ✅ Altura consistente */
 }
 
-.chat-input button:hover {
-  background-color: #0056b3;
-}
-/* --- Estilos para la lista de canales (ChatList) --- */
-
-/* Asegura que los ítems del canal estén bien espaciados */
-.channel-item {
-    display: flex;
-    justify-content: space-between; /* Mueve el badge a la derecha */
-    align-items: center;
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #eee; /* Ajusta el color del borde si es necesario */
-    transition: background-color 0.2s;
+.logout-btn:hover {
+  background: #c53030;
+  transform: translateY(-1px); /* ✅ Efecto más sutil */
+  box-shadow: 0 2px 6px rgba(229, 62, 62, 0.3); /* ✅ Sombra más suave */
 }
 
-.channel-item:hover {
-    background-color: #f0f0f0;
-}
-
-/* Contenedor de la información del canal (nombre y tipo) */
-.channel-info {
-    display: flex;
-    flex-direction: column;
-    /* Permite que el badge tenga espacio */
-    margin-right: 10px; 
-}
-
-/* Estilo del badge de notificación (el círculo rojo) */
-.unread-badge {
-    /* Diseño del círculo */
-    background-color: #e74c3c; /* Rojo vivo para la alerta */
-    color: white;
-    border-radius: 50%;
-    
-    /* Dimensiones y centrado */
-    min-width: 20px; 
-    height: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-    /* Tipografía */
-    font-size: 0.75rem; /* Pequeño y legible */
-    font-weight: bold;
-    line-height: 1; /* Asegura el centrado vertical */
-}
-.channel-item.selected {
-  background-color: #3b3f46; /* fondo más oscuro */
+/* Botón de retroceso en móvil - DEBE SER VISIBLE */
+.back-to-list {
+  display: flex !important;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
   color: white;
-  border-left: 4px solid #00bfff; /* borde azul a la izquierda */
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: bold;
 }
 
+.back-to-list:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
 
+.menu-popup {
+  position: absolute;
+  top: 20px;
+  right: 0;
+  background: rgb(0, 0, 0);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  animation: fadeIn 0.15s ease;
+}
+
+.online-users{
+  font-family: Arial, Helvetica, sans-serif;
+  color: #38a169;
+}
+
+.unread-count {
+  background: #ff4444;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-bubble.unread-count {
+  background: #4f46e5;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Agrega estos estilos a tu chat.css */
+
+/* Indicador visual para DMs */
+.dm-item {
+  border-left: 3px solid #6366f1;
+}
+
+.dm-item .channel-name {
+  color: #6366f1;
+}
+
+/* Badge para DMs */
+.dm-badge {
+  background: #6366f1;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+/* Estados para diferentes tipos de canales */
+.channel-item.public-channel {
+  border-left: 3px solid #10b981;
+}
+
+.channel-item.private-channel {
+  border-left: 3px solid #f59e0b;
+}
+
+.channel-item.dm-channel {
+  border-left: 3px solid #6366f1;
+}
+/* En tu chat.css */
+/* Estilos para botones de salir/eliminar en la lista */
+.channel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leave-channel-btn, .delete-btn {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+}
+
+.leave-channel-btn:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.delete-btn:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+/* Estilos para la información del canal */
+.channel-main-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.channel-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.member-count, .channel-creator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Estilos para el menú del canal en el header */
+.channel-menu-container {
+  position: relative;
+}
+
+.channel-menu-btn {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+}
+
+.channel-menu-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.channel-menu-popup {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 160px;
+  padding: 4px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #374151;
+  transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+  background: #f3f4f6;
+}
+
+.leave-item {
+  color: #dc2626;
+}
+
+.leave-item:hover {
+  background: #fef2f2;
+}
+
+.delete-item {
+  color: #dc2626;
+}
+
+.delete-item:hover {
+  background: #fef2f2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .channel-actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .channel-meta {
+    flex-direction: column;
+    gap: 2px;
+  }
+}

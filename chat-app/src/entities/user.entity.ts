@@ -1,6 +1,6 @@
 //Entidad Usuario
 //Importaciones necesarias:
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToMany } from "typeorm";
 import { Message } from "./message.entity";
 import { Channel } from "./channels.entity";
 
@@ -20,6 +20,9 @@ export class User {
     @Column() //Columna de correo electronico
     email: string;
 
+    @Column({ default: '' }) //Columna para el telefono
+    phone: string;
+
     @Column({ select: false }) //Columna de contraseña
     password: string;
 
@@ -32,7 +35,10 @@ export class User {
     messages: Message[];
 
     @ManyToMany(() => Channel, (channel) => channel.members)
-    @JoinTable()
     channels: Channel[];
+        
+    //Canales creados por el usuario
+    @OneToMany(() => Channel, (channel) => channel.creator)
+    createdChannels: Channel[];
 
 }
