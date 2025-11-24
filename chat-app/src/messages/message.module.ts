@@ -4,6 +4,7 @@ import { Message } from '../entities/message.entity';
 import { User } from '../entities/user.entity';
 import { Channel } from '../entities/channels.entity';
 import { MessageService } from './message.service';
+import { MessageController } from './message.controller';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { MessageService } from './message.service';
     TypeOrmModule.forFeature([Message, User, Channel]),
   ],
   providers: [MessageService],
-  exports: [MessageService], // 👈 Esto permite usar MessageService desde ChatModule u otros
+  controllers: [MessageController],
+  exports: [MessageService], //Esto permite usar MessageService desde ChatModule u otros
 })
 export class MessageModule {}

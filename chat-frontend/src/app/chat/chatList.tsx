@@ -1,46 +1,49 @@
 //chat-frontend/src/app/chat/chatList.tsx
+//Lista de canales y mensajes directos en la aplicacion de chat - Barra lateral
+"use client";
+//Importaciones importantes
 import React, { useEffect, useState } from "react";
-//Importar estilos CSS
 import './chat.css';
 import "./chat-responsive.css"; 
 import "./chat-dark.css";
+import { LogOut, Users, Trash2 } from "lucide-react"; // ✅ Agregar LogOut
 import socket from "@/lib/socket";
-//Definir las propiedades del componente
+//Definicion de las props del componente
 interface Props {
   channels: any[]; //Lista de canales
-  onSelectChannel: (channel: any) => void; //Función al seleccionar un canal
-  onCreateChannel: () => void; //Función para crear un canal
-  onAddUser: () => void; //Función para agregar un usuario
-  onLogout: () => void; //Función para cerrar sesión
+  onSelectChannel: (channel: any) => void; //Funcion al seleccionar un canal
+  onChannelManager: () => void; //Funcion para crear un nuevo canal o buscar unirse a uno
+  onAddUser: () => void; //Funcion para agregar un usuario (iniciar DM)
+  onLogout: () => void; //Funcion para cerrar sesion
   onDeleteChannel: (idChannel: number) => void; //Funcion para eliminar un canal
-  username: string; //Nombre de usuario del usuario actual
-  unreadCounts?: { [key: number]: number }; //Contadores de mensajes no leídos por canal
+  username: string; //Nombre de usuario actual
+  unreadCounts?: { [key: number]: number }; //Conteo de mensajes no leidos por canal
+  publicChannels?: any[]; //Lista de canales publicos
+  privateChannels?: any[]; //Lista de canales privados
+  dmChannels?: any[]; //Lista de canales de mensajes directos
 }
-
-//Definir y exportar el componente ChatList
+//Componente de la lista de canales y DMs
 export default function ChatList({
   channels,
   onSelectChannel,
-  onCreateChannel,
+  onChannelManager,
   onAddUser,
   onLogout,
   onDeleteChannel,
   username,
   unreadCounts = {}, 
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState(""); //Para buscar DM
-  const [onlineUsers, setOnlineUsers] = useState<{ idUser: number; username: string }[]>([]); //Usuarios en línea
-  const [collapsedSections, setCollapsedSections] = useState({ dms: false, groups: false });
-
-  //Efecto: Escuchar mensajes y usuarios conectados
+  const [searchTerm, setSearchTerm] = useState(""); //Estado para el termino de busqueda
+  const [onlineUsers, setOnlineUsers] = useState<{ idUser: number; username: string }[]>([]); //Estado para usuarios en linea
+  const [collapsedSections, setCollapsedSections] = useState({ dms: false, groups: false }); //Estado para secciones colapsadas
+  //Efecto para manejar usuarios en linea via WebSocket
   useEffect(() => {
     if (!socket || !socket.connected) return;
-
-    //Lista de usuarios en línea (ahora el backend manda [{idUser, username}])
+    //Funcion para actualizar la lista de usuarios en linea
     const handleOnlineUsers = (users: { idUser: number; username: string }[]) => {
       setOnlineUsers(users);
     };
-    //Escuchar eventos del socket
+    //Escuchar evento de usuarios en linea
     socket.on("onlineUsers", handleOnlineUsers);
     socket.emit("userConnected", username);
 
@@ -49,33 +52,37 @@ export default function ChatList({
     };
   }, [username]);
 
-    //Manejar selección de canal
-   const handleSelectChannel = (channel: any) => {
+  const handleSelectChannel = (channel: any) => {
     onSelectChannel(channel);
   };
 
-  //Separar canales en grupos y MDs
-  const uniqueChannels = channels.filter((channel, index, self) => 
-    index === self.findIndex(ch => 
-      ch.idChannel === channel.idChannel && ch.idChannel !== undefined
-    )
-  );
-  // Luego usar uniqueChannels en lugar de channels
-  const groups = uniqueChannels.filter(ch => ch?.isPublic);
-  const directMessages = uniqueChannels.filter(ch => ch && !ch.isPublic);
+  //USAR LAS LISTAS SEPARADAS EN LUGAR DE FILTRAR
+  const groups = channels.filter(ch => ch.type === "channel");
 
-  //Formatear nombre para MDs
-  const formatDMName = (channelName: string) => {
-    if (typeof channelName === "string" && channelName.startsWith("DM ")) {
-      const parts = channelName.replace("DM ", "").split("-");
+  const directMessages = channels.filter(ch => ch.type === "dm");
+
+  //FUNCIÓN MEJORADA: Formatear nombre para DMs con manejo de errores
+  const formatDMName = (channel: any) => {
+    //PRIMERO: Manejar casos donde channel sea undefined
+    if (!channel) return "Chat desconocido";
+    
+    //Si ya viene con displayName desde el backend, usarlo
+    if (channel.displayName) {
+      return channel.displayName.replace('DM con ', '');
+    }
+    
+    //Fallback para DMs antiguos - verificar que name existe
+    if (channel.name && typeof channel.name === "string" && channel.name.startsWith("DM ")) {
+      const parts = channel.name.replace("DM ", "").split("-");
       const currentUser = username;
       const otherUser = parts[0] === currentUser ? parts[1] : parts[0];
-      return otherUser;
+      return otherUser || channel.name;
     }
-    return channelName;
+    
+    //Último fallback
+    return channel.name || "Chat sin nombre";
   };
 
-  //Función para colapsar secciones
   const toggleSection = (section: 'dms' | 'groups') => {
     setCollapsedSections((prev) => ({
       ...prev,
@@ -83,41 +90,55 @@ export default function ChatList({
     }));
   };
 
-  //Verificar si un usuario esta en linea
   const isUserOnline = (usernameToCheck: string) => {
     return onlineUsers.some((user) => user.username === usernameToCheck);
   }
 
-  // Confirmación de borrado con ventana nativa
+  //CORREGIDO: Pasar el objeto completo 'ch' en lugar de 'ch.name'
   const handleDeleteClick = (ch: any) => {
     if (!ch.isPublic) {
-      const displayName = formatDMName(ch.name);
+      const displayName = formatDMName(ch); //Pasar 'ch' no 'ch.name'
       const confirmDelete = confirm(
         `¿Seguro que deseas eliminar este DM con ${displayName}?`
       );
       if (confirmDelete) onDeleteChannel(ch.idChannel);
     }
   };
-
-  //Función para generar keys únicas
+  //Generar clave unica para cada canal
   const generateUniqueKey = (ch: any, type: 'group' | 'dm', index: number) => {
     if (ch.idChannel) {
       return `${type}-${ch.idChannel}`;
     }
-    //Si no hay idChannel, crear una key única basada en múltiples propiedades
     return `${type}-${ch.name}-${ch.creatorId || 'unknown'}-${index}`;
   };
 
-  //Funcion para filtrar los dm
+  //FUNCIÓN Filtrar DMs con manejo de errores
   const filteredDMs = directMessages.filter((ch) => {
-    const displayName = formatDMName(ch.name).toLowerCase();
-    return displayName.includes(searchTerm.toLowerCase());
+    try {
+      const displayName = formatDMName(ch); 
+      return displayName.toLowerCase().includes(searchTerm.toLowerCase());
+    } catch (error) {
+      console.warn('Error al formatear nombre del canal:', ch, error);
+      return false;
+    }
   });
+
+  //Funcion para salir de un canal
+  const handleLeaveChannel = (channel: any) => {
+    const confirmLeave = confirm(
+      `¿Seguro que deseas salir del canal ${channel.name}?`
+    );
+    if (confirmLeave){
+      //Emitir el evento para salir del canal
+      if(socket){
+        socket.emit('leaveChannel', channel.idChannel);
+      }
+    }
+  }
 
   //Renderizado del componente
   return (
     <div className="chat-list">
-      {/*Header del usuario actual */}
       <div className="chat-list-header">
         <span className="chat-username-header">{username}</span>
         <button className="logout-btn" onClick={onLogout}>
@@ -139,25 +160,30 @@ export default function ChatList({
         </div>
         {!collapsedSections.dms && (
           <>
-            {/* 🔍 Barra de búsqueda */}
             <div className="chat-search-bar">
-              <input type="text" placeholder="Buscar usuario..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input" />
+              <input 
+                type="text" 
+                placeholder="Buscar usuario..." 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input" 
+              />
             </div>
 
-            {/* 📜 Lista de DMs */}
             {filteredDMs.length > 0 ? (
               <ul className="channel-list">
                 {filteredDMs.map((ch, index) => {
-                  const displayName = formatDMName(ch.name); //Formatear nombre de usuario con el que se tiene el DM
-                  const unread = unreadCounts[ch.idChannel] || 0; //Cantidad de mensajes no leídos
-                  const isOnline = isUserOnline(displayName); //Estado online
-                  //Renderizar cada DM
+                  // ✅ CORREGIDO: Pasar 'ch' no 'ch.name'
+                  const displayName = formatDMName(ch);
+                  const unread = unreadCounts[ch.idChannel] || 0;
+                  const isOnline = isUserOnline(displayName);
+                  
                   return (
-                    //Elemento de lista para cada DM
-                    <li key={generateUniqueKey(ch, "dm", index)}
+                    <li 
+                      key={generateUniqueKey(ch, "dm", index)}
                       className="channel-item dm-item"
-                      onClick={() => handleSelectChannel(ch)}>
+                      onClick={() => handleSelectChannel(ch)}
+                    >
                       <div className="channel-info">
                         <div className="dm-user-main">
                           <strong className="channel-name">
@@ -166,10 +192,13 @@ export default function ChatList({
                               {isOnline ? '🟢 - Conectado' : '⚫ - Desconectado'}
                             </span>
                           </strong>
+                        
                           <div className="dm-actions">
-                            <span className="message-bubble unread-count">{unread > 99 ? '99+' : unread}</span>
-                            <small className="channel-type">Privado</small>
-                            {/* Botón para eliminar DM */}
+                            {unread > 0 && (
+                            <span className="message-bubble unread-count">
+                              {unread > 99 ? '99+' : unread}
+                            </span>
+                            )}
                             <button
                               className="delete-btn"
                               onClick={(e) => {
@@ -184,7 +213,6 @@ export default function ChatList({
                         </div>
                       </div>
 
-                      {/* Descripción del DM */}
                       {ch.description && (
                         <p className="channel-description">{ch.description}</p>
                       )}
@@ -193,7 +221,9 @@ export default function ChatList({
                 })}
               </ul>
             ) : (
-              <p className="empty-state">No hay resultados</p>
+              <p className="empty-state">
+                {searchTerm ? 'No hay resultados' : 'No tienes mensajes directos'}
+              </p>
             )}
           </>
         )}
@@ -211,32 +241,55 @@ export default function ChatList({
             {collapsedSections.groups ? '▶' : '▼'}
           </span>
         </div>
-        {/* 📜 Lista de Grupos */}
+        
         {!collapsedSections.groups && (
           <>
             {groups.length > 0 ? (
               <ul className="channel-list">
                 {groups.map((ch, index) => {
-                    const unread = unreadCounts[ch.idChannel] || 0;
-                    return (
-                  <li
-                    key={generateUniqueKey(ch, "group", index)}
-                    className="channel-item group-item"
-                    onClick={() => handleSelectChannel(ch)}>
-                    <div className="channel-info">
-                      <strong className="channel-name">
-                        {ch.name || "Grupo sin nombre"}
-                      </strong>
-                      {unread > 0 && <span className="message-bubble">{unread}</span>}
-                      <small className="channel-type">Público</small>
-                    </div>
-                    {ch.description && (
-                      <p className="channel-description">{ch.description}</p>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+                  const unread = unreadCounts[ch.idChannel] || 0;
+                  const isCreator = ch.creator?.username === username;
+                  return (
+                    <li
+                      key={generateUniqueKey(ch, "group", index)}
+                      className={`channel-item group-item ${unread > 0 ? 'has-unread' : ''}`}
+                      onClick={() => handleSelectChannel(ch)}
+                    >
+                      <div className="channel-info">
+                        <strong className="channel-name">
+                          {ch.name || "Grupo sin nombre"}
+                        </strong>
+                        {unread > 0 && (
+                        <span className="message-bubble unread-count group-unread">
+                          {unread > 99 ? '99+' : unread}
+                        </span>
+                      )}
+
+                        {/* ✅ BOTÓN PARA SALIR DEL CANAL */}
+                          {!isCreator && (
+                            <button
+                              className="leave-channel-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleLeaveChannel(ch);
+                              }}
+                              title={`Salir del canal ${ch.name}`}
+                            >
+                              <LogOut size={14} />
+                            </button>
+                          )}
+
+                        <small className="channel-type">
+                          {ch.isPublic ? 'Público' : 'Privado'}
+                        </small>
+                      </div>
+                      {ch.description && (
+                        <p className="channel-description">{ch.description}</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             ) : (
               <p className="empty-state">No tienes grupos</p>
             )}
@@ -244,10 +297,9 @@ export default function ChatList({
         )}
       </div>
 
-      {/* ⚙️ Botones de acción lateral */}
       <div className="chat-list-buttons">
-        <button className="sidebar-button" onClick={onCreateChannel}>
-          ➕ Nuevo Grupo
+        <button className="sidebar-button" onClick={onChannelManager}>
+          ➕ Crear Grupo o Unirse a un Grupo
         </button>
         <button className="sidebar-button" onClick={onAddUser}>
           👥 Iniciar un DM

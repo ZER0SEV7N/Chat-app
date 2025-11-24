@@ -1,11 +1,12 @@
 //Importar la clases necesarias
-import { IsEmail, IsNotEmpty, IsPhoneNumber, MinLength} from 'class-validator'
+import { IsEmail, IsNotEmpty, IsPhoneNumber, MinLength, MaxLength, minLength} from 'class-validator'
 
 export class RegisterDTO {
     @IsNotEmpty ({message: 'El nombre es obligatorio'})
     name: string;
 
     @IsNotEmpty({message: 'El nombre de usuario es obligatorio'})
+    @MaxLength(30, {message: 'El nombre de usuario es hasta maximo 30 caracteres' })
     username: string;
 
     @IsEmail({}, {message: 'Debe proporcionar un correo electronico valido'})

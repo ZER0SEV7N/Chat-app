@@ -1,63 +1,97 @@
 //chat-frontend/src/app/page.tsx
-//Página de login
-//Importar hooks necesarios
-"use client"; // Indica que este es un componente del lado del cliente
+//Pagina de login de la aplicacion de chat - Pagina inicial
+"use client";
+//Importaciones Importantess
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/lib/config";
-
-//Componente de la página de login
+//Componente de la pagina de login
 export default function LoginPage() {
-  //Hooks de estado y router
-  const router = useRouter();
-  const [formData, setFormData] = useState({
-    username: "",
-    password: ""
+  const router = useRouter(); //Hook para la navegacion
+  const [formData, setFormData] = useState({ //Estado para los datos del formulario
+    username: "", //Nombre de usuario
+    password: "" //Contraseña
   });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(""); //Estado para los mensajes de error
+  const [loading, setLoading] = useState(false); //Estado para indicar carga
+  const [showPassword, setShowPassword] = useState(false); //Estado para mostrar/ocultar contraseña
 
-  //Función para redirigir a la página de registro
+  //Funcion para redirigir a la pagina de registro
   const goToRegister = () => {
-    router.push("/register"); //redirige a la página de registro
+    router.push("/register");
   };
-
-  //Función para manejar el envío del formulario de login
+  //Funcion para manejar el envio del formulario de login
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    //Validar el Front antes de enviar
+    e.preventDefault(); //Prevenir el comportamiento por defecto del formulario
+    setError(""); //Limpiar mensajes de error
+    //Validar que los campos no esten vacios
     if (!formData.username || !formData.password) {
       setError("Por favor completa todos los campos");
-      return;
+      return; // Detener la ejecución si hay campos vacíos
     }
-
-    setLoading(true); // Iniciar estado de carga
+    //Enviar los datos al backend para autenticar al usuario
+    setLoading(true);
     try {
-      //Realizar la petición al endpoint de login
+      //Realizar la peticion al backend
       const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST", // Método POST
-        headers: { "Content-Type": "application/json" }, // Encabezados
-        body: JSON.stringify(formData), // Cuerpo de la solicitud como JSON
+        method: "POST", //Metodo HTTP POST para enviar datos
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
-      
-      //Procesar la respuesta
+      //Parsear la respuesta JSON
       const data = await res.json();
-      
-      // Manejar la respuesta del servidor
+      //Si la respuesta no es OK, mostrar el mensaje de error
       if (!res.ok) {
-        // Mostrar mensaje de error si las credenciales son inválidas
         setError(data.message || "Credenciales inválidas ❌");
         return;
       }
-      
       //Guardar el token y redirigir al chat si el login es exitoso
       localStorage.setItem("token", data.access_token);
-      localStorage.setItem("username", data.user.username);
-      window.location.href = "/chat"; // Redirigir al chat
       
-    //Capturar otros errores
+      // Guardar datos del usuario individualmente
+      if (data.user) {
+        localStorage.setItem("username", data.user.username || formData.username);
+        localStorage.setItem("idUser", data.user.id?.toString() || "");
+        
+        //También mantener el objeto user completo por compatibilidad
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        //Fallback: si el backend no envía user object
+        localStorage.setItem("username", formData.username);
+        localStorage.setItem("idUser", data.userId?.toString() || "");
+      }
+      //Mostrar en consola los datos guardados
+      console.log('✅ Datos guardados en localStorage:', {
+        username: localStorage.getItem('username'),
+        idUser: localStorage.getItem('idUser'),
+        token: localStorage.getItem('token') ? '✅' : '❌'
+      });
+      
+      //Redirigir al chat
+      window.location.href = "/chat";
+      
+      //Guardar datos del usuario individualmente
+      if (data.user) {
+        localStorage.setItem("username", data.user.username || formData.username);
+        localStorage.setItem("idUser", data.user.id?.toString() || "");
+        
+        //También mantener el objeto user completo por compatibilidad
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        //Fallback: si el backend no envía user object
+        localStorage.setItem("username", formData.username);
+        localStorage.setItem("idUser", data.userId?.toString() || "");
+      }
+      
+      console.log('✅ Datos guardados en localStorage:', {
+        username: localStorage.getItem('username'),
+        idUser: localStorage.getItem('idUser'),
+        token: localStorage.getItem('token') ? '✅' : '❌'
+      });
+      
+      //Redirigir al chat
+      window.location.href = "/chat";
+      
     } catch (err) {
       console.error(err);
       setError("No se pudo conectar con el servidor");
@@ -65,8 +99,7 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-
-  // Función para manejar cambios en los inputs
+  //Funcion para manejar los cambios en los campos del formulario
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -74,29 +107,26 @@ export default function LoginPage() {
       [name]: value
     }));
   };
-
+  //Renderizado del componente
   return (
     <div className="auth-container">
       <div className="auth-card">
-        {/* Header del login */}
         <div className="auth-header">
           <div className="auth-logo">💬</div>
           <h1 className="auth-title">Iniciar sesión</h1>
           <p className="auth-subtitle">Ingresa a tu cuenta para continuar chateando</p>
         </div>
 
-        {/* Mensaje de error */}
         {error && (
           <div className="error-message">
             <span>⚠️</span>
             {error}
           </div>
         )}
-
         {/* Formulario de login */}
         <form onSubmit={handleLogin} className="auth-form">
-          {/* Campo de usuario */}
           <div className="form-group">
+            {/* Campo de usuario */}
             <label className="form-label" htmlFor="username">
               Usuario:
             </label>
@@ -115,7 +145,6 @@ export default function LoginPage() {
               />
             </div>
           </div>
-
           {/* Campo de contraseña */}
           <div className="form-group">
             <label className="form-label" htmlFor="password">
@@ -132,26 +161,22 @@ export default function LoginPage() {
                 value={formData.password}
                 onChange={handleInputChange}
                 disabled={loading}
-                required
-              />
-              {/* Botón para mostrar/ocultar contraseña */}
+                required/>
+              {/* Boton para mostrar/ocultar contraseña */}
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={loading}
-              >
+                disabled={loading}>
                 {showPassword ? "👁️" : "👁️‍🗨️"}
               </button>
             </div>
           </div>
-
-          {/* Botón de envío */}
+          {/* Boton de inicio de sesion */}
           <button
             type="submit"
             className={`auth-button btn-primary ${loading ? 'loading' : ''}`}
-            disabled={loading}
-          >
+            disabled={loading}>
             {loading ? (
               <>
                 <span className="loading-spinner"></span>
@@ -162,16 +187,14 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* Enlace a registro */}
+        {/* Enlace para ir a la página de registro */}
         <div className="auth-links">
           <p className="auth-text">
             <button 
               type="button" 
               onClick={goToRegister}
               className="auth-link"
-              disabled={loading}
-            >
+              disabled={loading}>
               ¿No tienes cuenta? Regístrate
             </button>
           </p>

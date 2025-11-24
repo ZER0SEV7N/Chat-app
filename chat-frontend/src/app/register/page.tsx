@@ -1,6 +1,9 @@
+//src/app/register/page.tsx
+//Página de registro de usuarios
 'use client';
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // Para App Router
+import toast from "react-hot-toast";
 import { API_URL } from "@/lib/config";
 
 //Componente de la página de registro
@@ -45,6 +48,11 @@ export default function RegisterPage(){
             setError("Por favor ingresa un correo válido");
             return;
         }
+        if(form.phone.length < 8){
+            setError("Por favor ingrese un numero valido")
+            return;
+        }
+
         //validar que la contraseña sea mayor a 6 caracteres
         if (form.password.length < 6) {
             setError("La contraseña debe tener al menos 6 caracteres");
@@ -70,12 +78,12 @@ export default function RegisterPage(){
             const data = await res.json();
             // Manejar la respuesta del servidor
             if (res.ok){
-                alert(`🎉 Registro exitoso: ${data.username}, ahora por favor inicia sesión.`);
+                toast.success(`🎉 Registro exitoso: ${data.username}, ahora por favor inicia sesión.`);
                 //Retornar a la página de inicio de sesión
                 router.push("/");
             //En caso de error
             } else {
-                setError(`Error en el registro: ${data.message}`);
+                toast.error(`Error en el registro: ${data.message}`);
             }
             //Capturar errores de conexión
         } catch (err) {
@@ -142,6 +150,7 @@ export default function RegisterPage(){
                                 className="form-input"
                                 placeholder="Nombre de usuario"
                                 value={form.username}
+                                maxLength={30}
                                 onChange={handleChange}
                                 disabled={loading}
                                 required
@@ -184,6 +193,7 @@ export default function RegisterPage(){
                                 className="form-input"
                                 placeholder="Tu número de teléfono"
                                 value={form.phone}
+                                maxLength={9}
                                 onChange={handleChange}
                                 disabled={loading}
                                 required
@@ -269,6 +279,7 @@ export default function RegisterPage(){
                         type="submit"
                         className={`auth-button btn-primary ${loading ? 'loading' : ''}`}
                         disabled={loading}
+                        
                     >
                         {loading ? (
                             <>

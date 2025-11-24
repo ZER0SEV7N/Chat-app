@@ -105,9 +105,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+  background: linear-gradient(145deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .btn-primary:hover {
@@ -120,9 +124,13 @@
 }
 
 .btn-secondary {
-  background: transparent;
-  color: #4f46e5;
-  border: 2px solid #4f46e5;
+  background: #e6e6e6;
+  color: #333;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .btn-secondary:hover {

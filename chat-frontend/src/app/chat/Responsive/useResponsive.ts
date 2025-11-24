@@ -7,7 +7,7 @@ export function useResponsive() {
     const [isMobile, setIsMobile] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
     const [isTablet, setIsTablet] = useState(false);
-
+    //Detectar el tamaño de la ventana
     useEffect(() => {
         const updateSize  = () => {
             const width = window.innerWidth;
@@ -24,5 +24,3 @@ export function useResponsive() {
 
     return { isMobile, isDesktop, isTablet };
 }
-
-
