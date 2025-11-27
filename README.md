@@ -4,5 +4,6 @@ Backend: NestJS
 Frontend: Next/React
 
 Creado Por:
-Daniel | Pedro | Wiliam
+Daniel | Pedro | Wiliam |
+Para
 Codecta.pe/J&P Perifericos
