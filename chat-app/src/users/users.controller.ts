@@ -15,11 +15,9 @@ export class UsersController {
     return this.usersService.getUserChannels(idUser);
   }
 
-    //Todos los usuarios
-  @UseGuards(JwtGuard)
+  //Obtener todos los usuarios
   @Get()
   async findAll() {
     return this.usersService.findAll();
   }
-
 }

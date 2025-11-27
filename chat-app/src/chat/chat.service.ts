@@ -1,8 +1,7 @@
-// ============================================================
-// 📁 src/chat/chat.service.ts
-// Servicio encargado de manejar la lógica del chat (mensajes, canales, etc.)
-// ============================================================
-
+//src/chat/chat.service.ts
+//Servicio encargado de manejar la lógica del chat (mensajes, canales, etc.)
+//============================================================
+//Importaciones necesaria
 import {
   Injectable,
   NotFoundException,
@@ -15,9 +14,9 @@ import { User } from 'src/entities/user.entity';
 
 @Injectable()
 export class ChatService {
-  // ============================================================
-  // Inyección de dependencias: repositorios de las entidades necesarias
-  // ============================================================
+  //============================================================
+  //Inyección de dependencias: repositorios de las entidades necesarias
+  //============================================================
   constructor(
     @InjectRepository(Message)
     private messageRepository: Repository<Message>, //Repositorio de mensajes
@@ -29,9 +28,9 @@ export class ChatService {
     private userRepository: Repository<User>, //Repositorio de usuarios
   ) {}
 
-  // ============================================================
-  // 📩 Crear un mensaje
-  // ============================================================
+  //============================================================
+  //Crear un mensaje
+  //============================================================
   async createMessage(userId: number, channelId: number, text: string) {
     //Buscar el usuario que envía el mensaje
     const user = await this.userRepository.findOne({
@@ -52,9 +51,9 @@ export class ChatService {
     return this.messageRepository.save(message);
   }
 
-  // ============================================================
-  // 💬 Obtener todos los mensajes de un canal
-  // ============================================================
+  //============================================================
+  //Obtener todos los mensajes de un canal
+  //============================================================
   async getMessages(channelId: number) {
     //Verificar que el canal exista
     const channel = await this.channelRepository.findOne({
@@ -70,9 +69,9 @@ export class ChatService {
     });
   }
 
-    // ============================================================
-    // 👤 Obtener usuario por ID
-    // ============================================================
+    //============================================================
+    //Obtener usuario por ID
+    //============================================================
     async getUserById(idUser: number) {
       const user = await this.userRepository.findOne({
         where: { idUser },
@@ -83,23 +82,21 @@ export class ChatService {
     }
 
 
-  // ============================================================
-  // Crear o recuperar un canal privado (DM) - CORREGIDO
-  // ============================================================
+  //============================================================
+  //Crear o recuperar un canal privado (DM)
+  //============================================================
   async getOrCreatePrivateChannel(userId: number, targetUsername: string) {
     //Buscar el usuario objetivo (con quien se chatea)
     const targetUser = await this.userRepository.findOne({
       where: { username: targetUsername },
     });
     if (!targetUser) throw new NotFoundException('Usuario destino no encontrado');
-
     //Buscar el usuario actual
     const currentUser = await this.userRepository.findOne({
       where: { idUser: userId },
     });
     if (!currentUser) throw new NotFoundException('Usuario actual no encontrado');
-
-    // 🔍 BUSCAR DM EXISTENTE usando el campo 'type'
+    //BUSCAR DM EXISTENTE usando el campo 'type'
     const existingDM = await this.channelRepository
       .createQueryBuilder('channel')
       .innerJoin('channel.members', 'currentUser', 'currentUser.idUser = :userId', { userId })
@@ -108,22 +105,17 @@ export class ChatService {
       .where('channel.type = :type', { type: 'dm' })
       .andWhere('channel.isPublic = false')
       .getOne();
-
     if (existingDM) {
       console.log(`✅ DM existente encontrado: ${existingDM.name}`);
       const displayName = this.getDMDisplayName(existingDM, currentUser, targetUser);
       return { channel: existingDM, displayName };
     }
-    
-    // 🆕 CREAR NUEVO DM
+    //CREAR NUEVO DM
     console.log(`🆕 Creando nuevo DM entre ${currentUser.username} y ${targetUser.username}`);
-
     // Ordenar alfabéticamente para que ambos usuarios tengan el mismo nombre de canal
     const orderedUsernames = [currentUser.username, targetUser.username].sort();
-
     // Nombre formateado tipo "#DM Moises25-ZER0SEV7N"
     const formattedName = `${orderedUsernames[0]}-${orderedUsernames[1]}`;
-
     const dmChannel = this.channelRepository.create({
       name: formattedName,
       description: `Chat privado entre ${currentUser.username} y ${targetUser.username}`,
@@ -132,10 +124,8 @@ export class ChatService {
       members: [currentUser, targetUser],
       creator: currentUser,
     });
-
     const savedChannel = await this.channelRepository.save(dmChannel);
     console.log(`✅ Nuevo DM creado: ${savedChannel.name}`);
-
     const displayName = this.getDMDisplayName(savedChannel, currentUser, targetUser);
     return { channel: savedChannel, displayName };
     }
@@ -148,39 +138,33 @@ export class ChatService {
     if (channel.name.includes(currentUser.username) && channel.name.includes(targetUser.username)) {
       return `DM con ${targetUser.username}`;
     }
-    
     // Para nombres internos, construir display name
     const otherMember = channel.members?.find(member => 
       member.idUser !== currentUser.idUser
     );
-    
+   
     return otherMember ? `DM con ${otherMember.username}` : `Chat Privado`;
   }
 
-  // ============================================================
-  // Obtener todos los canales donde participa un usuario
-  // ============================================================
+  //============================================================
+  //Obtener todos los canales donde participa un usuario
+  //============================================================
   async getUserChannels(userId: number) {
-    // Buscar al usuario con sus canales
+    //Buscar al usuario con sus canales
     const user = await this.userRepository.findOne({
       where: { idUser: userId },
-      relations: ['channels', 'channels.members', 'channels.creator'], // Incluir miembros para verificar
+      relations: ['channels', 'channels.members', 'channels.creator'], //Incluir miembros para verificar
     });
-
     if (!user) throw new NotFoundException('Usuario no encontrado');
-
     //Separar canales publicos y DMs
     const PublicChannels = user.channels.filter(channel =>
       channel.type === 'channel' && channel.isPublic);
-    
-    const privateChannels = user.channels.filter(channel => 
+     const privateChannels = user.channels.filter(channel => 
       channel.type === 'channel' && !channel.isPublic
     );
-
     const dmCHannels = user.channels.filter(channel =>
       channel.type === 'dm'
     );
-
     //Formatear DMs para mostrar nombre del otro usuario
     const formattedDMChannels = dmCHannels.map(dm => {
       const otherMember = dm.members.find(member => member.idUser !== userId);
@@ -190,9 +174,7 @@ export class ChatService {
         isDM: true
       };
     });
-
-
-      // Para canales privados, verificar que el usuario actual sea miembro
+    //Para canales privados, verificar que el usuario actual sea miembro
     return {  
       PublicChannels,
       privateChannels,
@@ -202,15 +184,14 @@ export class ChatService {
   }
   //============================================================
   //Obtener todos los usuarios (en AddUserModal)
+  //============================================================
   async getAllUsers(currentUserId: number) {
     const users = await this.userRepository.find({
       where: {
         idUser: Not(currentUserId),
       },
       select: ['idUser', 'username', 'name', 'email', 'phone', 'createdAt'],
-      order: {
-        username: 'ASC',
-      },
+      order: {username: 'ASC'},
     });
     return users;
   }
@@ -226,7 +207,6 @@ export class ChatService {
       .where('channel.type = :type', { type: 'dm' })
       .andWhere('channel.isPublic = false')
       .getMany();
-
     return dms.map(dm => {
       const otherMember = dm.members.find(member => member.idUser !== userId);
       return {
@@ -245,18 +225,12 @@ export class ChatService {
       where: { idChannel: channelId, type: 'dm' },
       relations: ['members']
     });
-
     if (!dm) throw new NotFoundException('DM no encontrado');
-
-    // Verificar que el usuario es miembro del DM
+    //Verificar que el usuario es miembro del DM
     const isMember = dm.members.some(member => member.idUser === userId);
     if (!isMember) throw new NotFoundException('No tienes acceso a este DM');
-
-    // Eliminar el DM
+    //Eliminar el DM
     await this.channelRepository.remove(dm);
-    
     return { message: 'Chat privado eliminado correctamente' };
   }
 }
-
-

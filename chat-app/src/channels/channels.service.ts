@@ -1,4 +1,5 @@
 //src/channels/channels.service.ts
+//Servicio encargardo de manejar la logica relacionada con los canales/grupos
 //Importaciones necesarias
 import { Injectable, NotFoundException, ForbiddenException  } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,7 +7,6 @@ import { Not, Repository } from 'typeorm';
 import { Channel } from 'src/entities/channels.entity';
 import { User } from 'src/entities/user.entity';
 
-//Servicio para manejar la lógica relacionada con los canales
 @Injectable()
 export class ChannelsService {
     constructor(
@@ -20,34 +20,21 @@ export class ChannelsService {
     Crear un canal
     ============================================================*/
     async createChannel(name: string, creatorId: number, description?: string, isPublic = true, type: 'channel' | 'dm' = 'channel') {
-        const creator = await this.userRepository.findOne({ where: { idUser: creatorId }, select: ['idUser', 'username', 'email'] });
-        // ✅ DEBUG DETALLADO
+        const creator = await this.userRepository.findOne({ where: { idUser: creatorId }, select: ['idUser', 'username', 'email'] }); //Valida que el creador exista
         if (!creator) {
             console.error('❌ Usuario no encontrado con ID:', creatorId);
             throw new NotFoundException('Usuario no encontrado');
         }
-
         console.log('✅ Usuario creador encontrado:', {
             id: creator.idUser,
             username: creator.username
         });
-
-        // ✅ VERIFICACIÓN MEJORADA: Rechazar explícitamente DMs
+        //Rechazar explícitamente DMs
         if (type === 'dm') {
             throw new ForbiddenException('Use el endpoint /chat/private para crear DMs');
         }
-
-        // ✅ FORZAR TIPO CHANNEL - Ignorar cualquier otro valor
+        //FORZAR TIPO CHANNEL - Ignorar cualquier otro valor
         const channelType: 'channel' = 'channel';
-
-        console.log('📝 Creando canal:', {
-            name,
-            isPublic,
-            type: channelType, //Siempre será 'channel'
-            creatorId: creator.idUser,
-            creatorUsername: creator.username
-        });
-
         //Verificar solo para canales públicos con mismo nombre
         if (isPublic) {
             const existing = await this.channelrepository.findOne({ 
@@ -55,7 +42,6 @@ export class ChannelsService {
             });
             if (existing) throw new ForbiddenException('Ya existe un canal con ese nombre');
         }
-
         //CREAR CON TIPO FIJO
         const channel = this.channelrepository.create({
             name,
@@ -65,16 +51,14 @@ export class ChannelsService {
             type: channelType, 
             members: [creator],
         });
-
+        //Guardar el canal
         const savedChannel = await this.channelrepository.save(channel);
-        
         console.log('✅ Canal creado exitosamente:', {
             id: savedChannel.idChannel,
             name: savedChannel.name,
             type: savedChannel.type,
             isPublic: savedChannel.isPublic
         });
-
         return savedChannel;
     }
 
@@ -82,6 +66,7 @@ export class ChannelsService {
     Obtener canales públicos con información de membresía del usuario
     ============================================================*/
     async getPublicChannelsWithMembership(userId: number) {
+        //Informacion del canal
         const publicChannels = await this.channelrepository.find({
             where: { 
                 isPublic: true, 
@@ -93,8 +78,8 @@ export class ChannelsService {
 
         // Formatear respuesta con información de membresía
         return publicChannels.map(channel => {
-            const isMember = channel.members.some(member => member.idUser === userId);
-            
+            const isMember = channel.members.some(member => member.idUser === userId); //Obtener los miembros
+            //Retornar estructura del canal
             return {
                 idChannel: channel.idChannel,
                 name: channel.name,
@@ -120,30 +105,23 @@ export class ChannelsService {
             where: { idChannel: channelId },
             relations: ['creator', 'members'],
         });
-
         if (!channel) {
             throw new NotFoundException('Canal no encontrado');
-        }
-
-        if (!channel.isPublic) {
+        }else if(!channel.isPublic) {
             throw new ForbiddenException('No puedes unirte a un canal privado sin invitación');
         }
-
         // Verificar si el usuario ya es miembro
         const isMember = channel.members.some(member => member.idUser === userId);
         if (isMember) {
             throw new ForbiddenException('Ya eres miembro de este canal');
         }
-
         // Obtener el usuario
         const user = await this.userRepository.findOne({ 
             where: { idUser: userId } 
         });
-
         if (!user) {
             throw new NotFoundException('Usuario no encontrado');
         }
-
         // Agregar usuario al canal
         channel.members.push(user);
         const updatedChannel = await this.channelrepository.save(channel);
@@ -201,8 +179,7 @@ export class ChannelsService {
                 name: member.name
             })),
             membersCount: channel.members.length,
-            createdAt: channel.createdAt,
-            unreadCount: 0 // Puedes implementar lógica de mensajes no leídos
+            createdAt: channel.createdAt
         }));
     }
 
@@ -217,7 +194,6 @@ export class ChannelsService {
         });
     }
 
-    
     /*============================================================
     Obtener un canal por ID
     ============================================================*/
@@ -234,34 +210,25 @@ export class ChannelsService {
     Actualizar canal (nombre, descripcion, visibilidad)
     Solo el creador puede hacerlo
     ============================================================*/
-    async updateChannel(
-        idChannel: number,
-        data: { name?: string; description?: string; isPublic?: boolean },
-        idUser: number, 
-        ) {
+    async updateChannel(idChannel: number,data: { name?: string; description?: string; isPublic?: boolean }, idUser: number) {
         //Cargar el canal con todas sus relaciones
         const channel = await this.channelrepository.findOne({
             where: { idChannel },
             relations: ['creator', 'members'],
         });
-
         if (!channel) throw new NotFoundException('Canal no encontrado');
-
         //Solo el creador puede editar
         if (channel.creator.idUser !== idUser) {
             throw new ForbiddenException('Solo el creador puede modificar este canal');
         }
-
         //Actualizar solo los campos enviados
         if(data.name !== undefined) channel.name = data.name;
         if(data.description !== undefined) channel.description = data.description;
         if(data.isPublic !== undefined) channel.isPublic = data.isPublic;
-
         //Asegurar que el creador siempre se mantenga vinculado
         if (!channel.members.some((m) => m.idUser === channel.creator.idUser)) {
             channel.members.push(channel.creator);
         }
-
         //Guardar cambios sin perder relaciones
         return await this.channelrepository.save(channel);
     }
@@ -278,25 +245,16 @@ export class ChannelsService {
                 where: { idChannel },
                 relations: ['creator', 'members'],
             });
-            
-            if (!channel) {
-            throw new NotFoundException(`Canal con ID ${idChannel} no encontrado`);
-            }
-
+            if (!channel) throw new NotFoundException(`Canal con ID ${idChannel} no encontrado`);
             // Verificar permisos según el tipo de canal
             if (channel.isPublic) {
-            //Para canales públicos: solo el creador puede eliminar
-            if (channel.creator.idUser !== idUser) {
-                throw new ForbiddenException('Solo el creador puede eliminar este grupo');
-            }
+                //Para canales públicos: solo el creador puede eliminar
+                if (channel.creator.idUser !== idUser) throw new ForbiddenException('Solo el creador puede eliminar este grupo');
             } else {
-            //Para DM: verificar que el usuario es miembro del DM
-            const isMember = channel.members.some(member => member.idUser === idUser);
-            if (!isMember) {
-                throw new ForbiddenException('No eres miembro de este chat privado');
+                //Para DM: verificar que el usuario es miembro del DM
+                const isMember = channel.members.some(member => member.idUser === idUser);
+                if (!isMember) throw new ForbiddenException('No eres miembro de este chat privado');
             }
-            }
-
             //Eliminar el canal
             await this.channelrepository.delete(idChannel);
             return { message: `Canal "${channel.name}" eliminado correctamente` };
@@ -306,7 +264,6 @@ export class ChannelsService {
         }
     }
 
-
     /*============================================================
     Agregar todos los usuarios a un canal publico
     ============================================================*/
@@ -315,19 +272,13 @@ export class ChannelsService {
             where: {idChannel: channelId},
             relations: ['members']
         });
-
-        if(!channel){
-            throw new NotFoundException('Canal no encontrado')
-        }
+        if(!channel) throw new NotFoundException('Canal no encontrado')
         //Obtener todos los usuarios
         const allUsers = await this.userRepository.find();
-
         //Agregar todos los usuarios al canal (Evitar duplicados)
         const existingMemberIds = channel.members.map(member => member.idUser);
         const newUsers = allUsers.filter(user => !existingMemberIds.includes(user.idUser));
-
         channel.members = [...channel.members, ...newUsers]
-
         await this.channelrepository.save(channel)
     }
 
@@ -340,12 +291,10 @@ export class ChannelsService {
             relations: ['members', 'creator'],
         });
         if (!channel) throw new NotFoundException('Canal no encontrado');
-
         if (channel.isPublic && channel.type === 'channel') {
             const allUsers = await this.userRepository.find({
                 where: { idUser: Not(currentUserId) }
-            });
-            
+            });       
             return {
                 channel,
                 currentMembers: channel.members,
@@ -360,7 +309,6 @@ export class ChannelsService {
                     memberIds: channel.members.map(m => m.idUser)
                 })
                 .getMany();
-
             return {
                 channel,
                 currentMembers: channel.members,
@@ -377,20 +325,16 @@ export class ChannelsService {
             where: { idChannel },
             relations: ['members'],
         });
-        if (!channel) throw new NotFoundException('Canal no encontrado');
-        
+        if (!channel) throw new NotFoundException('Canal no encontrado');    
         const user = await this.userRepository.findOne({ where: { username } });
         if (!user) throw new NotFoundException('Usuario no encontrado');
-
         const alreadyMember = channel.members.some((u) => u.idUser === user.idUser);
         if (alreadyMember) {
         throw new ForbiddenException('El usuario ya pertenece a este canal');
         }
-
         channel.members.push(user);
         await this.channelrepository.save(channel);
-        
-        // ✅ Devolver el usuario agregado en lugar del canal
+        //Devolver el usuario agregado en lugar del canal
         return user;
     }
 
@@ -403,13 +347,10 @@ export class ChannelsService {
             relations: ['members'],
         });
         if (!channel) throw new NotFoundException('Canal no encontrado');
-
         const userExists = channel.members.some((u) => u.idUser === userId);
         if (!userExists) throw new ForbiddenException('El usuario no pertenece a este canal');
-
         channel.members = channel.members.filter((u) => u.idUser !== userId);
         await this.channelrepository.save(channel);
-
         return { message: `Usuario eliminado del canal "${channel.name}"` };
     }
 
@@ -422,25 +363,18 @@ export class ChannelsService {
             relations: ['members'],
         });
         if (!channel) throw new NotFoundException('Canal no encontrado');
-
         const user = await this.userRepository.findOne({ where: { idUser } });
-        if (!user) throw new NotFoundException('Usuario no encontrado');
-
         const isMember = channel.members.some((m) => m.idUser === idUser);
+        if (!user) throw new NotFoundException('Usuario no encontrado');
         if (!isMember) throw new ForbiddenException('No perteneces a este canal');
-
-        if (channel.type === 'dm') {
-            throw new ForbiddenException('No puedes salir de un chat privado. Debes eliminarlo completamente.');
-        }
-
+        if (channel.type === 'dm') throw new ForbiddenException('No puedes salir de un chat privado. Debes eliminarlo completamente.');
         channel.members = channel.members.filter((m) => m.idUser !== idUser);
         await this.channelrepository.save(channel);
-
+        //Si es privado y queda vacio, eliminar el canal
         if (!channel.isPublic && channel.members.length === 0) {
             await this.channelrepository.remove(channel);
             return { message: 'Saliste del canal. El canal fue eliminado porque quedó vacío.' };
         }
-
         return { message: 'Has salido del canal correctamente' };
     }
 }

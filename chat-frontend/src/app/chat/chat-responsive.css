@@ -35,41 +35,27 @@ CHAT RESPONSIVO
 
   /* --- CHAT ACTIVO --- */
   .responsive-chat-layout.has-active-chat .chat-window-container {
-
     display: flex !important;
-
     flex-direction: column !important;
-
     position: fixed !important;
-
     top: 0;
-
     left: 0;
-
     width: 100vw !important;
-
     height: 100dvh !important;
-
     background: white;
-
     z-index: 1200;
-
     overflow: hidden !important;
-
   }
 
 
 
   .responsive-chat-layout:not(.has-active-chat) .chat-window-container {
-
     display: none !important;
-
   }
 
 
 
   /* --- HEADER FIJO --- */
-
   .chat-header {
     position: fixed !important;
     top: 0;
@@ -127,9 +113,7 @@ CHAT RESPONSIVO
 }
 
 
-
 /* DESKTOP */
-
 @media (min-width: 769px) {
   .back-to-responsive {
     display: none !important;

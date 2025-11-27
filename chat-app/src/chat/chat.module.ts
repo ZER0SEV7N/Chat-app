@@ -1,8 +1,10 @@
+//src/chat/chat.module.ts
+//Módulo principal del sistema de chat
+//Este módulo agrupa el WebSocket Gateway, el controlador REST
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
-import { JwtModule } from '@nestjs/jwt';
 import { Message } from 'src/entities/message.entity';
 import { Channel } from 'src/entities/channels.entity';
 import { User } from 'src/entities/user.entity';
@@ -13,7 +15,7 @@ import { ChannelsService } from 'src/channels/channels.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Message, Channel, User]), 
+    TypeOrmModule.forFeature([Message, Channel, User]), //Entidades a utilizar
     AuthModule,
     MessageModule, 
   ],

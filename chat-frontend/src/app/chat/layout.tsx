@@ -1,6 +1,6 @@
 //chat-frontend/src/app/chat/layout.tsx
-// Layout del chat
-// Importaciones necesarias:
+//Layout del chat
+//Importaciones necesarias:
 import type { Metadata } from "next"; // Importar Metadata desde next
 import { Geist, Geist_Mono } from "next/font/google"; // Importar fuentes de Google
 import Providers from "./provider";

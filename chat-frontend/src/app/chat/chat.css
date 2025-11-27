@@ -270,12 +270,24 @@
   gap: 6px; /* ✅ Reducido de 8px */
 }
 
-/* Indicador de estado en DMs */
 .status-indicator {
-  font-size: 0.7rem;
-  vertical-align: middle;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
 }
 
+.status-indicator.online {
+    background: #10b98120;
+    color: #10b981;
+    border: 1px solid #10b98140;
+}
+
+.status-indicator.offline {
+    background: #6b728020;
+    color: #6b7280;
+    border: 1px solid #6b728040;
+}
 
 .channel-type {
   color: #718096;
@@ -1164,4 +1176,40 @@
     flex-direction: column;
     gap: 2px;
   }
+}
+
+/* Agregar a src/app/chat/chat.css */
+.info-popover-container {
+    position: relative;
+    display: inline-block;
+}
+
+.info-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.info-btn.active {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
 }

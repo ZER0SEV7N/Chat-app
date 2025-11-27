@@ -25,67 +25,71 @@ interface User {
 // Componente principal
 export default function AddUserModal({ onClose, onChannelCreated, channels, onChannelSelected }: AddUserModalProps) {
   // Estados del componente
-  const [username, setUsername] = useState(''); // Para búsqueda manual
-  const [isLoading, setIsLoading] = useState(false); // Estado de carga general
-  const [allUsers, setAllUsers] = useState<User[]>([]); // Todos los usuarios del sistema
-  const [usersLoading, setUsersLoading] = useState(true); // Estado de carga de usuarios
-  const [searchTerm, setSearchTerm] = useState(''); // Término de búsqueda
-  const [creatingUser, setCreatingUser] = useState<string | null>(null); // Usuario que se está creando
+  const [username, setUsername] = useState(''); //Para búsqueda manual
+  const [isLoading, setIsLoading] = useState(false); //Estado de carga general
+  const [allUsers, setAllUsers] = useState<User[]>([]); //Todos los usuarios del sistema
+  const [usersLoading, setUsersLoading] = useState(true); //Estado de carga de usuarios
+  const [searchTerm, setSearchTerm] = useState(''); //Término de búsqueda
+  const [creatingUser, setCreatingUser] = useState<string | null>(null); //Usuario que se está creando
 
-  // Obtener el usuario actual del localStorage
+  //Obtener el usuario actual del localStorage
   const currentUser = localStorage.getItem('username');
 
-  /**
-   * Función para encontrar un DM existente entre el usuario actual y el usuario objetivo
-   * @param targetUsername - Usuario con el que se quiere chatear
-   * @returns El canal DM existente o null si no existe
-   */
-  const findExistingDM = (targetUsername: string): any | null => {
-    const currentUser = localStorage.getItem('username');
-    if (!currentUser || !targetUsername) return null;
+  /*======================================================================================
+    Función para encontrar un DM existente entre el usuario actual y el usuario objetivo
+  ======================================================================================*/
+const findExistingDM = (targetUsername: string): any | null => {
+  const currentUser = localStorage.getItem('username');
+  if (!currentUser || !targetUsername) return null; 
+  const existingDM = channels.find(ch => {
+    // Solo buscar en canales DM
+    if (!ch || ch.type !== 'dm') return false;     
+
+    // Verificar por targetUsername si existe esta propiedad
+    if (ch.targetUsername && ch.targetUsername === targetUsername) {
+      return true;
+    }
     
-    return channels.find(ch => {
-      // Solo buscar en canales no públicos (DMs)
-      if (!ch || ch.type !== 'dm') return false;
+    // Verificar por nombre del canal - DEBE INCLUIR AL USUARIO ACTUAL
+    if (ch.name && typeof ch.name === 'string' && ch.name.startsWith('DM ')) {
+      const cleanName = ch.name.replace('DM ', '');
+      const usernames = cleanName.split('-');
+            
+      // El DM debe contener AL USUARIO ACTUAL Y al target
+      const hasCurrentUser = usernames.includes(currentUser);
+      const hasTargetUser = usernames.includes(targetUsername);
       
-      console.log('🔍 Verificando canal:', ch.name, 'para usuario actual:', currentUser, 'y target:', targetUsername);
-      
-      // Verificar por targetUsername si existe esta propiedad
-      if (ch.targetUsername && ch.targetUsername === targetUsername) {
-        console.log('✅ Encontrado por targetUsername');
+      if (hasCurrentUser && hasTargetUser) {
+        console.log('✅ Encontrado DM válido que incluye al usuario actual');
+        return true;
+      } else if (hasTargetUser && !hasCurrentUser) {
+        console.log('❌ DM encontrado pero NO incluye al usuario actual - IGNORAR');
+        return false;
+      }
+    }
+    if (ch.members && Array.isArray(ch.members)) {
+      const memberUsernames = ch.members.map((member: any) => member.username);
+      console.log('👥 Miembros del canal:', memberUsernames);   
+      const hasCurrentUser = memberUsernames.includes(currentUser);
+      const hasTargetUser = memberUsernames.includes(targetUsername);     
+      if (hasCurrentUser && hasTargetUser) {
+        console.log('✅ Encontrado DM por lista de miembros');
         return true;
       }
-      
-      // Verificar por nombre del canal - DEBE INCLUIR AL USUARIO ACTUAL
-      if (ch.name && typeof ch.name === 'string' && ch.name.startsWith('DM ')) {
-        const cleanName = ch.name.replace('DM ', '');
-        const usernames = cleanName.split('-');
-        
-        // VERIFICACIÓN CRÍTICA: El DM debe contener AL USUARIO ACTUAL Y al target
-        const hasCurrentUser = usernames.includes(currentUser);
-        const hasTargetUser = usernames.includes(targetUsername);
-        
-        if (hasCurrentUser && hasTargetUser) {
-          console.log('✅ Encontrado DM válido que incluye al usuario actual');
-          return true;
-        } else if (hasTargetUser && !hasCurrentUser) {
-          console.log('❌ DM encontrado pero NO incluye al usuario actual - IGNORAR');
-          return false;
-        }
-      }
-      
-      return false;
-    });
-  };
+    }
+    console.log('❌ No coincide con ningún criterio');
+    return false;
+  });
+  return existingDM;
+};
 
-  /**
-   * Efecto para cargar todos los usuarios del sistema al montar el componente
-   */
+  /*======================================================================================
+     Efecto para cargar todos los usuarios del sistema al montar el componente
+  ======================================================================================*/
   useEffect(() => {
     const fetchAllUsers = async () => {
       const token = localStorage.getItem('token');
-      if (!token) return;
-      
+      if (!token) return;    
       try {
         const res = await fetch(`${API_URL}/chat/users`, {
           headers: {
@@ -110,14 +114,13 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
     fetchAllUsers();
   }, []);
 
-  /**
+  /*======================================================================================
    * Función principal para manejar la creación o selección de un DM
-   * @param selectedUsername - Usuario seleccionado (opcional para búsqueda manual)
-   */
+  ======================================================================================*/
   const handleAdd = async (selectedUsername?: string) => {
     const userToAdd = selectedUsername || username;
     
-    // Validaciones básicas
+    //Validaciones básicas
     if (!userToAdd.trim()) {
       toast.error('Por favor ingresa un nombre de usuario');
       return;
@@ -129,22 +132,20 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
       return;
     }
 
-    // VERIFICACIÓN: Buscar DM existente que incluya al usuario actual
+    //Buscar DM existente que incluya al usuario actual
     const existingDM = findExistingDM(userToAdd);
     if (existingDM) {
       console.log('🔍 DM existente encontrado que incluye al usuario actual:', existingDM);
-      // Si existe, redirigir al DM existente
+      //Si existe, redirigir al DM existente
       onChannelSelected(existingDM);
       onClose();
       return;
     }
-
     console.log('🆕 Creando NUEVO DM con:', userToAdd);
     setIsLoading(true);
     setCreatingUser(userToAdd);
-
     try {
-      // Llamada al API para crear el DM
+      //Llamada al API para crear el DM
       const res = await fetch(`${API_URL}/chat/private`, {
         method: 'POST',
         headers: {
@@ -157,10 +158,10 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
       if (res.ok) {
         const data = await res.json();
         console.log('📨 Respuesta del backend:', data);
-        
         // El backend devuelve {channel: {...}, displayName: '...'}
         if (data && data.channel) {
           onChannelCreated(data.channel);
+          //Cerrar el modal ANTES de llamar a onChannelCreated
         } else {
           console.error('❌ Estructura inesperada:', data);
           toast.error('Error: Respuesta inesperada del servidor');
@@ -180,10 +181,9 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
     }
   };
 
-  /**
+  /*======================================================================================
    * Manejar eventos de teclado en el input
-   * @param e - Evento del teclado
-   */
+  ======================================================================================*/
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleAdd();
@@ -192,7 +192,7 @@ export default function AddUserModal({ onClose, onChannelCreated, channels, onCh
     }
   };
 
-  // Filtrar usuarios según el término de búsqueda (excluyendo al usuario actual)
+  //Filtrar usuarios según el término de búsqueda (excluyendo al usuario actual)
   const filteredUsers = allUsers.filter(user => 
     user.username !== currentUser &&
     (user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||

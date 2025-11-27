@@ -1,13 +1,8 @@
 //src/auth/jwt.guard.ts
-// ============================================================
-// 📁 JwtGuard - Middleware de autenticación por JWT
-// ------------------------------------------------------------
-// Este guard se encarga de verificar que la solicitud HTTP
-// contenga un token JWT válido en el encabezado Authorization.
-// ============================================================
+//Este guard se encarga de verificar que la solicitud HTTP
+//contenga un token JWT válido en el encabezado Authorization.
 //Importaciones necesarias:
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { JwtService } from '@nestjs/jwt';
 //Definicion del JwtGuard
 @Injectable()
@@ -42,6 +37,7 @@ export class JwtGuard implements CanActivate {
         throw new UnauthorizedException('Token inválido o expirado');
       }
     }
+ 
     //Caso Socket.IO
     if(type === 'ws'){
       const client = context.switchToWs().getClient();

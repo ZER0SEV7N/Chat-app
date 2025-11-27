@@ -1,4 +1,6 @@
-// src/channels/channels.controller.ts
+//src/channels/channels.controller.ts
+//Controlador de canales, maneja todos los endspoints para la gestion de canales
+//Su principal funcionalidad es un CRUD de canales
 //Importaciones necesarias
 import { 
   Controller, Get, 
@@ -9,88 +11,83 @@ import {
 import { ChannelsService } from './channels.service';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
-import { JwtGuard } from 'src/auth/jwt.guard';
+import { JwtGuard } from 'src/auth/jwt.guard'; //Utilizar el guard
 
 @Controller('channels')
 export class ChannelsController {
   constructor(
     private readonly channelsService: ChannelsService,
-    private readonly jwtService: JwtService, // ✅ Inyectar JwtService
+    private readonly jwtService: JwtService, //Inyectar JwtService
   ) {}
 
   /*============================================================
-  Obtener todos los canales públicos CON INFORMACIÓN DE MEMBRESÍA
+   *GET /channels/public
+   *Obtiene todos los canales públicos junto con la información
+   *de si el usuario autenticado pertenece o no a cada canal.
   ============================================================*/
   @UseGuards(JwtGuard)
   @Get('public')
   async getPublicChannels(@Req() req) {
     const userId = req.user?.idUser;
     if (!userId) throw new UnauthorizedException('Usuario no autenticado');
-    
     return this.channelsService.getPublicChannelsWithMembership(userId);
   }
+
   /*============================================================
-  Unirse a un canal público
+   *POST /channels/:id/join
+   *Permite al usuario autenticado unirse a un canal público.
   ============================================================*/
   @UseGuards(JwtGuard)
   @Post(':id/join')
   async joinChannel(@Param('id') id: number, @Req() req) {
     const userID = req.user?.idUser;
     if (!userID) throw new UnauthorizedException('Usuario no autenticado');
-    
     return this.channelsService.joinPublicChannel(id, userID);
   }
 
   /*============================================================
-  Obtener canales del usuario actual (para sidebar)
+   *GET /channels/user/channels
+   *Obtiene todos los canales del usuario autenticado.
+   *Usado para la barra lateral del ChatList.
   ============================================================*/
   @UseGuards(JwtGuard)
   @Get('user/channels')
   async getUserChannels(@Req() req) {
     const userId = req.user?.idUser;
     if (!userId) throw new UnauthorizedException('Usuario no autenticado');
-
     return this.channelsService.getUserChannels(userId);
   }
 
   /*============================================================
-  Crear un canal
-  ============================================================*/
+   *POST /channels/create
+   *Crea un nuevo canal asociado al usuario autenticado.
+  ===========================================================*/
   @UseGuards(JwtGuard)
-  @Post()
-  async createChannel(
-      @Req() req,
-      @Body() body: { name: string; description?: string;  isPublic?: boolean; type?: string },
+  @Post('create')
+  async createChannel(@Req() req, @Body() body: { 
+    name: string; description?: string;  isPublic?: boolean; type?: string },
   ) {
-      const userId = req.user?.idUser;
+      const userId = req.user?.idUser; //Obtener el Id del usuario
       if (!userId) throw new UnauthorizedException('Usuario no autenticado');
-      console.log('🎯 Solicitud de creación de canal:', {
-          name: body.name,
-          isPublic: body.isPublic,
-          requestedType: body.type,
-          userId,
-      });
-
       const result = await this.channelsService.createChannel(
           body.name,
           userId,  
           body.description,
           body.isPublic ?? true,
           'channel',
-      );
-
+      ); //Crear un canal con los parametros que se envian
       console.log('✅ Respuesta del servicio:', {
           id: result.idChannel,
           name: result.name,
           type: result.type,
           isPublic: result.isPublic
       });
-
       return result;
   }
 
   /*============================================================
-  Obtener un canal por su ID
+   *GET /channels/:id
+   *Obtiene la información de un canal a partir de su ID.
   ============================================================*/
   @UseGuards(JwtGuard)
   @Get(':id')
@@ -99,22 +96,20 @@ export class ChannelsController {
   }
 
   /*============================================================
-  Eliminar un canal por su ID
+   *DELETE /channels/:id
+   *Elimina un canal. Solo el creador puede hacerlo.
+   *Verifica manualmente el token en la cabecera Authorization.
   ============================================================*/
   @UseGuards(JwtGuard)
   @Delete(':id')
-  async deleteChannel(
-    @Param('id') id: number, 
-    @Req() req: Request,
-  ) {
+  async deleteChannel(@Param('id') id: number, @Req() req: Request) {
     //Obtener el usuario del token JWT
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       throw new UnauthorizedException('Falta el token de autorización');
     }
-    
     const token = authHeader.split(' ')[1];
-    const payload = this.jwtService.verify(token);
+    const payload = this.jwtService.verify(token); //Verificar el token
     const userId = payload.sub; // ID del usuario autenticado
 
     if (!userId) {
@@ -125,7 +120,9 @@ export class ChannelsController {
   }
   
   /*============================================================
-  Actualizar un canal
+   *PATCH /channels/:id
+   *Actualiza los datos de un canal (nombre, descripción, etc.).
+   *Solo permitido para el propietario del canal.
   ============================================================*/
   @UseGuards(JwtGuard)
   @Patch(':id')
@@ -152,7 +149,8 @@ export class ChannelsController {
   }
 
   /*============================================================
-  Obtener los usuarios de un canal
+   *GET /channels/:id/manage-users
+   *Obtiene los usuarios de un canal para su administración.
   ============================================================*/
   @UseGuards(JwtGuard)
   @Get(':id/manage-users')
@@ -170,9 +168,10 @@ export class ChannelsController {
     return this.channelsService.getUsersForChannel(id, userId);
   }
 
-  /*=============================================================
-  Agregar un usuario a un canal
-  ==============================================================*/
+  /*============================================================
+   *POST /channels/:id/add-user
+   *Agrega un usuario al canal mediante su nombre de usuario.
+  ============================================================*/
   @UseGuards(JwtGuard)
   @Post(':id/add-user')
   async addUserToChannel(
@@ -183,9 +182,11 @@ export class ChannelsController {
     return this.channelsService.addUserToChannel(id, body.username);
   }
 
-  /*=============================================================
-  Expulsar (eliminar) un usuario del canal
-  ==============================================================*/
+  /*============================================================
+   *DELETE /channels/:id/remove-user/:userId
+   *Expulsa a un usuario del canal.
+   *Solo permitido para usuarios con rol adecuado.
+  ============================================================*/
   @UseGuards(JwtGuard)
   @Delete(':id/remove-user/:userId')
   async removeUserFromChannel(
@@ -195,9 +196,10 @@ export class ChannelsController {
     return this.channelsService.removeUserFromChannel(id, userId);
   }
 
-  /*=============================================================
-  Salir de un canal
-  ==============================================================*/
+  /*============================================================
+   *POST /channels/:id/leave
+   *Permite al usuario autenticado salir del canal.
+  ============================================================*/
   @UseGuards(JwtGuard)
   @Post(':id/leave')
   async leaveChannel(@Param('id') id: number, @Req() req) {

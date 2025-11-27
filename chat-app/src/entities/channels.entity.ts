@@ -36,7 +36,7 @@ export class Channel {
       inverseJoinColumn: { name: "usersIdUser", referencedColumnName: "idUser" },
     })
     members: User[];
-
+    //Realizacion uno a muchos con el creador del canal (un usuario puede crear multiples canales)
     @ManyToOne(() => User, (user) => user.createdChannels)
     @JoinColumn({ name: "creatorId" })
     creator: User;

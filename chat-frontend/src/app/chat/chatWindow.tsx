@@ -3,7 +3,7 @@
 //Importaciones necesarias:
 import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "emoji-picker-react"; //Funcion para el selector de emojis 
-import { Search, MoreVertical, Edit2, Trash2, Check, X, User, Edit3, ArrowLeft} from "lucide-react"; //Iconos de Lucide
+import { Search, MoreVertical, Edit2, Trash2, Check, X, User, Edit3, ArrowLeft, MessageCircle, Info} from "lucide-react"; //Iconos de Lucide
 import socket from "../../lib/socket"; //Instancia del socket.io
 import { useBackButton } from "./Responsive/useBackButton"; //Hook para el manejo del boton de retroceso en el movil
 import { Socket } from "socket.io-client";
@@ -32,6 +32,8 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
   const [messages, setMessages] = useState<any[]>([]); //Lista de mensajes
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]); //Usuarios conectados
   const [input, setInput] = useState(""); //Texto del input de envío
+  const [isInfoPopoverOpen, setIsInfoPopoverOpen] = useState(false); //Mostrar miniventana con la informacion del usuario
+  const infoButtonRef = useRef<HTMLButtonElement>(null); //Estado para el popover de informacion
   const [showPicker, setShowPicker] = useState(false); //Mostrar/ocultar selector de emojis
   const [showSearch, setShowSearch] = useState(false); //Mostrar/ocultar barra de búsqueda
   const [searchTerm, setSearchTerm] = useState(""); //Texto de búsqueda
@@ -40,7 +42,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
   const [menuOpen, setMenuOpen] = useState<string | null>(null); //Menú contextual abierto (⋮)
   const [username, setUsername] = useState<string>(""); //Nombre del usuario actual - TIPO CORREGIDO
 
-// Estados para el panel de información de DM
+  //Estados para el panel de información de DM
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
   const [selectedDMUser, setSelectedDMUser] = useState<any>(null);
 
@@ -59,7 +61,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
   //Hook para cerrar el chat con escape en Desktop
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isMobile && !onEditChannel && onBackToList) {
+      if (e.key === "Escape" && !isMobile && onBackToList) {
         onBackToList();
       }
     };
@@ -71,7 +73,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [onBackToList, isMobile]);
-  // ✅ FUNCIÓN PARA OBTENER EL OTRO USUARIO EN DM
+  //FUNCIÓN PARA OBTENER EL OTRO USUARIO EN DM
   const getOtherUserInDM = () => {
     if (channel?.type !== 'dm' || !channel.members) return null;
     
@@ -84,14 +86,22 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
     );
   };
 
-  //Funcion para abrir el panel de informacion DM
-  const handleOpenUserInfo = () => {
-    const otherUser = getOtherUserInDM();
-    if(otherUser){
-      setSelectedDMUser(otherUser);
-      setIsUserPanelOpen(true);
+ // Cerrar popover al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (infoButtonRef.current && !infoButtonRef.current.contains(event.target as Node)) {
+        setIsInfoPopoverOpen(false);
+      }
+    };
+
+    if (isInfoPopoverOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
-  };
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isInfoPopoverOpen]);
 
   //===============================================================
   //CONFIGURACIÓN INICIAL: Usuario, Audio y Eventos de Foco
@@ -264,6 +274,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
     m.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const groupedMessages = groupMessagesByDay(filteredMessages);
+  const otherUser = getOtherUserInDM();
 
   //===============================================================
   //RENDER PRINCIPAL
@@ -306,18 +317,30 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
 
         {/* Acciones del encabezado */}
         <div className="chat-header-actions">
-
-           {/* ✅ BOTÓN DE INFORMACIÓN SOLO PARA DM */}
+          {/* SOLO EN DM: Botón de información con popover */}
           {channel.type === 'dm' && (
-            <button
-              className="user-info-btn"
-              title="Información del contacto"
-              onClick={handleOpenUserInfo}
-            >
-              <User size={18} />
-            </button>
-          )}
+            <div className="info-popover-container">
+              <button
+                ref={infoButtonRef}
+                className={`info-btn ${isInfoPopoverOpen ? 'active' : ''}`}
+                title="Información del contacto"
+                onClick={() => setIsInfoPopoverOpen(!isInfoPopoverOpen)}
+              >
+                <Info size={20} />
+              </button>
 
+              {/* Popover de información */}
+              {isInfoPopoverOpen && (
+                <UserInfoPanel 
+                  user={getOtherUserInDM()} 
+                  channel={channel}
+                  onlineUsers={onlineUsers}
+                  onClose={() => setIsInfoPopoverOpen(false)}
+                />
+              )}
+            </div>
+          )}
+          
           {/* Solo el creador puede editar el canal */}
           {channel.creator?.username === username && channel.type === 'channel' &&(
             <button
@@ -337,7 +360,7 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
           >
             <Search size={20} />
           </button>
-        </div>
+          </div>
       </div>
       {/* ================= BARRA DE BÚSQUEDA ================= */}
       {showSearch && (
@@ -480,11 +503,6 @@ export default function ChatWindow({ channel, onEditChannel, onBackToList  }: Pr
           Enviar
         </button>
       </div>
-        <UserInfoPanel 
-        user={selectedDMUser}
-        isOpen={isUserPanelOpen}
-        onClose={() => setIsUserPanelOpen(false)}
-      />
     </div>
   );
 }

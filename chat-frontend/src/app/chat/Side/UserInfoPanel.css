@@ -1,201 +1,236 @@
-/* src/app/chat/Side/UserInfoPanel.css */
-.user-info-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
+/* src/app/chat/Side/UserInfoPopover.css - Estilos corregidos */
+.user-info-popover {
+    position: absolute;
+    top: 100%;
     right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.user-info-modal-content {
-    background: white;
+    margin-top: 8px;
+    background: #ffffff; /* Fondo sólido blanco */
+    border: 1px solid #e1e5e9; /* Borde definido */
     border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    max-height: 80vh;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    width: 320px;
+    max-height: 500px;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    animation: modalSlideIn 0.2s ease-out;
+    z-index: 1000;
+    animation: popoverSlideDown 0.2s ease-out;
 }
 
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9) translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
+/* Para modo oscuro */
+@media (prefers-color-scheme: dark) {
+    .user-info-popover {
+        background: #1e1e1e;
+        border-color: #444;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 }
 
-.user-info-modal-header {
+/* O usando variables CSS si las tienes definidas */
+.user-info-popover {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e1e5e9);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    width: 320px;
+    max-height: 500px;
+    overflow: hidden;
+    z-index: 1000;
+    animation: popoverSlideDown 0.2s ease-out;
+}
+
+.user-info-popover-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #e1e5e9;
-    background: #f8f9fa;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color, #e1e5e9);
+    background: var(--bg-secondary, #f8f9fa);
 }
 
-.user-info-modal-header h3 {
+.user-info-popover-header h3 {
     margin: 0;
-    font-size: 1.1rem;
-    color: #2d3748;
+    font-size: 14px;
     font-weight: 600;
+    color: var(--text-primary, #000000);
 }
 
-.modal-close {
+.popover-close {
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 18px;
+    color: var(--text-secondary, #666);
     cursor: pointer;
-    color: #6b7280;
-    padding: 0;
-    width: 30px;
-    height: 30px;
+    padding: 4px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
 }
 
-.modal-close:hover {
-    background: #e5e7eb;
-    color: #374151;
+.popover-close:hover {
+    background: var(--bg-hover, #f0f0f0);
+    color: var(--text-primary, #000);
 }
 
-.user-info-modal-body {
-    padding: 20px;
+.user-info-popover-content {
+    padding: 0;
+    max-height: 400px;
     overflow-y: auto;
+    background: var(--bg-primary, #ffffff);
 }
 
-/* ✅ ACTUALIZADO: Sección de detalles sin avatar */
-.user-details {
+/* Estado del usuario */
+.user-status-popover {
+    padding: 16px 16px 8px;
     text-align: center;
-    margin-bottom: 20px;
-    padding: 20px 0;
-    border-bottom: 1px solid #e1e5e9;
+    background: var(--bg-primary, #ffffff);
 }
 
-.user-name {
-    font-size: 1.4rem;
+/* Detalles del usuario */
+.user-details-popover {
+    padding: 0 16px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
+    background: var(--bg-primary, #ffffff);
+}
+
+.user-name-popover {
+    font-size: 16px;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--text-primary, #000000);
     margin-bottom: 4px;
 }
 
-.user-username {
-    font-size: 1rem;
-    color: #6b7280;
-    margin-bottom: 8px;
+.user-username-popover {
+    font-size: 13px;
+    color: var(--accent-primary, #007bff);
+    margin-bottom: 6px;
 }
 
-.user-context {
-    font-size: 0.85rem;
-    color: #3b82f6;
-    background: #eff6ff;
-    padding: 4px 12px;
-    border-radius: 12px;
-    display: inline-block;
+.user-context-popover {
+    font-size: 11px;
+    color: var(--text-secondary, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.user-info-section {
-    background: #f8f9fa;
-    border-radius: 8px;
+/* Información de contacto */
+.contact-info-popover {
     padding: 16px;
-    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
+    background: var(--bg-primary, #ffffff);
 }
 
-.info-item {
+.contact-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: 8px 0;
-    border-bottom: 1px solid #e5e7eb;
+    font-size: 13px;
+    color: var(--text-primary, #000000);
 }
 
-.info-item:last-child {
+.contact-item:last-child {
     border-bottom: none;
 }
 
-.info-label {
-    font-weight: 500;
-    color: #4b5563;
-    font-size: 0.9rem;
+.contact-label {
+    color: var(--text-secondary, #666);
+    min-width: 70px;
+    font-size: 12px;
 }
 
-.info-value {
-    color: #1f2937;
-    font-size: 0.9rem;
+.contact-value {
+    color: var(--text-primary, #000000);
     text-align: right;
-    word-break: break-all;
-}
-
-/* ✅ NUEVO: Acciones para DM */
-.dm-actions {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.btn-secondary {
-    background: #f3f4f6;
-    color: #374151;
-    border: 1px solid #d1d5db;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
     flex: 1;
+    margin-left: 12px;
+    word-break: break-word;
+    font-size: 13px;
 }
 
-.btn-secondary:hover {
-    background: #e5e7eb;
-    border-color: #9ca3af;
+/* Separador */
+.popover-divider {
+    height: 1px;
+    background: var(--border-light, #f0f0f0);
+    margin: 0 16px;
 }
 
-.user-info-modal-footer {
-    padding: 16px 20px;
-    border-top: 1px solid #e1e5e9;
+/* Información del chat */
+.chat-info-popover {
+    padding: 16px;
+    background: var(--bg-primary, #ffffff);
+}
+
+.chat-info-popover h4 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: var(--text-primary, #000000);
+    font-weight: 600;
+}
+
+.chat-info-item {
     display: flex;
-    justify-content: flex-end;
-    background: #f8f9fa;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 6px 0;
+    font-size: 13px;
+    color: var(--text-primary, #000000);
 }
 
-.btn-primary {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
+.chat-info-label {
+    color: var(--text-secondary, #666);
+    min-width: 80px;
+    font-size: 12px;
 }
 
-.btn-primary:hover {
-    background: #2563eb;
+.chat-info-value {
+    color: var(--text-primary, #000000);
+    text-align: right;
+    flex: 1;
+    margin-left: 12px;
+    word-break: break-word;
+    font-size: 13px;
 }
 
-/* Responsive para móviles */
+/* Scrollbar personalizado */
+.user-info-popover-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.user-info-popover-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary, #f8f9fa);
+}
+
+.user-info-popover-content::-webkit-scrollbar-thumb {
+    background: var(--border-color, #e1e5e9);
+    border-radius: 3px;
+}
+
+.user-info-popover-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary, #666);
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-    .user-info-modal-content {
-        width: 95%;
-        margin: 10px;
+    .user-info-popover {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 320px;
+        margin: 0;
+        background: var(--bg-primary, #ffffff);
     }
-    
-    .user-info-modal-body {
-        padding: 16px;
-    }
+}
 
-    .dm-actions {
-        flex-direction: column;
-    }
+.info-popover-container {
+    position: relative;
+    display: inline-block;
 }

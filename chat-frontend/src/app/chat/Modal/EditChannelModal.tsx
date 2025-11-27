@@ -40,7 +40,7 @@ export default function EditChannelModal({
     try {
       setIsLoading(true);
       
-      // ✅ CORREGIDO: Usar el endpoint que devuelve la estructura correcta
+      //Usar el endpoint que devuelve la estructura correcta
         const manageUsersRes = await fetch(`${API_URL}/channels/${channel.idChannel}/manage-users`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -51,7 +51,7 @@ export default function EditChannelModal({
           const manageData = await manageUsersRes.json();
           console.log('🔍 DEBUG - Datos de gestión de usuarios:', manageData);
           
-          // ✅ CORREGIDO: La estructura es { channel, currentMembers, availableUsers, isPublic }
+          //La estructura es { channel, currentMembers, availableUsers, isPublic }
           const currentMembers = manageData.currentMembers || [];
           const availableUsers = manageData.availableUsers || [];
           
@@ -234,9 +234,15 @@ export default function EditChannelModal({
     user.name.toLowerCase().includes(newUser.toLowerCase())
   );
 
+    // Cierra el modal al presionar ESC
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+  
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content edit-channel-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content edit-channel-modal" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
         
         {/* Header */}
         <div className="modal-header">
@@ -372,17 +378,17 @@ export default function EditChannelModal({
                           setIsLoading(true);
 
                           try {
-                            // Llamada al backend para eliminar el canal
+                            //Llamada al backend para eliminar el canal
                             const res = await fetch(`${API_URL}/channels/${channel.idChannel}`, {
                               method: "DELETE",
                               headers: { Authorization: `Bearer ${token}` }
                             });
 
-                            // Si eliminación correcta
+                            //Si eliminación correcta
                             if (res.ok) {
-                              onClose(); // Cerrar modal
+                              onClose(); //Cerrar modal
 
-                              // Avisar al padre para remover el canal de la lista visual
+                              //Avisar al padre para remover el canal de la lista visual
                               onChannelUpdate({
                                 deleted: true,
                                 idChannel: channel.idChannel

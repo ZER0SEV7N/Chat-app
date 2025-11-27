@@ -1,10 +1,12 @@
 //src/app/chat/Modal/ChannelManageModal.tsx
-//Modal para unirse a un canal público
+//Modal para crear canales públicos/privados y unirse a canales públicos.
+//Maneja REST + WebSocket indirectly (solo usa socketContext para mantener contexto).
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import "./modal.css"; 
 import "./modal-responsive.css";
-import { useSocket } from "@/lib/socketContext"; // ✅ IMPORTAR SOCKET CONTEXT
+import { useSocket } from "@/lib/socketContext"; 
+import { API_URL } from "@/lib/config";
 
 //Definir las propiedades del modal
 interface ChannelManagerModalProps {
@@ -24,7 +26,7 @@ interface PublicChannels {
         username: string;
     };
     membersCount: number;
-    isMember: boolean;
+    isMember: boolean; //Indica si el usuario ya forma parte
 }
 
 //Componente del modal
@@ -34,206 +36,158 @@ export default function ChannelManagerModal({
   onChannelJoined,
 }: ChannelManagerModalProps) {
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
-  const { socket } = useSocket(); // ✅ OBTENER SOCKET DEL CONTEXTO
+  const { socket } = useSocket(); 
     
-  // Estados para la pestaña de Crear
+  //Estados para la pestaña de Crear
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Estados para la pestaña de Unirse
+  //Estados para la pestaña de Unirse
   const [searchTerm, setSearchTerm] = useState("");
   const [publicChannels, setPublicChannels] = useState<PublicChannels[]>([]);
   const [filteredChannels, setFilteredChannels] = useState<PublicChannels[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [joiningChannelId, setJoiningChannelId] = useState<number | null>(null);
 
-    //=====================================
-    // EFECTOS Y LISTENERS DE WEBSOCKET
-    //======================================
-    
-    // ✅ ESCUCHAR EVENTOS DE WEBSOCKET AL MONTAR EL COMPONENTE
-    useEffect(() => {
-      if (!socket) return;
+  /*===============================================================
+    Obtiene los canales públicos desde el backend (GET /channels/public)
+  ===============================================================*/
+  const fetchPublicChannels = async () => {
+    setIsLoading(true);
 
-      // 🔔 Listener para recibir lista de canales públicos
-      const handlePublicChannels = (channels: PublicChannels[]) => {
-        console.log("📥 Canales públicos recibidos:", channels);
-        setPublicChannels(channels);
-        setFilteredChannels(channels);
-        setIsLoading(false);
-      };
+    try {
+      const res = await fetch(`${API_URL}/channels/public`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-      // ✅ Listener para confirmación de creación de canal
-      const handleChannelCreated = (channel: any) => {
-        console.log("✅ Canal creado recibido:", channel);
-        setIsCreating(false);
-        
-        // Mostrar confirmación mejorada
-        if (channel.isPublic) {
-          toast.success(`✅ Canal público "${channel.name}" creado exitosamente.\n\n👥 Todos los usuarios tienen acceso automático.`);
-        } else {
-          toast.success(`✅ Canal privado "${channel.name}" creado exitosamente.\n\n🔒 Solo usuarios invitados podrán unirse.`);
-        }
+      if (!res.ok) throw new Error("Error al cargar canales");
 
-        // Asegurar que el canal tenga el tipo correcto
-        const channelWithType = {
-          ...channel,
-          type: 'channel',
-          isDM: false
-        };
+      const channels = await res.json();
+      setPublicChannels(channels);
+      setFilteredChannels(channels);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al cargar los grupos públicos");
+    }
 
-        onChannelCreated(channelWithType);
-        onClose();
-      };
+    setIsLoading(false);
+  };
 
-      // ✅ Listener para confirmación de unión a canal
-      const handleChannelJoined = (channel: any) => {
-        console.log("✅ Unión a canal confirmada:", channel);
-        setJoiningChannelId(null);
-        
-        toast.success(`✅ Te has unido al canal "${channel.name}"`);
-        onChannelJoined(channel);
-        onClose();
-      };
+  //Carga automáticamente los canales cuando la pestaña "join" se abre
+  useEffect(() => {
+    if (activeTab === "join") fetchPublicChannels();
+  }, [activeTab]);
 
-      // ❌ Listener para errores
-      const handleError = (error: { message: string }) => {
-        console.error("❌ Error recibido:", error);
-        setIsCreating(false);
-        setJoiningChannelId(null);
-        toast.error(error.message || "Error en la operación");
-      };
+  /*===============================================================
+    Filtro de búsqueda en canales públicos
+  ===============================================================*/
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredChannels(publicChannels);
+    } else {
+      const filtered = publicChannels.filter((c) =>
+        (c.name + c.description).toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredChannels(filtered);
+    }
+  }, [searchTerm, publicChannels]);
 
-      // 📡 Registrar listeners
-      socket.on('publicChannels', handlePublicChannels);
-      socket.on('channelCreated', handleChannelCreated);
-      socket.on('channelJoined', handleChannelJoined);
-      socket.on('error', handleError);
+  /*===============================================================
+    Crear canal vía REST (POST /channels/create)
+  ===============================================================*/
+  const handleCreateChannel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isCreating) return;
 
-      // 🧹 Limpiar listeners al desmontar
-      return () => {
-        socket.off('publicChannels', handlePublicChannels);
-        socket.off('channelCreated', handleChannelCreated);
-        socket.off('channelJoined', handleChannelJoined);
-        socket.off('error', handleError);
-      };
-    }, [socket, onChannelCreated, onChannelJoined, onClose]);
+    setIsCreating(true);
 
-    //=====================================
-    // CARGA DE CANALES PÚBLICOS
-    //======================================
-    
-    //Cargar canales Publicos al cambiar a pestaña "Unirse"
-    useEffect(() => {
-      if (activeTab === 'join' && socket) {
-        fetchPublicChannels();
-      }
-    }, [activeTab, socket]);
+    try {
+      const res = await fetch(`${API_URL}/channels/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim(),
+          isPublic,
+          type: "channel",
+        }),
+      });
 
-    //Filtrar canales segun la busqueda
-    useEffect(() => {
-        if(searchTerm.trim() === "") {
-            setFilteredChannels(publicChannels);
-        } else {
-            const filtered = publicChannels.filter(channel =>
-                channel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                channel.description.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            setFilteredChannels(filtered);
-        }
-    }, [searchTerm, publicChannels]);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Error creando el canal");
 
-    //=====================================
-    // FUNCIONES PRINCIPALES
-    //======================================
+      // Notificar al usuario
+      toast.success(
+        `Canal ${isPublic ? "público" : "privado"} "${data.name}" creado`
+      );
 
-    // ✅ FUNCIÓN ACTUALIZADA: Cargar canales públicos via WebSocket
-    const fetchPublicChannels = async () => {
-        setIsLoading(true);
-        try {
-            if (!socket) {
-                toast.error("Error: Conexión no disponible");
-                return;
-            }
-            
-            console.log("📡 Solicitando canales públicos via WebSocket...");
-            // 📡 Enviar evento WebSocket en lugar de HTTP
-            socket.emit('getPublicChannels');
-            
-        } catch (error) {
-            console.error("Error fetching public channels:", error);
-            toast.error("Error al cargar los canales públicos");
-            setIsLoading(false);
-        }
-        // ❗ NO llamar setIsLoading(false) aquí - se llamará cuando llegue la respuesta
-    };
+      // Informar al componente padre
+      onChannelCreated({
+        ...data,
+        type: "channel",
+        isDM: false,
+      });
 
-    // ✅ FUNCIÓN ACTUALIZADA: Unirse a canal público via WebSocket
-    const handleJoinChannel = async (channelId: number) => {
-        if (!socket) {
-            toast.error("Error: Conexión no disponible");
-            return;
-        }
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
 
-        setJoiningChannelId(channelId);
-        console.log(`📡 Uniéndose al canal ${channelId} via WebSocket...`);
-        
-        // 📡 Enviar evento WebSocket en lugar de HTTP
-        socket.emit('joinPublicChannel', channelId);
-        
-        // ❗ NO hacer setJoiningChannelId(null) aquí - se hará cuando llegue la respuesta
-    };
+    setIsCreating(false);
+  };
 
-    // ✅ FUNCIÓN ACTUALIZADA: Crear canal via WebSocket
-    const handleCreateChannel = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (isCreating || !socket) return;
-        
-        setIsCreating(true);
-        console.log("📡 Creando canal via WebSocket...", {
-            name,
-            description,
-            isPublic
-        });
+  /*===============================================================
+    Unirse a canal vía REST (POST /channels/:id/join)
+  ===============================================================*/
+  const handleJoinChannel = async (idChannel: number) => {
+    setJoiningChannelId(idChannel);
 
-        // 📡 Enviar evento WebSocket en lugar de HTTP
-        socket.emit('createChannel', {
-            name: name.trim(),
-            description: description.trim(),
-            isPublic,
-            autoAddAllUsers: false
-        });
-        
-        // ❗ NO hacer setIsCreating(false) aquí - se hará cuando llegue la respuesta
-    };
+    try {
+      const res = await fetch(`${API_URL}/channels/${idChannel}/join`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-    //=====================================
-    // FUNCIONES AUXILIARES
-    //======================================
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
 
-    //Función para salir al presionar escape
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Escape") {
-            onClose();
-        }
-    };
+      toast.success(`Te has unido al grupo "${data.name}"`);
 
-    // ✅ FUNCIÓN PARA LIMPIAR FORMULARIOS
-    const resetForm = () => {
-        setName("");
-        setDescription("");
-        setIsPublic(true);
-    };
+      onChannelJoined(data);
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
 
-    // ✅ ACTUALIZAR FORMULARIOS AL CAMBIAR PESTAÑA
-    useEffect(() => {
-        if (activeTab === 'create') {
-            resetForm();
-        }
-    }, [activeTab]);
+    setJoiningChannelId(null);
+  };
+
+  /*===============================================================
+    Resetea formulario de creación cuando se cambia de pestaña
+  ===============================================================*/
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setIsPublic(true);
+  };
+
+  useEffect(() => {
+    if (activeTab === "create") resetForm();
+  }, [activeTab]);
+
+  // Cierra el modal al presionar ESC
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  };
 
   /*===============================================================
   RENDERIZADO DEL MODAL
@@ -244,7 +198,7 @@ export default function ChannelManagerModal({
         className="modal-content" 
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
-        tabIndex={0} // ✅ Hacer el modal focusable para eventos de teclado
+        tabIndex={0} //Hacer el modal focusable para eventos de teclado
       >
         {/* Header del modal */}
         <div className="modal-header">
@@ -253,7 +207,7 @@ export default function ChannelManagerModal({
             className="modal-close" 
             onClick={onClose} 
             aria-label="Cerrar modal"
-            disabled={isCreating} // ✅ Deshabilitar mientras se crea
+            disabled={isCreating} //Deshabilitar mientras se crea
           >
             ×
           </button>
@@ -264,14 +218,14 @@ export default function ChannelManagerModal({
           <button 
             className={`tab-button ${activeTab === 'create' ? 'active' : ''}`}
             onClick={() => setActiveTab('create')}
-            disabled={isCreating} // ✅ Deshabilitar mientras se crea
+            disabled={isCreating} //Deshabilitar mientras se crea
           >
             ➕ Crear Grupo
           </button>
           <button 
             className={`tab-button ${activeTab === 'join' ? 'active' : ''}`}
             onClick={() => setActiveTab('join')}
-            disabled={isLoading} // ✅ Deshabilitar mientras carga
+            disabled={isLoading} //Deshabilitar mientras carga
           >
             🔍 Unirse a Grupo
           </button>
@@ -294,7 +248,7 @@ export default function ChannelManagerModal({
                   disabled={isCreating}
                   required
                   autoFocus
-                  maxLength={50} // ✅ Limitar longitud
+                  maxLength={50} //Limitar longitud
                 />
                 <div className="character-count">
                   {name.length}/50 caracteres
@@ -312,7 +266,7 @@ export default function ChannelManagerModal({
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={isCreating}
                   rows={3}
-                  maxLength={200} // ✅ Limitar longitud
+                  maxLength={200} //Limitar longitud
                 />
                 <div className="character-count">
                   {description.length}/200 caracteres
