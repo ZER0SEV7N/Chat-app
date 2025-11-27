@@ -233,4 +233,18 @@ export class ChatService {
     await this.channelRepository.remove(dm);
     return { message: 'Chat privado eliminado correctamente' };
   }
+  //============================================================
+  //Obtener todos los canales DM del usuario (alternativa más específica)
+  //============================================================
+  async getDMById(channelId: number, userId: number){
+    return this.channelRepository.findOne({
+      where: {
+        idChannel: channelId,
+        type: 'dm',
+        members: { idUser: userId}//Verificar que el usuario es miembro
+      },
+      relations: ['members', 'messages', 'nessages.user']
+    });
+  }
+  
 }

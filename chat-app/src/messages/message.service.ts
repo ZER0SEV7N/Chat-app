@@ -2,7 +2,7 @@
 //Servicio encargado de gestionar la lógica de negocio relacionada con los mensajes.
 //Incluye creación, edición, obtención y eliminación de mensajes dentro de los canales.
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from 'src/entities/message.entity';
@@ -48,16 +48,20 @@ export class MessageService {
   /*===========================================================================
     Buscar un mensaje por ID
   ===========================================================================*/
-  async findAll(idChannel: number) {
-    return await this.messageRepository.find({
-      where: { channel: { idChannel } },
-      relations: ['user', 'channel'],
-      order: { createdAt: 'ASC' },
-    });
-  }
-
+  async findAll(idChannel: number, page: number = 1, limit: number = 50) {
+      const skip = (page - 1) * limit;
+      
+      return await this.messageRepository.find({
+        where: { channel: { idChannel } },
+        relations: ['user'],
+        order: { createdAt: 'ASC' },
+        skip,
+        take: limit,
+      });
+    }
+  
   /*===========================================================================
-    Buscar un mensaje por ID
+    Buscar un mensaje por ID (sin verificar canal)
   ===========================================================================*/
   async findOne(idMessage: number) {
     return await this.messageRepository.findOne({
@@ -87,4 +91,47 @@ export class MessageService {
     await this.messageRepository.remove(message);
     return { deleted: true, idMessage };
   }
+  /*===========================================================================
+    Buscar un mensaje específico dentro de un canal
+  ===========================================================================*/
+  async findOneInChannel(idMessage: number, idChannel: number) {
+    return await this.messageRepository.findOne({
+      where: { idMessage,
+        channel: { idChannel },
+      },
+      relations: ['user', 'channel'],
+    });
+  }
+  /*==========================================================================
+   Actualizar Mensaje con verificacion de canal y propiedad (API)
+  ===========================================================================*/
+  async updateMessageInChannel(idMessage: number, idChannel: number, newText: string, userId: number){
+    //Primero verificar la procedencia del mensaje
+    const message = await this.findOneInChannel(idMessage, idChannel);
+    if(!message) throw new NotFoundException("El mensaje no ha sido encontrado");
+
+    //Verificar al usuario que envio ese mensaje
+    if(message.user.idUser !== userId){
+      throw new ForbiddenException("Solo puedes editar tus propios mensajes");
+    } 
+    message.text = newText;
+    message.createdAt = new Date();
+    return await this.messageRepository.save(message);
+  }
+  
+  /*==========================================================================
+   Eliminar Mensaje con verificacion de canal y propiedad (API)
+  ===========================================================================*/
+  async removeMessageFromChannel(idMessage: number, idChannel: number,  userId: number){
+    //Primero verificar la procedencia del mensaje
+    const message = await this.findOneInChannel(idMessage, idChannel);
+    if(!message) throw new NotFoundException('Mensaje no encontrado en este canal');
+    //Verificar al usuario que envio ese mensaje
+    if(message.user.idUser !== userId){
+      throw new ForbiddenException("Solo puedes editar tus propios mensajes");
+    } 
+    await this.messageRepository.remove(message);
+    return { deleted: true, idMessage};
+  }
 }
+
