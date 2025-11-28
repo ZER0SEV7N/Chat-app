@@ -36,6 +36,7 @@ export class MessageController{
         Crear un nuevo mensaje usando método REST.
         Requiere autenticación JWT.
     =========================================================================*/
+    @UseGuards(JwtGuard)
     @Post()
     async createMessage(
         @Body() body: {channelId: number; text: string},
@@ -49,6 +50,7 @@ export class MessageController{
         Actualizar un mensaje existente.
         Solo el usuario propietario del mensaje puede editarlo.
     =========================================================================*/
+    @UseGuards(JwtGuard)
     @Put(':id')
     async updateMessage(@Param('id') id: number,
         @Body() body: {text: string},
@@ -66,6 +68,7 @@ export class MessageController{
         Eliminar un mensaje.
         Únicamente el autor del mensaje puede eliminarlo.
     =========================================================================*/
+    @UseGuards(JwtGuard)
     @Delete(':id')
     async deleteMessage(@Param('id') id: number, @Req() req){
         const userId = req.user.idUser;

@@ -136,11 +136,9 @@ export class ChannelsController {
     if (!authHeader) {
       throw new UnauthorizedException('Falta el token de autorización');
     }
-    
     const token = authHeader.split(' ')[1];
     const payload = this.jwtService.verify(token);
     const userId = payload.sub;
-
     if (!userId) {
       throw new UnauthorizedException('Token inválido');
     }
