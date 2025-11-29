@@ -1,5 +1,5 @@
 //src/users/users.controller.ts
-//Controlador para la gestion de usuarios
+//Controlador para la gestión de usuarios
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtGuard } from '../auth/jwt.guard'; 
@@ -7,7 +7,11 @@ import { JwtGuard } from '../auth/jwt.guard';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-  //Obtener los canales del usuario autenticado
+
+  /*=======================================================================
+    GET /users/channels
+    Obtener los canales del usuario autenticado
+  ========================================================================*/
   @UseGuards(JwtGuard)
   @Get('channels')
   async getUserChannels(@Req() req) {
@@ -15,7 +19,10 @@ export class UsersController {
     return this.usersService.getUserChannels(idUser);
   }
 
-  //Obtener todos los usuarios
+  /*=======================================================================
+    GET /users
+    Obtener todos los usuarios
+  ========================================================================*/
   @Get()
   async findAll() {
     return this.usersService.findAll();

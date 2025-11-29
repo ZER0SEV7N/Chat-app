@@ -377,4 +377,13 @@ export class ChannelsService {
         }
         return { message: 'Has salido del canal correctamente' };
     }
+    /*============================================================
+    Obtener todos los canales
+    ============================================================*/
+    async getAllChannels(userId: number) {
+        return this.channelrepository.find({
+            relations: ['creator', 'members'],
+            order: { createdAt: 'DESC' }
+        });
+    }
 }

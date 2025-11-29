@@ -3,13 +3,15 @@
 //============================================================
 
 //Importaciones necesarias
-import { Controller, Post, Body, Req, Delete, Param, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Req, Delete, Param, Get, UseGuards, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { JwtGuard } from 'src/auth/jwt.guard';
+
 //Controlador para manejar las rutas del chat
 @Controller('chat')
+@UseGuards(JwtGuard)
 export class ChatController {
   chatGateway: any;
   constructor(
@@ -18,92 +20,117 @@ export class ChatController {
   ) {}
 
   /*========================================================================
-  Crear o recuperar un canal privado (DM)
+    Extraer userId del token JWT de forma reusable
+  =========================================================================*/
+  private extractUserIdFromToken(req: Request): number {
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+      throw new UnauthorizedException("Falta el token de autorizacion para poder realizar cambios");
+
+    }
+    const token = authHeader.split(' ')[1];
+    if(!token){
+      throw new UnauthorizedException("Token mal formado")
+    }
+     try {
+      const payload = this.jwtService.verify(token);
+      return payload.sub; //el id del usuario autenticado
+    } catch (error) {
+      throw new UnauthorizedException('Token inválido o expirado');
+    }
+  }
+
+  /*========================================================================
+    POST /chat/private
+    Crear o recuperar un canal privado (DM)
   =========================================================================*/
   @Post('private')
   async getOrCreatePrivateChannel(
     @Body() body: { targetUsername: string },
     @Req() req: Request,
   ) {
-    // Extraer token JWT desde encabezado Authorization
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      throw new Error('Falta el token de autorización');
+    if (!body.targetUsername?.trim()) {
+      throw new BadRequestException('targetUsername es requerido');
     }
-    //Extraer el token del encabezado
-    const token = authHeader.split(' ')[1];
-    const payload = this.jwtService.verify(token);
-    //Obtener el idUser del payload del token
-    const userId = payload.sub; // el id del usuario autenticado
+    const userId = this.extractUserIdFromToken(req); // el id del usuario autenticado
     return this.chatService.getOrCreatePrivateChannel(userId, body.targetUsername);
   }
   
   /*=======================================================================
-  Obtener todos los usuarios
+    GET /chat/users
+    Obtener todos los usuarios
   =========================================================================*/
   @Get('users')
   async getAllUsers(@Req() req: Request) {
-    // Extraer token JWT desde encabezado Authorization
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      throw new Error('Falta el token de autorización');
-    }
-    //Extraer el token del encabezado
-    const token = authHeader.split(' ')[1];
-    const payload = this.jwtService.verify(token);
     //Obtener el idUser del payload del token
-    const currentUserId = payload.sub; 
-    return this.chatService.getAllUsers(currentUserId);
+    const userId = this.extractUserIdFromToken(req); // el id del usuario autenticado
+    return this.chatService.getAllUsers(userId);
   }
 
   /*=======================================================================
-  Obtener todos los canales del usuario (incluye: públicos, privados y DMs)
+    GET /chat/user-channels
+    Obtener todos los canales del usuario (incluye: públicos, privados y DMs)
   =========================================================================*/
-  @UseGuards(JwtGuard)
   @Get('user-channels')
   async getUserChannels(@Req() req: Request) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      throw new Error('Falta el token de autorización');
-    }
-    const token = authHeader.split(' ')[1];
-    const payload = this.jwtService.verify(token);
-    const userId = payload.sub;
+    const userId = this.extractUserIdFromToken(req); // el id del usuario autenticado
     return this.chatService.getUserChannels(userId);
   }
 
   /*======================================================================
-  Obtener solo los DMs del usuario
+    GET /chat/dms
+    Obtener solo los DMs del usuario
   =========================================================================*/
   @Get('dms')
   async getUserDMs(@Req() req: Request) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      throw new Error('Falta el token de autorización');
-    }
-    const token = authHeader.split(' ')[1];
-    const payload = this.jwtService.verify(token);
-    const userId = payload.sub;
-    
+    const userId = this.extractUserIdFromToken(req); // el id del usuario autenticado
     return this.chatService.getUserDMs(userId);
   }
 
- /*=====================================================================================
-  Eliminar un DM (solo si el usuario pertenece al DM)
+  /*=====================================================================================
+    DELETE /chat/dm/:channelId
+    Eliminar un DM (solo si el usuario pertenece al DM)
   =========================================================================*/
-  @UseGuards(JwtGuard)
   @Delete('dm/:channelId')
   async deleteDM(
     @Param('channelId') channelId: number,
     @Req() req: Request
   ) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      throw new Error('Falta el token de autorización');
+    if (!channelId || isNaN(channelId)) {
+      throw new BadRequestException('channelId debe ser un número válido');
     }
-    const token = authHeader.split(' ')[1];
-    const payload = this.jwtService.verify(token);
-    const userId = payload.sub;  
+    const userId = this.extractUserIdFromToken(req); // el id del usuario autenticado
     return this.chatService.deleteDM(channelId, userId);
+  }
+
+  /*======================================================================
+    GET /chat/my-dms
+    Obtener todos los canales DM del usuario (alternativa más específica)
+  =========================================================================*/
+  @Get('my-dms')
+  async getAllMyDMs(@Req() req: Request) {
+    const userId = this.extractUserIdFromToken(req); // el id del usuario autenticado
+    return this.chatService.getUserDMsWithMessages(userId); // Reutiliza el mismo servicio
+  }
+
+
+  /*======================================================================
+    GET /chat/dm/search/:username
+    Buscar un DM específico por username del otro usuario
+  =========================================================================*/
+  @Get('dm/search/:username')
+  async getDMByUsername(
+    @Param('username') username: string,
+    @Req() req: Request
+  ) {
+    if (!username?.trim()) {
+      throw new BadRequestException('Username es requerido');
+    }
+    const userId = this.extractUserIdFromToken(req);
+    const dm = await this.chatService.getDMByUsername(userId, username);
+    if (!dm) {
+      throw new NotFoundException(`No se encontró un DM con el usuario ${username}`);
+    }
+    return dm;
   }
 }

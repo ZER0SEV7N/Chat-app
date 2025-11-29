@@ -207,6 +207,7 @@ export class ChatService {
       .where('channel.type = :type', { type: 'dm' })
       .andWhere('channel.isPublic = false')
       .getMany();
+    
     return dms.map(dm => {
       const otherMember = dm.members.find(member => member.idUser !== userId);
       return {
@@ -216,6 +217,44 @@ export class ChatService {
       };
     });
   }
+
+  /*===========================================================================
+  GET /chat/my-dms
+  Obtener DMs con información completa incluyendo mensajes y detalles extendidos
+===========================================================================*/
+async getUserDMsWithMessages(userId: number) {
+  const dms = await this.channelRepository
+    .createQueryBuilder('channel')
+    .innerJoin('channel.members', 'user', 'user.idUser = :userId', { userId })
+    .leftJoinAndSelect('channel.members', 'members')
+    .leftJoinAndSelect('channel.messages', 'messages')
+    .leftJoinAndSelect('messages.user', 'messageUser', 'messageUser.idUser IS NOT NULL')
+    .where('channel.type = :type', { type: 'dm' })
+    .andWhere('channel.isPublic = false')
+    .orderBy('messages.createdAt', 'ASC')
+    .getMany();
+  
+  return dms.map(dm => {
+    const otherMember = dm.members.find(member => member.idUser !== userId);
+    const lastMessage = dm.messages.length > 0 ? dm.messages[dm.messages.length - 1] : null;
+    
+    return {
+      ...dm,
+      displayName: otherMember ? `DM con ${otherMember.username}` : 'Chat Privado',
+      otherUser: otherMember,
+      lastMessage: lastMessage ? {
+        id: lastMessage.idMessage,
+        text: lastMessage.text,
+        createdAt: lastMessage.createdAt,
+        user: {
+          idUser: lastMessage.user?.idUser,
+          username: lastMessage.user?.username
+        }
+      } : null,
+      unreadCount: 0 // Puedes agregar lógica para contar mensajes no leídos
+    };
+  });
+}
 
   //============================================================
   //Eliminar DM (solo si ambos usuarios lo desean)
@@ -232,5 +271,33 @@ export class ChatService {
     //Eliminar el DM
     await this.channelRepository.remove(dm);
     return { message: 'Chat privado eliminado correctamente' };
+  }
+
+  //============================================================
+  //Obtener todos los canales DM del usuario (alternativa más específica)
+  //============================================================
+  async getDMById(channelId: number, userId: number){
+    return this.channelRepository.findOne({
+      where: {
+        idChannel: channelId,
+        type: 'dm',
+        members: { idUser: userId}//Verificar que el usuario es miembro
+      },
+      relations: ['members', 'messages', 'messages.user']
+    });
+  }
+
+  //============================================================
+  //Buscar un DM específico por username del otro usuario
+  //============================================================
+  async getDMByUsername(userId: number, targetUsername: string) {
+    // Implementación para buscar DM por username
+    const userDMs = await this.getUserDMs(userId);
+    
+    return userDMs.find(dm => 
+      dm.members.some(member => 
+        member.username === targetUsername && member.idUser !== userId
+      )
+    );
   }
 }

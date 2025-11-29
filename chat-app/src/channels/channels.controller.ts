@@ -75,7 +75,7 @@ export class ChannelsController {
           body.description,
           body.isPublic ?? true,
           'channel',
-      ); //Crear un canal con los parametros que se envian
+      ); //Crear un canal con los parametros que se envian  
       console.log('✅ Respuesta del servicio:', {
           id: result.idChannel,
           name: result.name,
@@ -206,4 +206,17 @@ export class ChannelsController {
 
     return this.channelsService.leaveChannel(id, userId);
   }
+
+  /*============================================================
+   *GET /channels
+   *Obtienes todos los canales sin importar si es publico o no.
+  ============================================================*/
+  @UseGuards(JwtGuard)
+  @Get()
+  async getAllChannels(@Req() req:any) {
+    const userId = req.user?.idUser;
+    if (!userId) throw new UnauthorizedException('Usuario no autenticado');
+    return this.channelsService.getAllChannels(userId);
+  }
+
 }

@@ -3,6 +3,7 @@
 //Maneja conexión/desconexión de usuarios, salas, envío/recepción de mensajes,
 //creación de canales, DMs, notificaciones globales y sincronización de usuarios online.
 //Se integra con Socket.IO y usa JWT para autenticar conexiones entrantes.
+
 //Importaciones
 import {
   WebSocketGateway, SubscribeMessage,
@@ -24,10 +25,13 @@ import { ChannelsService } from '../channels/channels.service';
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
+  
   //Lista de usuarios conectados (clave: idUser, valor: username)
   private onlineUsers: Map<number, string> = new Map();
+  
   //Lista de usuarios y sus salas unidas (clave: idUser, valor: Set de room names)
   private userRooms: Map<number, Set<string>> = new Map();
+  
   constructor(
     private readonly chatService: ChatService,
     private readonly channelsService: ChannelsService,
@@ -35,17 +39,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly messageService: MessageService,
   ) { }
 
-  //============================================================
-  //CONEXIÓN DE USUARIO (autenticación de la sesión WebSocket)
-  //============================================================
+  //======================================================================================
+  // EVENTO: Conexión de WebSocket
+  // Maneja la autenticación JWT y unión automática a canales del usuario
+  //======================================================================================
   async handleConnection(client: Socket) {
     try {
       //Obtener el token
       const token = client.handshake.auth.token;
       if (!token) throw new Error('No se ha enviado el token');
+      
       //Decodificar JWT
       const payload = this.jwtService.verify(token);
       client.data.idUser = payload.sub;
+      
       //Obtener el nombre de usuario desde ChatService
       try {
         const user = await this.chatService.getUserById(client.data.idUser);
@@ -54,14 +61,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         //si falla, poner un fallback
         client.data.username = `user-${client.data.idUser}`;
       }
+      
       //Agregar a la lista de usuarios conectados
       this.onlineUsers.set(client.data.idUser, client.data.username);
+      
       //Inicializar conjunto de salas para este usuario
       this.userRooms.set(client.data.idUser, new Set());
 
       console.log(`✅ Cliente conectado: ${client.id} (${client.data.username})`);
+      
       //Notificar a todos los clientes
       this.broadcastOnlineUsers();
+      
       //Unir automáticamente a los canales del usuario
       await this.joinUserChannels(client);
     } catch (error) {
@@ -70,9 +81,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  // Desconexión
-  //============================================================
+  //======================================================================================
+  // EVENTO: Desconexión de WebSocket
+  // Limpia los recursos del usuario desconectado
+  //======================================================================================
   handleDisconnect(client: Socket) {
     console.log(`🔌 Cliente desconectado: ${client.id} (${client.data?.username})`);
     if (client.data && client.data.idUser) {
@@ -81,10 +93,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //===========================================================
-  //unirse automaticamente a los canales del usuario en el que
-  //Ya eres miembro
-  //===========================================================
+  //======================================================================================
+  // MÉTODO PRIVADO: Unir automáticamente a los canales del usuario
+  //======================================================================================
   private async joinUserChannels(client: Socket){
     try{
       const userId = client.data.idUser;
@@ -99,9 +110,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  // Agregar usuario a la lista de salas
-  //============================================================
+  //======================================================================================
+  // MÉTODO PRIVADO: Agregar usuario a la lista de salas
+  //======================================================================================
   private addUserToRoom(userId: number, room: string){
     if(!this.userRooms.has(userId)){
       this.userRooms.set(userId, new Set());
@@ -109,18 +120,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.userRooms.get(userId)?.add(room);
   }
 
-  //============================================================
-  // Remover usuario de la lista de salas
-  //============================================================
+  //======================================================================================
+  // MÉTODO PRIVADO: Remover usuario de la lista de salas
+  //======================================================================================
   private removeUserFromRoom(userId: number, room: string) {
     if (this.userRooms.has(userId)) {
       this.userRooms.get(userId)?.delete(room);
     }
   }
 
-  //============================================================
-  // Enviar la lista actualizada de usuarios en línea
-  //============================================================
+  //======================================================================================
+  // MÉTODO PRIVADO: Enviar la lista actualizada de usuarios en línea
+  //======================================================================================
   private broadcastOnlineUsers() {
     const usersArray = Array.from(this.onlineUsers.entries()).map(([id, username]) => ({
       idUser: id,
@@ -129,25 +140,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit('onlineUsers', usersArray);
   }
 
-  //============================================================
-  // Unirse y salir de canales
-  //============================================================
+  //======================================================================================
+  // EVENTO: joinRoom
+  // WebSocket: Unirse a un canal específico
+  //======================================================================================
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
     try {
       const channel = await this.channelsService.getChannelById(idChannel);
+      
       //Verificar que el usuario es miembro del canal
       const isMember = channel.members.some(member => member.idUser === client.data.idUser);
       if (!isMember && channel.type !== 'dm') {
         client.emit('error', { message: 'No eres miembro de este canal' });
         return;
       }
+      
       const room = `Canal:${idChannel}`;
       client.join(room);
       this.addUserToRoom(client.data.idUser, room);
+      
       //Enviar historial al usuario recién conectado
       const history = await this.chatService.getMessages(idChannel);
       client.emit('history', history);
+      
       //Notificar a otros usuarios en la sala que alguien se unió
       client.to(room).emit('userJoinedRoom', {
         userId: client.data.idUser,
@@ -161,7 +177,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
   
   //======================================================================================
-  // Evento para manejar la salida del canal
+  // EVENTO: leaveRoom
+  // WebSocket: Salir de un canal específico
   //======================================================================================
   @SubscribeMessage('leaveRoom')
   async handleLeaveRoom(@MessageBody() idChannel: number, @ConnectedSocket() client: Socket) {
@@ -177,35 +194,46 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       channelId: idChannel,
     });
   }
+
+  //======================================================================================
+  // MÉTODO PRIVADO: Broadcast actualización de canales públicos
+  //======================================================================================
   private broadcastPublicChannelsUpdate() {
     this.server.emit('publicChannelsUpdate');
   }
+
   //======================================================================================
-  // Helper: obtener socket por userId
+  // MÉTODO PRIVADO: Helper para encontrar socket por userId
   //======================================================================================
   private findSocketByUserId(userId: number): Socket | null {
     const sockets = Array.from(this.server.sockets.sockets.values());
     return sockets.find(socket => socket.data.idUser === userId) || null;
   }
-  //========== ==================================================
-  //Salir de canal
-  //============================================================
+
+  //======================================================================================
+  // EVENTO: leaveChannel
+  // WebSocket: Salir permanentemente de un canal
+  //======================================================================================
   @SubscribeMessage('leaveChannel')
   async handleLeaveChannel(@MessageBody() channelId: number, @ConnectedSocket() client: Socket) {
     try {
       const userId = client.data.idUser;  
+      
       //Usar el servicio para salir del canal
       const result = await this.channelsService.leaveChannel(channelId, userId);
       const room = `Canal:${channelId}`;
       client.leave(room);
       this.removeUserFromRoom(userId, room);
+      
       console.log(`🚪 Usuario ${client.data.username} salió del canal ${channelId}`);
+      
       //Notificar a otros usuarios en el canal
       client.to(room).emit('userLeftChannel', {
         userId: userId,
         username: client.data.username,
         channelId: channelId
       });
+      
       client.emit('channelLeft', { channelId, message: result.message });
     } catch (error) {
       console.error('Error saliendo del canal:', error.message);
@@ -213,12 +241,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  //ENVIAR MENSAJE (incluye notificación global)
-  //============================================================
+  //======================================================================================
+  // EVENTO: sendMessage
+  // WebSocket: Enviar mensaje a un canal (incluye notificación global)
+  //======================================================================================
   @SubscribeMessage('sendMessage')
   async handleMessage(@MessageBody() payload: CreateChatDto, @ConnectedSocket() client: Socket) {
     const idUser = client.data.idUser;
+    
     //Crear mensaje en DB (retorna message con relation user)
     const message = await this.chatService.createMessage(
       idUser,
@@ -246,8 +276,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('newMessage', outgoing);
     //Enviar a los demás usuarios del canal (no al remitente)
     client.to(room).emit('newMessage', { ...outgoing, self: false });
-    //Enviar a TODOS los usuarios del canal (excepto remitente)
-    //Esto incluye a usuarios que no están actualmente en el chat
     // Notificación global
     client.to(room).emit('newMessageNotification', {
       idChannel: payload.idChannel,
@@ -255,23 +283,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       text: message.text,
       timestamp: new Date().toISOString(),
     });
-    //Emitir a todos los sockets en la sala excepto al remitente
+    
     console.log(`💬 Mensaje enviado por ${message.user?.username} en canal ${payload.idChannel}`);
   }
   
-  //============================================================
-  // Unirse a un canal público
-  //============================================================
+  //======================================================================================
+  // EVENTO: joinPublicChannel
+  // WebSocket: Unirse a un canal público
+  //======================================================================================
   @SubscribeMessage('joinPublicChannel')
   async handleJoinPublicChannel(@MessageBody() channelId: number, @ConnectedSocket() client: Socket) {
     try {
       const userId = client.data.idUser;
+      
       //Utilizar el servicio para unirse a un canal
       const channel = await this.channelsService.joinPublicChannel(channelId, userId);
       const room = `Canal:${channelId}`;
       client.join(room);
       this.addUserToRoom(userId, room);
+      
       console.log(`✅ Usuario ${client.data.username} se unió al canal público ${channel.name}`);
+      
       //Notificar a todos los usuarios del canal que alguien nuevo se unió
       this.server.to(room).emit('userJoinedChannel', {
         userId: userId,
@@ -279,8 +311,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         channelId: channelId,
         channelName: channel.name
       });
+      
       //Enviar confirmacion al usuario
       client.emit('channelJoined', channel);
+      
       //Enviar historial de mensajes
       const history = await this.chatService.getMessages(channelId);
       client.emit('history', history);
@@ -291,9 +325,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  // Editar mensaje
-  //============================================================
+  //======================================================================================
+  // EVENTO: editMessage
+  // WebSocket: Editar un mensaje existente
+  //======================================================================================
   @SubscribeMessage('editMessage')
   async handleEditMessage(@MessageBody() payload: UpdateChatDto, @ConnectedSocket() client: Socket) {
     try {
@@ -302,16 +337,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.emit('error', { message: 'Mensaje no encontrado' });
         return;
       }
+      
       if (message.user.idUser !== client.data.idUser) {
         client.emit('error', { message: 'No puedes editar mensajes de otros usuarios' });
        return;
       }
+      
       const updated = await this.messageService.updateMessage(
         Number(payload.idMessage),
         payload.newText,
       );
+      
       const room = `Canal:${message.channel.idChannel}`;
       this.server.to(room).emit('messageEdited', updated);
+      
       console.log(`✏️ Mensaje editado (ID: ${payload.idMessage})`);
     } catch (err) {
       console.error('Error editando mensaje:', err.message);
@@ -319,9 +358,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  // Eliminar mensaje
-  //============================================================
+  //======================================================================================
+  // EVENTO: deleteMessage
+  // WebSocket: Eliminar un mensaje
+  //======================================================================================
   @SubscribeMessage('deleteMessage')
   async handleDeleteMessage(@MessageBody() idMessage: string, @ConnectedSocket() client: Socket) {
     try {
@@ -330,14 +370,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.emit('error', { message: 'Mensaje no encontrado' });
         return;
       }
+      
       if (message.user.idUser !== client.data.idUser) {
         client.emit('error', { message: 'No puedes eliminar mensajes de otros usuarios' });
         return;
       }
+      
       await this.messageService.removeMessage(Number(idMessage));
       const room = `Canal:${message.channel.idChannel}`;
+      
       //Enviar solo el ID del mensaje como string
       this.server.to(room).emit('messageDeleted', idMessage);
+      
       console.log(`🗑️ Mensaje eliminado (ID: ${idMessage})`);
     } catch (err) {
       console.error('Error eliminando mensaje:', err.message);
@@ -345,9 +389,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  //Obtener canales públicos
-  //============================================================
+  //======================================================================================
+  // EVENTO: getPublicChannels
+  // WebSocket: Obtener lista de canales públicos
+  //======================================================================================
   @SubscribeMessage('getPublicChannels')
   async handleGetPublicChannels(@ConnectedSocket() client: Socket) {
     try {
@@ -360,9 +405,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  //Crear un canal DM
-  //============================================================
+  //======================================================================================
+  // EVENTO: createChannelDM
+  // WebSocket: Crear un canal de mensajes directos (DM)
+  //======================================================================================
   @SubscribeMessage('createChannelDM')
   async handleDMCreateChannel(
   @MessageBody() payload: { userId: number; targetUsername: string },
@@ -404,17 +450,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  //Obtener canales del usuario
-  //============================================================
+  //======================================================================================
+  // EVENTO: getUserChannels
+  // WebSocket: Obtener canales del usuario
+  //======================================================================================
   @SubscribeMessage('getUserChannels')
   async handleGetUserChannels(@MessageBody() userId: number, @ConnectedSocket() client: Socket) {
     const channels = await this.chatService.getUserChannels(userId);
     client.emit('userChannels', channels);
   }
-  //============================================================
-  // Eliminar canal
-  //============================================================
+
+  //======================================================================================
+  // EVENTO: deleteChannel
+  // WebSocket: Eliminar un canal
+  //======================================================================================
   @SubscribeMessage('deleteChannel')
   async handleDeleteChannel( @MessageBody() payload: { channelId: number}, @ConnectedSocket() client: Socket){
     try{
@@ -422,11 +471,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.channelId,
         client.data.idUser
       );
+      
       //Notificar a todos los miembros del canal que fue eliminado
       this.server.emit('channelDeleted',{
           channelId: payload.channelId,
           deletedBy: client.data.idUser
         });
+        
         console.log(`🗑️ Canal ${payload.channelId} eliminado por ${client.data.username}`);
         return result;
     } catch (error) {
@@ -435,18 +486,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //============================================================
-  //NOTIFICACIÓN DE USUARIO CONECTADO (para el frontend)
-  //============================================================
+  //======================================================================================
+  // EVENTO: userConnected
+  // WebSocket: Notificación de usuario conectado (para el frontend)
+  //======================================================================================
   @SubscribeMessage('userConnected')
   async handleUserConnected(@MessageBody() username: string, @ConnectedSocket() client: Socket) {
     console.log(`🔔 Usuario ${username} notificado como conectado`);
     // El usuario ya fue agregado en handleConnection, solo log para debugging
   }
 
-  //============================================================
-  // Crear Canal publico 
-  //============================================================
+  //======================================================================================
+  // EVENTO: createChannel
+  // WebSocket: Crear canal público o privado
+  //======================================================================================
   @SubscribeMessage('createChannel')
   async handleCreatePublicChannel(
     @MessageBody() payload: { name: string; description?: string; isPublic: boolean, autoAddAllUsers:boolean },

@@ -5,4 +5,5 @@ Frontend: Next/React
 
 Creado Por:
 Daniel | Pedro | Wiliam |
-Para Codecta.pe/J&P Perifericos
+Para
+Codecta.pe/J&P Perifericos
