@@ -1,7 +1,19 @@
 # Chat-app
-Una aplicacion web tanto backend como frontend encargada de crear y administrar un chat a tiempo real.
-Backend: NestJS
-Frontend: Next/React
+
+## Contexto:
+Este proyecto fue solicitado para crear un chat base, que pueda ser utilizado en diferentes aplicaciones mediante la conexion con la api.
+
+## Problema:
+el principal problema fue programar los eventos websockets para el manejo de los mensajes a tiempo real, y la creacion de una interfaz grafica optimizada, al estilo del WhatsApp.
+
+## Solucion tecnica:
+Para este proyecto se dividio la estructura en dos: 
+* Backend utilizando las tecnologías de NodeJs/NestJs. 
+* Frontend utilizando las tecnologias de NextJs/React.
+* Contenedor de base de datos PostgreSQL y Redis.
+
+## Resultados:
+Tanto backend como Frontend funcionan en simultaneo y permite una comunicación local en tiempo real.
 
 Creado Por:
 Daniel | Pedro | Wiliam |
