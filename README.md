@@ -4,7 +4,7 @@
 Este proyecto fue solicitado para crear un chat base, que pueda ser utilizado en diferentes aplicaciones mediante la conexion con la api.
 
 ## Problema:
-el principal problema fue programar los eventos websockets para el manejo de los mensajes a tiempo real, y la creacion de una interfaz grafica optimizada, al estilo del WhatsApp.
+El principal problema fue programar los eventos websockets para el manejo de los mensajes a tiempo real, y la creacion de una interfaz grafica optimizada, al estilo del WhatsApp.
 
 ## Solucion tecnica:
 Para este proyecto se dividio la estructura en dos: 
