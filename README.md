@@ -16,7 +16,8 @@ Para este proyecto se dividio la estructura en dos:
 Tanto backend como Frontend funcionan en simultaneo y permite una comunicación local en tiempo real.
 
 ## Creditos:
-Creado Por:
-Daniel | Pedro | Wiliam |
-Para
-Codecta.pe/J&P Perifericos
+Creado Por NodeJs Team II:
+* Daniel 
+* Pedro 
+* Wiliam 
+Para Codecta.pe/J&P Perifericos.
