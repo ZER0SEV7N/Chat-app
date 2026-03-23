@@ -17,7 +17,8 @@ Tanto backend como Frontend funcionan en simultaneo y permite una comunicación 
 
 ## Creditos:
 Creado Por NodeJs Team II:
-* Daniel 
-* Pedro 
-* Wiliam 
-Para Codecta.pe/J&P Perifericos.
+* Daniel.
+* Pedro. 
+* Wiliam.
+
+- Para Codecta.pe/J&P Perifericos.
