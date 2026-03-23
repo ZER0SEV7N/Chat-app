@@ -15,6 +15,7 @@ Para este proyecto se dividio la estructura en dos:
 ## Resultados:
 Tanto backend como Frontend funcionan en simultaneo y permite una comunicación local en tiempo real.
 
+## Creditos:
 Creado Por:
 Daniel | Pedro | Wiliam |
 Para
